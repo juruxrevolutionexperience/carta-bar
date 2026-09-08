@@ -46,3 +46,12 @@ class Plato(BaseModel):
         if self.sin_gluten and Alergeno.GLUTEN in self.alergenos:
             raise ValueError("Un plato sin_gluten no puede listar GLUTEN entre sus alergenos")
         return self
+
+
+class RestriccionesCliente(BaseModel):
+    vegano: bool = False
+    vegetariano: bool = False
+    sin_gluten: bool = False
+    sin_lactosa: bool = False
+    alergenos_excluir: list[Alergeno] = []
+    ingredientes_excluir: list[str] = []
