@@ -1,0 +1,47 @@
+[project]
+name = "carta-bar"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "juruxrevolutionexperience", email = "juruxrevolution@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=1.0.0",
+    "beautifulsoup4>=4.15.0",
+    "markdownify>=1.2.3",
+    "pydantic>=2.13.4",
+    "python-dotenv>=1.2.3",
+    "requests>=2.34.2",
+    "sentence-transformers>=6.0.0",
+    "structlog>=26.1.0",
+    "tiktoken>=0.13.0",
+]
+
+[project.scripts]
+carta-bar = "carta_bar:main"
+
+[build-system]
+requires = ["uv_build>=0.12.2,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.0",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.1",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E" , "F" , "I" , "N", "UP" , "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true 
+warn_unreachable = true
