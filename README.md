@@ -1,4 +1,4 @@
-# agente-formacion
+# Carta-Bar
 
 Repo plantilla con la estructura base sobre la que se construyen agentes: validación, tests, logging estructurado y base de datos. Reutilizable en cualquier proyecto nuevo.
 
