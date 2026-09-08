@@ -1,9 +1,8 @@
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-from carta_bar.modelos import Plato, RestriccionesCliente
 from carta_bar.datos import cargar_carta
-from carta_bar.modelos import Plato
+from carta_bar.modelos import Plato, RestriccionesCliente
 
 
 def texto_de_plato(plato: Plato) -> str:
