@@ -1,61 +1,48 @@
-from datetime import date
+from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, field_validator, model_validator
-
-
-class Direccion(BaseModel):
-    calle: str
-    ciudad: str
-    codigo_postal: str
+from pydantic import BaseModel, field_validator, model_validator
 
 
-class Cliente(BaseModel):
+class Alergeno(str, Enum):
+    GLUTEN = "gluten"
+    CRUSTACEOS = "crustaceos"
+    HUEVOS = "huevos"
+    PESCADO = "pescado"
+    CACAHUETES = "cacahuetes"
+    SOJA = "soja"
+    LACTEOS = "lacteos"
+    FRUTOS_CASCARA = "frutos_cascara"
+    APIO = "apio"
+    MOSTAZA = "mostaza"
+    SESAMO = "sesamo"
+    SULFITOS = "sulfitos"
+    ALTRAMUCES = "altramuces"
+    MOLUSCOS = "moluscos"
+
+
+class Plato(BaseModel):
+    id: str
     nombre: str
-    email: str
-    direccion: Direccion
+    descripcion: str
+    precio: float
+    categoria: str
+    ingredientes: list[str]
+    alergenos: list[Alergeno]
+    vegano: bool = False
+    vegetariano: bool = False
+    sin_gluten: bool = False
+    sin_lactosa: bool = False
+    disponible: bool = True
 
-
-class Usuario(BaseModel):
-    nombre: str
-    edad: int
-    email: str
-
-
-class UsuarioEstricto(BaseModel):
-    model_config = ConfigDict(strict=True)
-
-    nombre: str
-    edad: int
-    email: str
-
-
-class Persona(BaseModel):
-    nombre: str
-    edad: int
-
-    @field_validator("edad")
+    @field_validator("precio")
     @classmethod
-    def validar_edad(cls, edad: int) -> int:
-        if edad < 0:
-            raise ValueError("La edad no puede ser negativa")
-        if edad > 120:
-            raise ValueError("La edad no puede ser mayor a 120")
-        return edad
-
-
-class Reserva(BaseModel):
-    fecha_inicio: date
-    fecha_fin: date
+    def validar_precio(cls, precio: float) -> float:
+        if precio <= 0:
+            raise ValueError("El precio debe ser mayor que cero")
+        return precio
 
     @model_validator(mode="after")
-    def validar_fechas(self) -> "Reserva":
-        if self.fecha_fin <= self.fecha_inicio:
-            raise ValueError("La fecha de fin debe ser posterior a la de inicio")
+    def validar_coherencia_gluten(self) -> "Plato":
+        if self.sin_gluten and Alergeno.GLUTEN in self.alergenos:
+            raise ValueError("Un plato sin_gluten no puede listar GLUTEN entre sus alergenos")
         return self
-
-
-class Contacto(BaseModel):
-    nombre: str
-    email: str
-    plan_interes: str
-    quiere_demo: bool
