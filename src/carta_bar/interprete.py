@@ -30,5 +30,3 @@ def extraer_restricciones(pregunta: str) -> RestriccionesCliente:
     if respuesta.parsed_output is None:
         raise ValueError("El modelo no devolvió una respuesta estructurada válida")
     return respuesta.parsed_output
-
-   

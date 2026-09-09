@@ -3,18 +3,23 @@ from pathlib import Path
 
 from carta_bar.modelos import Categoria, Plato
 
-CARTA = Path("datos/carta.json")
-CATEGORIAS = Path("datos/categorias.json")
+
+def _ruta_carta(restaurante_id: str) -> Path:
+    return Path(f"datos/{restaurante_id}/carta.json")
 
 
-def cargar_categorias() -> list[Categoria]:
-    datos = json.loads(CATEGORIAS.read_text(encoding="utf-8"))
+def _ruta_categorias(restaurante_id: str) -> Path:
+    return Path(f"datos/{restaurante_id}/categorias.json")
+
+
+def cargar_categorias(restaurante_id: str) -> list[Categoria]:
+    datos = json.loads(_ruta_categorias(restaurante_id).read_text(encoding="utf-8"))
     return [Categoria.model_validate(c) for c in datos]
 
 
-def cargar_carta() -> list[Plato]:
-    categorias_validas = {c.id for c in cargar_categorias()}
-    datos = json.loads(CARTA.read_text(encoding="utf-8"))
+def cargar_carta(restaurante_id: str) -> list[Plato]:
+    categorias_validas = {c.id for c in cargar_categorias(restaurante_id)}
+    datos = json.loads(_ruta_carta(restaurante_id).read_text(encoding="utf-8"))
     platos = [Plato.model_validate(p) for p in datos]
 
     for plato in platos:

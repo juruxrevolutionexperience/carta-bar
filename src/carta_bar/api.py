@@ -9,7 +9,7 @@ from carta_bar.modelos import Plato
 app = FastAPI()
 
 modelo = cargar_modelo()
-carta, vectores = indexar(modelo)
+carta, vectores = indexar(modelo, "la-catedral")
 
 
 class Pregunta(BaseModel):

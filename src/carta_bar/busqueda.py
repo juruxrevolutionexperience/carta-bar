@@ -13,8 +13,8 @@ def texto_de_plato(plato: Plato) -> str:
     )
 
 
-def indexar(modelo: SentenceTransformer) -> tuple[list[Plato], np.ndarray]:
-    carta = cargar_carta()
+def indexar(modelo: SentenceTransformer, restaurante_id: str) -> tuple[list[Plato], np.ndarray]:
+    carta = cargar_carta(restaurante_id)
     textos = [texto_de_plato(p) for p in carta]
     vectores = modelo.encode(textos, show_progress_bar=True)
     return carta, vectores

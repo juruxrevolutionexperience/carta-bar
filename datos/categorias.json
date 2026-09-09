@@ -1,7 +1,0 @@
-[
-  {"id": "entrantes", "nombre": "Entrantes", "orden": 1},
-  {"id": "tostas", "nombre": "Tostas", "orden": 2},
-  {"id": "principales", "nombre": "Platos principales", "orden": 3},
-  {"id": "postres", "nombre": "Postres", "orden": 4},
-  {"id": "panes", "nombre": "Panes", "orden": 5}
-]
