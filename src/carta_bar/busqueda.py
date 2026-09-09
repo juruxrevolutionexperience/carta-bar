@@ -7,7 +7,10 @@ from carta_bar.modelos import Plato, RestriccionesCliente
 
 def texto_de_plato(plato: Plato) -> str:
     ingredientes = ", ".join(plato.ingredientes)
-    return f"{plato.nombre}. {plato.descripcion}. Ingredientes: {ingredientes}."
+    return (
+        f"{plato.nombre}. Categoría: {plato.categoria}. "
+        f"{plato.descripcion}. Ingredientes: {ingredientes}."
+    )
 
 
 def indexar(modelo: SentenceTransformer) -> tuple[list[Plato], np.ndarray]:

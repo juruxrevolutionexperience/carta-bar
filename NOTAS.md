@@ -82,3 +82,6 @@ Mismas fronteras (194 chunks en ambos), solo cambia el contenido limpio/sucio.
 Conclusión: la limpieza no mejora, posiblemente empeora ligeramente.
 Con n=10 esta diferencia (1 pregunta) es ruido estadístico, no concluyente.
 Decisión: NO adoptar limpieza. Mantener chunking por títulos (Exp 2) como base.
+
+# NOTA
+Un embedding solo "sabe" lo que está literalmente en el texto indexado. Si un dato existe en tu modelo pero no lo incluyes en el texto que conviertes a vector, la búsqueda semántica no puede usarlo, aunque el dato esté ahí delante.

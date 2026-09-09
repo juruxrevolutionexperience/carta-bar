@@ -55,3 +55,4 @@ class RestriccionesCliente(BaseModel):
     sin_lactosa: bool = False
     alergenos_excluir: list[Alergeno] = []
     ingredientes_excluir: list[str] = []
+    intencion_busqueda: str = ""

@@ -23,7 +23,9 @@ def responder_cliente(
     indices = [carta.index(p) for p in candidatos]
     vectores_filtrados = vectores[indices]
 
-    resultados = buscar_platos(pregunta, modelo, candidatos, vectores_filtrados, k=3)
+    texto_busqueda = restricciones.intencion_busqueda or pregunta
+    k = min(len(candidatos), 10)
+    resultados = buscar_platos(texto_busqueda, modelo, candidatos, vectores_filtrados, k=k)
 
     contexto = "\n\n".join(
         f"{p.nombre} ({p.precio}€): {p.descripcion}. "
@@ -41,11 +43,11 @@ def responder_cliente(
                 "role": "user",
                 "content": (
                     "Eres el asistente de un restaurante. Responde la pregunta del cliente "
-                    "usando SOLO los platos de este contexto. Sé breve y cercano. "
-                    "Si preguntan por alérgenos, cita los que aparecen "
-                        "en el contexto exactamente.\n\n"
+                    "usando SOLO los platos de este contexto. Muestra TODAS las opciones "
+                    "relevantes del contexto que encajen, no solo una — el cliente decide, "
+                    "tú le das el abanico. Sé breve y cercano en la descripción de cada una.\n\n"
                     f"Platos disponibles:\n{contexto}\n\nPregunta: {pregunta}"
-                ),
+),
             }
         ],
     )
