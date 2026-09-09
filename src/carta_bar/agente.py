@@ -47,7 +47,7 @@ def responder_cliente(
                     "relevantes del contexto que encajen, no solo una — el cliente decide, "
                     "tú le das el abanico. Sé breve y cercano en la descripción de cada una.\n\n"
                     f"Platos disponibles:\n{contexto}\n\nPregunta: {pregunta}"
-),
+                ),
             }
         ],
     )
