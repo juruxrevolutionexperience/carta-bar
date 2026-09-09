@@ -31,7 +31,7 @@ def cargar_carta(restaurante_id: str) -> list[Plato]:
     return platos
 
 
-def cargar_carta_traducida(restaurante_id: str, idioma: str) -> list[dict]:
+def cargar_carta_traducida(restaurante_id: str, idioma: str) -> list[dict[str, object]]:
     carta = cargar_carta(restaurante_id)
     base = [p.model_dump() for p in carta]
 

@@ -22,8 +22,9 @@ class Pregunta(BaseModel):
 
 
 @app.get("/carta")
-def obtener_carta(idioma: str = "es") -> list[dict]:
+def obtener_carta(idioma: str = "es") -> list[dict[str, object]]:
     return cargar_carta_traducida("la-catedral", idioma)
+
 
 
 @app.get("/categorias")
@@ -32,9 +33,10 @@ def obtener_categorias() -> list[Categoria]:
 
 
 @app.get("/config")
-def obtener_config() -> dict:
+def obtener_config() -> dict[str, object]:
     ruta = Path("datos/la-catedral/config.json")
-    return json.loads(ruta.read_text(encoding="utf-8"))
+    datos: dict[str, object] = json.loads(ruta.read_text(encoding="utf-8"))
+    return datos
 
 
 @app.post("/preguntar")
@@ -43,9 +45,11 @@ def preguntar(pregunta: Pregunta) -> dict[str, str]:
     return {"respuesta": respuesta}
 
 
+
 @app.get("/idiomas")
-def obtener_idiomas() -> dict:
-    return json.loads(Path("datos/idiomas.json").read_text(encoding="utf-8"))
+def obtener_idiomas() -> dict[str, object]:
+    datos: dict[str, object] = json.loads(Path("datos/idiomas.json").read_text(encoding="utf-8"))
+    return datos
 
 
 @app.get("/")

@@ -26,7 +26,7 @@ def _ruta_traduccion(restaurante_id: str, idioma: str) -> Path:
     return Path(f"datos/{restaurante_id}/carta.{idioma}.json")
 
 
-def cargar_traduccion(restaurante_id: str, idioma: str) -> dict[str, dict]:
+def cargar_traduccion(restaurante_id: str, idioma: str) -> dict[str, dict[str, object]]:
     ruta = _ruta_traduccion(restaurante_id, idioma)
     if not ruta.exists():
         return {}
