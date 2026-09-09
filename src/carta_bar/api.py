@@ -19,7 +19,15 @@ carta, vectores = indexar(modelo, "la-catedral")
 
 class Pregunta(BaseModel):
     texto: str
+    idioma: str = "es"
 
+
+@app.post("/preguntar")
+def preguntar(pregunta: Pregunta) -> dict[str, str]:
+    respuesta = responder_cliente(
+        pregunta.texto, modelo, carta, vectores, "la-catedral", pregunta.idioma
+    )
+    return {"respuesta": respuesta}
 
 @app.get("/carta")
 def obtener_carta(idioma: str = "es") -> list[dict[str, object]]:

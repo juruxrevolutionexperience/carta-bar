@@ -8,6 +8,15 @@ from carta_bar.llm import MODELO, cliente
 from carta_bar.modelos import Plato
 from carta_bar.rag import texto_de_respuesta
 
+NOMBRES_IDIOMA = {"es": "español", "en": "inglés", "de": "alemán", "fr": "francés"}
+
+SIN_RESULTADOS = {
+    "es": "No tenemos ningún plato que cumpla esas condiciones ahora mismo.",
+    "en": "We don't have any dish matching those conditions right now.",
+    "de": "Wir haben derzeit kein Gericht, das diese Bedingungen erfüllt.",
+    "fr": "Nous n'avons aucun plat correspondant à ces conditions pour le moment.",
+}
+
 
 def responder_cliente(
     pregunta: str,
@@ -15,6 +24,7 @@ def responder_cliente(
     carta: list[Plato],
     vectores: np.ndarray,
     restaurante_id: str,
+    idioma: str = "es",
 ) -> str:
     categorias = cargar_categorias(restaurante_id)
     nombres_categorias = [c.id for c in categorias]
@@ -22,7 +32,7 @@ def responder_cliente(
     candidatos = filtrar_por_restricciones_cliente(carta, restricciones)
 
     if not candidatos:
-        return "No tenemos ningún plato que cumpla esas condiciones ahora mismo."
+        return SIN_RESULTADOS.get(idioma, SIN_RESULTADOS["es"])
 
     indices = [carta.index(p) for p in candidatos]
     vectores_filtrados = vectores[indices]
@@ -38,6 +48,8 @@ def responder_cliente(
         for _, p in resultados
     )
 
+    lengua = NOMBRES_IDIOMA.get(idioma, "español")
+
     c = cliente()
     respuesta = c.messages.create(
         model=MODELO,
@@ -46,10 +58,13 @@ def responder_cliente(
             {
                 "role": "user",
                 "content": (
+                    f"Responde SIEMPRE en {lengua}, sea cual sea el idioma de la pregunta. "
                     "Eres el asistente de un restaurante. Responde la pregunta del cliente "
                     "usando SOLO los platos de este contexto. Muestra TODAS las opciones "
                     "relevantes del contexto que encajen, no solo una — el cliente decide, "
-                    "tú le das el abanico. Sé breve y cercano en la descripción de cada una.\n\n"
+                    "tú le das el abanico. Sé breve y cercano en la descripción de cada una. "
+                    "Mantén los nombres de los platos tal como aparecen en el contexto, "
+                    "sin traducirlos.\n\n"
                     f"Platos disponibles:\n{contexto}\n\nPregunta: {pregunta}"
                 ),
             }
