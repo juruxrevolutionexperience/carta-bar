@@ -2,6 +2,7 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 
 from carta_bar.busqueda import buscar_platos, filtrar_por_restricciones_cliente
+from carta_bar.datos import cargar_categorias
 from carta_bar.interprete import extraer_restricciones
 from carta_bar.llm import MODELO, cliente
 from carta_bar.modelos import Plato
@@ -13,8 +14,11 @@ def responder_cliente(
     modelo: SentenceTransformer,
     carta: list[Plato],
     vectores: np.ndarray,
+    restaurante_id: str,
 ) -> str:
-    restricciones = extraer_restricciones(pregunta)
+    categorias = cargar_categorias(restaurante_id)
+    nombres_categorias = [c.id for c in categorias]
+    restricciones = extraer_restricciones(pregunta, nombres_categorias)
     candidatos = filtrar_por_restricciones_cliente(carta, restricciones)
 
     if not candidatos:

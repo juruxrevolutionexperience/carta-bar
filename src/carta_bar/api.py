@@ -23,5 +23,5 @@ def obtener_carta() -> list[Plato]:
 
 @app.post("/preguntar")
 def preguntar(pregunta: Pregunta) -> dict[str, str]:
-    respuesta = responder_cliente(pregunta.texto, modelo, carta, vectores)
+    respuesta = responder_cliente(pregunta.texto, modelo, carta, vectores, "la-catedral")
     return {"respuesta": respuesta}

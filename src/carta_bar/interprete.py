@@ -2,8 +2,9 @@ from carta_bar.llm import MODELO, cliente
 from carta_bar.modelos import RestriccionesCliente
 
 
-def extraer_restricciones(pregunta: str) -> RestriccionesCliente:
+def extraer_restricciones(pregunta: str, categorias_disponibles: list[str]) -> RestriccionesCliente:
     c = cliente()
+    lista_categorias = ", ".join(categorias_disponibles)
     respuesta = c.messages.parse(
         model=MODELO,
         max_tokens=300,
@@ -17,10 +18,10 @@ def extraer_restricciones(pregunta: str) -> RestriccionesCliente:
                     "que expresa qué tipo de plato busca (sabor, tipo de comida, ocasión), "
                     "sin mencionar las restricciones. Si no hay ninguna intención de "
                     "búsqueda concreta, deja ese campo vacío. "
-                    "Si el cliente pide explícitamente una categoría de la carta "
-                    "(por ejemplo entrantes, principales, postres, panes, tostas), "
-                    "escribe su identificador exacto en minúsculas en 'categoria_pedida'. "
-                    "Si no pide ninguna categoría concreta, deja ese campo vacío.\n\n"
+                    "Si el cliente pide explícitamente una categoría de la carta, "
+                    f"elige su identificador EXACTO de esta lista: {lista_categorias}. "
+                    "Si no pide ninguna categoría concreta o no coincide con ninguna "
+                    "de la lista, deja ese campo vacío.\n\n"
                     f"Pregunta: {pregunta}"
                 ),
             }
