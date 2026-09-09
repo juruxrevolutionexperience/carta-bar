@@ -56,6 +56,7 @@ class RestriccionesCliente(BaseModel):
     alergenos_excluir: list[Alergeno] = []
     ingredientes_excluir: list[str] = []
     intencion_busqueda: str = ""
+    categoria_pedida: str = ""
 
 
 class Categoria(BaseModel):

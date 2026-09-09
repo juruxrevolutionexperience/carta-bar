@@ -76,4 +76,6 @@ def filtrar_por_restricciones_cliente(carta: list[Plato], r: RestriccionesClient
             for p in resultado
             if not any(palabra.lower() in ing.lower() for ing in p.ingredientes)
         ]
+    if r.categoria_pedida:
+        resultado = [p for p in resultado if p.categoria == r.categoria_pedida]
     return resultado

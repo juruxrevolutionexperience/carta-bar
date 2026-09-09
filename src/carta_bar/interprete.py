@@ -16,13 +16,21 @@ def extraer_restricciones(pregunta: str) -> RestriccionesCliente:
                     "Además, en 'intencion_busqueda' escribe SOLO la parte de la pregunta "
                     "que expresa qué tipo de plato busca (sabor, tipo de comida, ocasión), "
                     "sin mencionar las restricciones. Si no hay ninguna intención de "
-                    "búsqueda concreta, deja ese campo vacío.\n\n"
+                    "búsqueda concreta, deja ese campo vacío. "
+                    "Si el cliente pide explícitamente una categoría de la carta "
+                    "(por ejemplo entrantes, principales, postres, panes, tostas), "
+                    "escribe su identificador exacto en minúsculas en 'categoria_pedida'. "
+                    "Si no pide ninguna categoría concreta, deja ese campo vacío.\n\n"
                     f"Pregunta: {pregunta}"
                 ),
             }
         ],
         output_format=RestriccionesCliente,
     )
+    if respuesta.parsed_output is None:
+        raise ValueError("El modelo no devolvió una respuesta estructurada válida")
+    return respuesta.parsed_output
+
     if respuesta.parsed_output is None:
         raise ValueError("El modelo no devolvió una respuesta estructurada válida")
     return respuesta.parsed_output
