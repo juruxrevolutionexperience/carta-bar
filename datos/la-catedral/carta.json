@@ -11,7 +11,8 @@
     "vegetariano": true,
     "sin_gluten": true,
     "sin_lactosa": false,
-    "disponible": true
+    "disponible": true,
+    "etiqueta": "mas_vendido"
   },
   {
     "id": "p002",
@@ -53,7 +54,8 @@
     "vegetariano": false,
     "sin_gluten": true,
     "sin_lactosa": true,
-    "disponible": true
+    "disponible": true,
+    "etiqueta": "recomendacion_chef"
   },
   {
     "id": "p005",
@@ -81,7 +83,8 @@
     "vegetariano": false,
     "sin_gluten": true,
     "sin_lactosa": true,
-    "disponible": true
+    "disponible": true,
+    "etiqueta": "para_compartir"
   },
   {
     "id": "p007",
@@ -95,7 +98,8 @@
     "vegetariano": false,
     "sin_gluten": true,
     "sin_lactosa": true,
-    "disponible": true
+    "disponible": true,
+    "etiqueta": "para_compartir"
   },
   {
     "id": "p008",
@@ -123,7 +127,8 @@
     "vegetariano": false,
     "sin_gluten": true,
     "sin_lactosa": true,
-    "disponible": true
+    "disponible": true,
+    "etiqueta": "recomendacion_chef"
   },
   {
     "id": "p010",
@@ -151,7 +156,8 @@
     "vegetariano": false,
     "sin_gluten": false,
     "sin_lactosa": false,
-    "disponible": true
+    "disponible": true,
+    "etiqueta": "mas_vendido"
   },
   {
     "id": "p012",
@@ -165,7 +171,8 @@
     "vegetariano": false,
     "sin_gluten": false,
     "sin_lactosa": false,
-    "disponible": true
+    "disponible": true,
+    "etiqueta": "recomendacion_chef"
   },
   {
     "id": "p013",
@@ -179,7 +186,8 @@
     "vegetariano": true,
     "sin_gluten": false,
     "sin_lactosa": false,
-    "disponible": true
+    "disponible": true,
+    "etiqueta": "mas_vendido"
   },
   {
     "id": "p014",
@@ -207,7 +215,8 @@
     "vegetariano": false,
     "sin_gluten": false,
     "sin_lactosa": true,
-    "disponible": true
+    "disponible": true,
+    "etiqueta": "mas_vendido"
   },
   {
     "id": "p016",
@@ -263,7 +272,8 @@
     "vegetariano": false,
     "sin_gluten": false,
     "sin_lactosa": false,
-    "disponible": true
+    "disponible": true,
+    "etiqueta": "recomendacion_chef"
   },
   {
     "id": "p020",
@@ -291,7 +301,8 @@
     "vegetariano": true,
     "sin_gluten": false,
     "sin_lactosa": false,
-    "disponible": true
+    "disponible": true,
+    "etiqueta": "mas_vendido"
   },
   {
     "id": "p022",
@@ -333,7 +344,8 @@
     "vegetariano": false,
     "sin_gluten": false,
     "sin_lactosa": false,
-    "disponible": true
+    "disponible": true,
+    "etiqueta": "nuevo"
   },
   {
     "id": "p025",
@@ -361,6 +373,7 @@
     "vegetariano": false,
     "sin_gluten": false,
     "sin_lactosa": false,
-    "disponible": true
+    "disponible": true,
+    "etiqueta": "mas_vendido"
   }
 ]

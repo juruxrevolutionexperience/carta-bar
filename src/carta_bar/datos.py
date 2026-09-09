@@ -29,3 +29,25 @@ def cargar_carta(restaurante_id: str) -> list[Plato]:
                 f"que no existe en categorias.json"
             )
     return platos
+
+
+def cargar_carta_traducida(restaurante_id: str, idioma: str) -> list[dict]:
+    carta = cargar_carta(restaurante_id)
+    base = [p.model_dump() for p in carta]
+
+    if idioma == "es":
+        return base
+
+    ruta = Path(f"datos/{restaurante_id}/carta.{idioma}.json")
+    if not ruta.exists():
+        return base
+
+    trad = {d["id"]: d for d in json.loads(ruta.read_text(encoding="utf-8"))}
+
+    for plato in base:
+        t = trad.get(plato["id"])
+        if t:
+            plato["nombre"] = t["nombre"]
+            plato["descripcion"] = t["descripcion"]
+            plato["ingredientes"] = t["ingredientes"]
+    return base

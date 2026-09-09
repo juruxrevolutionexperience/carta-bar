@@ -1,0 +1,280 @@
+[
+  {
+    "id": "p001",
+    "hash": "34efa022440d7f1b",
+    "nombre": "CatedRal",
+    "descripcion": "Sprouts, cherry tomatoes, walnuts, goat cheese and caramelized onion",
+    "ingredientes": [
+      "sprouts",
+      "cherry tomatoes",
+      "walnuts",
+      "goat cheese",
+      "caramelized onion"
+    ]
+  },
+  {
+    "id": "p002",
+    "hash": "a57cf05b8a306e7d",
+    "nombre": "Caesar",
+    "descripcion": "Sprouts, crispy chicken, Parmesan cheese and croutons",
+    "ingredientes": [
+      "sprouts",
+      "crispy chicken",
+      "Parmesan cheese",
+      "croutons"
+    ]
+  },
+  {
+    "id": "p003",
+    "hash": "20fa39ef7cbcbf61",
+    "nombre": "Caprese",
+    "descripcion": "Tomato, avocado, mozzarella, capers and pesto",
+    "ingredientes": [
+      "tomato",
+      "avocado",
+      "mozzarella",
+      "capers",
+      "pesto"
+    ]
+  },
+  {
+    "id": "p004",
+    "hash": "fea82c291af8cb16",
+    "nombre": "Abanico Ibérico",
+    "descripcion": "Pending confirmation of ingredients with the restaurant",
+    "ingredientes": []
+  },
+  {
+    "id": "p005",
+    "hash": "b9b311a49f332df2",
+    "nombre": "Chorizo Criollo",
+    "descripcion": "Awaiting ingredient confirmation from the restaurant",
+    "ingredientes": []
+  },
+  {
+    "id": "p006",
+    "hash": "8d89938b4a4473a0",
+    "nombre": "Angus Ribeye",
+    "descripcion": "Pending confirmation of ingredients with the restaurant",
+    "ingredientes": []
+  },
+  {
+    "id": "p007",
+    "hash": "600fcfa84e62db22",
+    "nombre": "Half Rack of Ribs",
+    "descripcion": "Ingredients to be confirmed with the restaurant",
+    "ingredientes": []
+  },
+  {
+    "id": "p008",
+    "hash": "ae53c66e1b1bbe55",
+    "nombre": "Seared Salmon",
+    "descripcion": "Pending confirmation of ingredients with the restaurant",
+    "ingredientes": [
+      "salmon"
+    ]
+  },
+  {
+    "id": "p009",
+    "hash": "f3628f41c73d4d2c",
+    "nombre": "Sea Bass with Cava",
+    "descripcion": "Pending confirmation of ingredients with the restaurant",
+    "ingredientes": [
+      "sea bass",
+      "cava"
+    ]
+  },
+  {
+    "id": "p010",
+    "hash": "220719624bd9ee9f",
+    "nombre": "Rosada a la Plancha",
+    "descripcion": "Pending confirmation of ingredients with the restaurant",
+    "ingredientes": [
+      "griddle-cooked fish"
+    ]
+  },
+  {
+    "id": "p011",
+    "hash": "6d92eb56cf1a98cf",
+    "nombre": "Completa (Smash)",
+    "descripcion": "Angus beef, egg, bacon and cheddar cheese",
+    "ingredientes": [
+      "Angus beef",
+      "egg",
+      "bacon",
+      "cheddar cheese",
+      "hamburger bun"
+    ]
+  },
+  {
+    "id": "p012",
+    "hash": "e32c8b1869b071cd",
+    "nombre": "CatedRal",
+    "descripcion": "Angus beef, goat cheese and caramelized onion",
+    "ingredientes": [
+      "Angus beef",
+      "goat cheese",
+      "caramelized onion",
+      "burger bun"
+    ]
+  },
+  {
+    "id": "p013",
+    "hash": "27dad8928108447b",
+    "nombre": "Brownie with Vanilla Ice Cream",
+    "descripcion": "Pending confirmation of ingredients with the restaurant",
+    "ingredientes": []
+  },
+  {
+    "id": "p014",
+    "hash": "76fb10c10854575b",
+    "nombre": "Tarta de Queso / Lotus",
+    "descripcion": "Pending confirmation of ingredients with the restaurant",
+    "ingredientes": []
+  },
+  {
+    "id": "p015",
+    "hash": "39de6c84ac658f7f",
+    "nombre": "Huevos rotos, jamón, patatas y ali oli",
+    "descripcion": "Crispy potatoes with broken eggs, Jamón Ibérico and garlic aioli",
+    "ingredientes": [
+      "eggs",
+      "Jamón Ibérico",
+      "potatoes",
+      "garlic aioli",
+      "bread"
+    ]
+  },
+  {
+    "id": "p016",
+    "hash": "1fa04bd0d792f583",
+    "nombre": "Guacamole, Tuna and Hard-Boiled Egg",
+    "descripcion": "Guacamole, fresh tuna, and hard-boiled egg",
+    "ingredientes": [
+      "guacamole",
+      "tuna",
+      "hard-boiled egg",
+      "bread"
+    ]
+  },
+  {
+    "id": "p017",
+    "hash": "5bf7249725a0dc10",
+    "nombre": "Boquerones en vinagre y tomate natural",
+    "descripcion": "Fresh anchovies marinated in vinegar with natural tomato",
+    "ingredientes": [
+      "anchovies",
+      "vinegar",
+      "tomato",
+      "bread"
+    ]
+  },
+  {
+    "id": "p018",
+    "hash": "6fddb7a5570cb24b",
+    "nombre": "Loin with Caramelized Onion",
+    "descripcion": "Tender loin topped with sweet caramelized onions, served with crusty bread",
+    "ingredientes": [
+      "loin",
+      "caramelized onion",
+      "bread"
+    ]
+  },
+  {
+    "id": "p019",
+    "hash": "ae63f01c74c84519",
+    "nombre": "Ham, Brie Cheese and Caramelized Onion",
+    "descripcion": "Sliced ham, creamy brie cheese and sweet caramelized onions served together",
+    "ingredientes": [
+      "Ham",
+      "Brie cheese",
+      "Caramelized onion",
+      "Bread"
+    ]
+  },
+  {
+    "id": "p020",
+    "hash": "e89071cedb9e237a",
+    "nombre": "Prawn and Garlic Salad",
+    "descripcion": "Russian salad with garlic-infused prawns",
+    "ingredientes": [
+      "Russian salad base",
+      "prawns",
+      "garlic",
+      "bread"
+    ]
+  },
+  {
+    "id": "p021",
+    "hash": "7c33f0fb3c64cd55",
+    "nombre": "Goat Cheese, Jam and Walnuts",
+    "descripcion": "Creamy goat cheese paired with sweet jam and crunchy walnuts, served with bread.",
+    "ingredientes": [
+      "goat cheese",
+      "jam",
+      "walnuts",
+      "bread"
+    ]
+  },
+  {
+    "id": "p022",
+    "hash": "a8dc59d2571dfad3",
+    "nombre": "Salmon, Avocado, Cream Cheese and Yuzu",
+    "descripcion": "Salmon, avocado, cream cheese and yuzu citrus sauce",
+    "ingredientes": [
+      "salmon",
+      "avocado",
+      "cream cheese",
+      "yuzu",
+      "bread"
+    ]
+  },
+  {
+    "id": "p023",
+    "hash": "47b81cc058118ec5",
+    "nombre": "Ventresca, Tomato and Red Onion",
+    "descripcion": "Tender belly with ripe tomato and finely chopped red onion, a simple yet flavorful combination",
+    "ingredientes": [
+      "ventresca",
+      "tomato",
+      "red onion",
+      "bread"
+    ]
+  },
+  {
+    "id": "p024",
+    "hash": "c7d83f4d4d443de9",
+    "nombre": "Smoked Salmon, Greek Yogurt and Truffle Honey",
+    "descripcion": "Smoked salmon, Greek yogurt and truffled honey",
+    "ingredientes": [
+      "smoked salmon",
+      "Greek yogurt",
+      "truffle honey",
+      "bread"
+    ]
+  },
+  {
+    "id": "p025",
+    "hash": "31c4897e56889207",
+    "nombre": "Loin with Philadelphia cheese and quail egg",
+    "descripcion": "Tender loin accompanied by creamy Philadelphia cheese and topped with a delicate quail egg",
+    "ingredientes": [
+      "loin",
+      "Philadelphia cheese",
+      "quail egg",
+      "bread"
+    ]
+  },
+  {
+    "id": "p026",
+    "hash": "1c27b0d3c7ed59da",
+    "nombre": "Morcilla with Goat Cheese and Caramelized Onion",
+    "descripcion": "Black pudding with creamy goat cheese and sweet caramelized onions",
+    "ingredientes": [
+      "black pudding",
+      "goat cheese",
+      "caramelized onion",
+      "bread"
+    ]
+  }
+]

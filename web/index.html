@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Carta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --marca:#B03A2E;
+    --tinta:#171310;
+    --tinta-media:#6A615B;
+    --tinta-suave:#9C938C;
+    --fondo:#FFFFFF;
+    --fondo-alt:#F6F3F0;
+    --borde:#EDE8E3;
+    --verde:#1E7A48;
+    --verde-suave:#E7F4EC;
+    --ambar:#8A6000;
+    --ambar-suave:#FBF1DA;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+
+  body{
+    background:var(--fondo-alt);
+    color:var(--tinta);
+    font-family:"Inter",system-ui,sans-serif;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .app{
+    max-width:520px;margin:0 auto;
+    background:var(--fondo);
+    min-height:100vh;
+    padding-bottom:104px;
+  }
+
+  /* ---------- portada ---------- */
+
+  .portada{
+    position:relative;
+    height:172px;
+    background:
+      repeating-linear-gradient(115deg, rgba(255,255,255,.04) 0 2px, transparent 2px 22px),
+      linear-gradient(180deg, rgba(23,19,16,.12) 0%, rgba(23,19,16,.42) 100%),
+      linear-gradient(135deg, var(--marca) 0%, #7B2620 55%, #331715 100%);
+    background-size:cover;
+    background-position:center;
+  }
+
+  .logo-orbe{
+    position:absolute;left:50%;bottom:-40px;
+    transform:translateX(-50%);
+    width:80px;height:80px;border-radius:50%;
+    background:var(--fondo);
+    box-shadow:0 3px 16px rgba(23,19,16,.2);
+    display:grid;place-items:center;overflow:hidden;
+    z-index:2;
+  }
+  .logo-orbe .inicial{
+    font-family:"Bricolage Grotesque",sans-serif;
+    font-weight:800;font-size:32px;color:var(--marca);line-height:1;
+  }
+  .logo-orbe img{width:100%;height:100%;object-fit:cover}
+
+  .identidad{text-align:center;padding:54px 24px 26px}
+  h1{
+    font-family:"Bricolage Grotesque",sans-serif;
+    font-weight:800;font-size:27px;
+    letter-spacing:-.028em;line-height:1.1;
+  }
+  .sub{font-size:14px;color:var(--tinta-suave);margin-top:6px}
+
+  /* ---------- carrusel ---------- */
+
+  .seccion-tit{
+    font-family:"Bricolage Grotesque",sans-serif;
+    font-weight:600;font-size:20px;
+    letter-spacing:-.02em;
+    padding:0 22px 14px;
+  }
+
+  .carrusel{
+    display:flex;gap:13px;
+    overflow-x:auto;
+    padding:2px 22px 26px;
+    scroll-snap-type:x proximity;
+    scroll-padding-left:22px;
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  .carrusel::-webkit-scrollbar{display:none}
+
+  .cat-card{
+    flex:0 0 138px;
+    scroll-snap-align:start;
+    border:0;padding:0;background:none;
+    cursor:pointer;text-align:left;
+  }
+  .cat-visual{
+    height:92px;border-radius:16px;
+    display:grid;place-items:center;
+    font-size:34px;
+    transition:transform .15s ease,box-shadow .15s ease;
+  }
+  .cat-card:active .cat-visual{transform:scale(.96)}
+  .cat-card[aria-selected="true"] .cat-visual{box-shadow:0 0 0 2.5px var(--tinta)}
+  .cat-nombre{
+    font-family:"Bricolage Grotesque",sans-serif;
+    font-weight:600;font-size:14.5px;
+    margin-top:10px;letter-spacing:-.012em;
+  }
+  .cat-cuenta{font-size:12.5px;color:var(--tinta-suave);margin-top:2px}
+  .cat-card:focus-visible .cat-visual{outline:2px solid var(--marca);outline-offset:3px}
+
+  .divisor{height:9px;background:var(--fondo-alt)}
+
+  /* ---------- platos ---------- */
+
+  main{padding:24px 22px 8px}
+
+  .plato{
+    display:flex;gap:15px;
+    padding:19px 0;
+    border-bottom:1px solid var(--borde);
+  }
+  .plato:first-child{padding-top:2px}
+  .plato:last-child{border-bottom:0}
+
+  .plato-foto{
+    flex:0 0 82px;height:82px;
+    border-radius:14px;
+    display:grid;place-items:center;
+    font-size:28px;overflow:hidden;
+  }
+  .plato-foto img{width:100%;height:100%;object-fit:cover}
+
+  .plato-info{flex:1;min-width:0}
+
+  .etiqueta{
+    display:inline-flex;align-items:center;gap:4px;
+    font-size:11.5px;font-weight:600;
+    letter-spacing:.005em;
+    padding:3px 9px 3px 7px;border-radius:100px;
+    margin-bottom:7px;
+  }
+  .etiqueta .ico{font-size:12px;line-height:1}
+  .etq-mas_vendido{background:#FDEDE9;color:#B8391F}
+  .etq-recomendacion_chef{background:#EDE9F6;color:#5B44A8}
+  .etq-nuevo{background:#E4F3EC;color:#12734A}
+  .etq-picante{background:#FDE9E7;color:#C0392B}
+  .etq-para_compartir{background:#FBF0DA;color:#8A6000}
+  .etq-temporada{background:#E7F0FA;color:#20609E}
+
+  .plato-top{display:flex;align-items:baseline;gap:12px}
+  .nombre{
+    font-family:"Bricolage Grotesque",sans-serif;
+    font-weight:600;font-size:16.5px;
+    line-height:1.25;letter-spacing:-.015em;flex:1;
+  }
+  .precio{
+    font-family:"Bricolage Grotesque",sans-serif;
+    font-weight:600;font-size:16px;white-space:nowrap;
+  }
+
+  .desc{
+    font-size:13.5px;color:var(--tinta-media);
+    margin-top:5px;line-height:1.42;
+  }
+  .desc.pendiente{color:var(--tinta-suave);font-style:italic;font-size:13px}
+
+  .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+  .chip{font-size:11.5px;font-weight:500;padding:4px 9px;border-radius:100px}
+  .chip.dieta{background:var(--verde-suave);color:var(--verde)}
+  .chip.alergeno{background:var(--fondo-alt);color:var(--tinta-media)}
+  .chip.aviso{background:var(--ambar-suave);color:var(--ambar)}
+
+  .vacio{text-align:center;color:var(--tinta-suave);font-size:14px;padding:48px 20px}
+
+  .pie{
+    text-align:center;font-size:12.5px;color:var(--tinta-suave);
+    padding:18px 30px 24px;line-height:1.55;
+  }
+
+  /* ---------- chat ---------- */
+
+  .lanzador{
+    position:fixed;left:50%;bottom:22px;
+    transform:translateX(-50%);z-index:30;
+    display:flex;align-items:center;gap:10px;
+    background:var(--tinta);color:#fff;
+    border:0;border-radius:100px;
+    padding:15px 27px;
+    font-family:"Inter",sans-serif;
+    font-size:15px;font-weight:500;
+    cursor:pointer;
+    box-shadow:0 10px 30px rgba(23,19,16,.32);
+  }
+  .lanzador:focus-visible{outline:2px solid var(--marca);outline-offset:3px}
+  .punto{width:7px;height:7px;border-radius:50%;background:#4ADE80;flex-shrink:0}
+
+  .panel{
+    position:fixed;inset:0;z-index:40;
+    background:var(--fondo);
+    display:flex;flex-direction:column;
+    transform:translateY(100%);visibility:hidden;
+    max-width:520px;margin:0 auto;
+  }
+  .panel.abierto{transform:translateY(0);visibility:visible}
+  @media (prefers-reduced-motion:no-preference){
+    .panel{transition:transform .32s cubic-bezier(.32,.72,0,1),visibility .32s}
+  }
+
+  .panel-top{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 22px 15px;border-bottom:1px solid var(--borde);
+  }
+  .panel-top h2{
+    font-family:"Bricolage Grotesque",sans-serif;
+    font-weight:600;font-size:18px;letter-spacing:-.018em;
+  }
+  .cerrar{
+    background:var(--fondo-alt);border:0;border-radius:50%;
+    width:32px;height:32px;color:var(--tinta-media);
+    font-size:19px;line-height:1;cursor:pointer;
+  }
+  .cerrar:focus-visible{outline:2px solid var(--marca)}
+
+  .hilo{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:14px}
+  .msg{max-width:88%;font-size:15px;line-height:1.5}
+  .msg.yo{
+    align-self:flex-end;background:var(--tinta);color:#fff;
+    padding:11px 15px;border-radius:18px 18px 4px 18px;
+  }
+  .msg.bot{
+    align-self:flex-start;background:var(--fondo-alt);
+    padding:12px 15px;border-radius:18px 18px 18px 4px;white-space:pre-wrap;
+  }
+  .msg.bot strong{font-weight:600}
+
+  .sugerencias{display:flex;flex-wrap:wrap;gap:8px;padding:0 22px 12px}
+  .sug{
+    background:var(--fondo);border:1px solid var(--borde);
+    border-radius:100px;color:var(--tinta-media);
+    font-family:"Inter",sans-serif;font-size:13px;
+    padding:8px 14px;cursor:pointer;
+  }
+  .sug:hover{border-color:var(--tinta);color:var(--tinta)}
+  .sug:focus-visible{outline:2px solid var(--marca);outline-offset:2px}
+
+  .barra{
+    display:flex;gap:9px;
+    padding:12px 22px calc(16px + env(safe-area-inset-bottom));
+    border-top:1px solid var(--borde);
+  }
+  .barra input{
+    flex:1;background:var(--fondo-alt);
+    border:1px solid transparent;border-radius:100px;
+    color:var(--tinta);font-family:"Inter",sans-serif;
+    font-size:15px;padding:13px 17px;
+  }
+  .barra input::placeholder{color:var(--tinta-suave)}
+  .barra input:focus{outline:none;border-color:var(--tinta);background:var(--fondo)}
+  .barra button{
+    background:var(--tinta);color:#fff;border:0;border-radius:100px;
+    padding:0 21px;font-family:"Inter",sans-serif;
+    font-size:15px;font-weight:500;cursor:pointer;
+  }
+  .barra button:disabled{opacity:.35;cursor:default}
+
+  .puntos span{
+    display:inline-block;width:6px;height:6px;border-radius:50%;
+    background:var(--tinta-suave);margin-right:3px;
+  }
+  @media (prefers-reduced-motion:no-preference){
+    .puntos span{animation:latir 1.3s infinite}
+    .puntos span:nth-child(2){animation-delay:.18s}
+    .puntos span:nth-child(3){animation-delay:.36s}
+    @keyframes latir{0%,60%,100%{opacity:.3}30%{opacity:1}}
+  }
+
+  /* ---------- selector de idioma ---------- */
+
+  .velo{
+    position:fixed;inset:0;z-index:60;
+    background:rgba(23,19,16,.55);
+    backdrop-filter:blur(6px);
+    display:grid;place-items:center;
+    padding:24px;
+  }
+  .velo[hidden]{display:none}
+
+  .caja-idioma{
+    background:var(--fondo);
+    border-radius:22px;
+    width:100%;max-width:330px;
+    padding:28px 22px 22px;
+    text-align:center;
+    box-shadow:0 20px 50px rgba(23,19,16,.35);
+  }
+  .caja-idioma h2{
+    font-family:"Bricolage Grotesque",sans-serif;
+    font-weight:700;font-size:20px;
+    letter-spacing:-.02em;margin-bottom:4px;
+  }
+  .caja-idioma p{font-size:13.5px;color:var(--tinta-suave);margin-bottom:20px}
+
+  .opciones-idioma{display:grid;gap:9px}
+  .op-idioma{
+    display:flex;align-items:center;gap:12px;
+    background:var(--fondo-alt);
+    border:1.5px solid transparent;
+    border-radius:14px;
+    padding:13px 16px;
+    font-family:"Inter",sans-serif;
+    font-size:15px;font-weight:500;
+    color:var(--tinta);
+    cursor:pointer;
+    text-align:left;
+    transition:border-color .14s,background .14s;
+  }
+  .op-idioma:hover{border-color:var(--tinta)}
+  .op-idioma:focus-visible{outline:2px solid var(--marca);outline-offset:2px}
+  .op-idioma .bandera{font-size:21px;line-height:1}
+
+  .btn-idioma{
+    position:absolute;top:14px;right:14px;z-index:3;
+    display:flex;align-items:center;gap:6px;
+    background:rgba(255,255,255,.92);
+    border:0;border-radius:100px;
+    padding:7px 13px 7px 10px;
+    font-family:"Inter",sans-serif;
+    font-size:13px;font-weight:500;
+    color:var(--tinta);
+    cursor:pointer;
+    box-shadow:0 2px 10px rgba(23,19,16,.16);
+  }
+  .btn-idioma:focus-visible{outline:2px solid var(--marca);outline-offset:2px}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="portada" id="portada">
+    <button class="btn-idioma" id="btn-idioma">
+      <span id="bandera-actual">🇪🇸</span><span id="cod-actual">ES</span>
+    </button>
+    <div class="logo-orbe" id="logo"><span class="inicial">·</span></div>
+  </div>
+
+  <div class="identidad">
+    <h1 id="nombre-sitio">Carta</h1>
+    <p class="sub" id="sub-sitio"></p>
+  </div>
+
+  <h2 class="seccion-tit">Menú</h2>
+  <div class="carrusel" id="carrusel" role="tablist"></div>
+
+  <div class="divisor"></div>
+
+  <main>
+    <h2 class="seccion-tit" id="titulo-cat" style="padding:0 0 6px"></h2>
+    <div id="lista"></div>
+  </main>
+
+  <p class="pie" id="pie"></p>
+</div>
+
+<button class="lanzador" id="abrir">
+  <span class="punto"></span>
+  Pregunta lo que quieras
+</button>
+
+<section class="panel" id="panel" aria-hidden="true">
+  <div class="panel-top">
+    <h2>Pregunta sobre la carta</h2>
+    <button class="cerrar" id="cerrar" aria-label="Cerrar">×</button>
+  </div>
+  <div class="hilo" id="hilo">
+    <div class="msg bot">Dime qué te apetece o qué no puedes comer, y te digo qué hay para ti.</div>
+  </div>
+  <div class="sugerencias"></div>
+  <form class="barra" id="barra">
+    <input id="entrada" placeholder="Escribe aquí…" autocomplete="off">
+    <button type="submit" id="enviar">Enviar</button>
+  </form>
+</section>
+
+<script>
+let carta = [], categorias = [], config = {}, textos = {}, idiomas = {};
+let idioma = localStorage.getItem("carta_idioma") || null;
+
+function t(clave){ return (textos && textos[clave]) || clave; }
+
+const ICONO_CAT = {
+  ensaladas:"🥗", tierra_y_mar:"🥩", hamburguesas:"🍔", postres:"🍰",
+  tostas:"🥪", entrantes:"🫒", principales:"🍽️", panes:"🥖",
+  bebidas:"🍷", brunch:"🍳", arroces:"🥘", pescados:"🐟",
+};
+
+/* icono por palabra clave del plato, más específico que el de categoría */
+const PISTAS = [
+  [/salm[oó]n|lubina|rosada|boquer|atun|atún|ventresca|pescado/i,"🐟"],
+  [/gamba|langostino|marisco|crust/i,"🦐"],
+  [/queso|brie|cabra|mozzar|parmes|burrata|philad/i,"🧀"],
+  [/huevo|tortilla|revuelto/i,"🥚"],
+  [/jam[oó]n|ib[eé]rico|lomo|cerdo|morcilla|chorizo/i,"🥓"],
+  [/angus|ternera|solomillo|costill|toro|carne/i,"🥩"],
+  [/pollo|pavo/i,"🍗"],
+  [/hamburgu|smash/i,"🍔"],
+  [/ensalad|brotes|lechuga|caprese/i,"🥗"],
+  [/aguacate|guacamole/i,"🥑"],
+  [/tomate/i,"🍅"],
+  [/brownie|chocolate/i,"🍫"],
+  [/tarta|cheesecake|lotus/i,"🍰"],
+  [/helado|sorbete/i,"🍨"],
+  [/pan\b|tosta|picatos/i,"🥖"],
+  [/patata/i,"🥔"],
+  [/nuez|nueces|almendra/i,"🌰"],
+  [/mermelada|miel/i,"🍯"],
+];
+
+const TONO = {
+  ensaladas:[140,42], tierra_y_mar:[8,55], hamburguesas:[34,72],
+  postres:[318,40], tostas:[36,32], entrantes:[95,38],
+  principales:[262,32], panes:[33,38], bebidas:[290,28], brunch:[38,68],
+};
+
+const ICONO_ETQ = {
+  mas_vendido:"🔥", recomendacion_chef:"👨‍🍳", nuevo:"✨",
+  picante:"🌶️", para_compartir:"🍽️", temporada:"🍂",
+};
+
+function txtAlergeno(a){ return (textos.alergenos && textos.alergenos[a]) || a; }
+function txtEtiqueta(e){ return (textos.etiquetas && textos.etiquetas[e]) || e; }
+function txtDieta(d){ return (textos.dietas && textos.dietas[d]) || d; }
+
+function hash(s){
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+/* cada plato recibe una variación del tono de su categoría */
+function degradado(catId, semilla){
+  const base = TONO[catId] || [30, 20];
+  const giro = semilla ? (hash(semilla) % 26) - 13 : 0;
+  const h = (base[0] + giro + 360) % 360;
+  const s = base[1];
+  return "linear-gradient(140deg,hsl(" + h + " " + s + "% 92%) 0%,hsl(" + h + " " + s + "% 82%) 100%)";
+}
+
+function iconoPlato(p){
+  const texto = p.nombre + " " + (p.ingredientes || []).join(" ");
+  for (const [re, ico] of PISTAS) if (re.test(texto)) return ico;
+  return ICONO_CAT[p.categoria] || "🍽️";
+}
+
+async function cargar(){
+  const pedir = u => fetch(u).then(r => r.ok ? r.json() : null).catch(() => null);
+  const [c, cats, cfg, idi] = await Promise.all([
+    pedir("/carta"), pedir("/categorias"), pedir("/config"), pedir("/idiomas"),
+    
+  ]);
+
+  carta = c || [];
+  config = cfg || {};
+  idiomas = idi || {};
+
+  if (!idioma || !idiomas[idioma]) {
+    const nav = (navigator.language || "es").slice(0,2);
+    idioma = idiomas[nav] ? nav : "es";
+    mostrarSelectorIdioma();
+  }
+  textos = idiomas[idioma] || {};
+
+  if (config.nombre){
+    document.getElementById("nombre-sitio").textContent = config.nombre;
+    document.title = config.nombre;
+    if (!config.logo) document.querySelector(".logo-orbe .inicial").textContent = config.nombre.trim()[0];
+  }
+  if (config.logo) document.getElementById("logo").innerHTML = '<img src="' + config.logo + '" alt="">';
+  if (config.subtitulo) document.getElementById("sub-sitio").textContent = config.subtitulo;
+  if (config.color_marca) document.documentElement.style.setProperty("--marca", config.color_marca);
+  if (config.foto_portada){
+    document.getElementById("portada").style.backgroundImage =
+      "linear-gradient(180deg,rgba(23,19,16,.18),rgba(23,19,16,.5)),url('" + config.foto_portada + "')";
+  }
+
+  categorias = cats || [...new Set(carta.map(p => p.categoria))]
+    .map((id,i) => ({id, nombre:id.replace(/_/g," "), orden:i}));
+  categorias.sort((a,b) => a.orden - b.orden);
+
+  aplicarIdioma();
+}
+
+function aplicarIdioma(){
+  textos = idiomas[idioma] || {};
+  document.documentElement.lang = idioma;
+
+    fetch("/carta?idioma=" + idioma)
+    .then(r => r.json())
+    .then(d => {
+      carta = d;
+      pintarCarrusel();
+      const activa = document.querySelector('.cat-card[aria-selected="true"]');
+      seleccionar(activa ? activa.dataset.id : categorias[0].id);
+    });
+
+  document.getElementById("bandera-actual").textContent = textos.bandera || "🌐";
+  document.getElementById("cod-actual").textContent = idioma.toUpperCase();
+  document.querySelector(".seccion-tit").textContent = t("menu");
+  document.querySelector(".lanzador").lastChild.textContent = " " + t("preguntar");
+  document.querySelector(".panel-top h2").textContent = t("titulo_chat");
+  document.getElementById("entrada").placeholder = t("escribe");
+  document.getElementById("enviar").textContent = t("enviar");
+  document.getElementById("titulo-idioma").textContent = t("elige_idioma");
+  document.getElementById("pie").textContent =
+    (config.aviso_alergenos_i18n && config.aviso_alergenos_i18n[idioma]) ||
+    config.aviso_alergenos || "";
+
+  const primer = document.querySelector(".hilo .msg.bot");
+  if (primer && !primer.dataset.usuario) primer.textContent = t("bienvenida_chat");
+
+  const cont = document.querySelector(".sugerencias");
+  cont.innerHTML = "";
+  (textos.sugerencias || []).forEach(txt => {
+    const b = document.createElement("button");
+    b.className = "sug";
+    b.textContent = txt;
+    b.onclick = () => { document.getElementById("entrada").value = txt; preguntar(); };
+    cont.appendChild(b);
+  });
+
+  pintarCarrusel();
+  const activa = document.querySelector('.cat-card[aria-selected="true"]');
+  const catId = activa ? activa.dataset.id : (categorias[0] && categorias[0].id);
+  if (catId) seleccionar(catId);
+}
+
+function mostrarSelectorIdioma(){
+  const velo = document.getElementById("velo");
+  const cont = document.getElementById("opciones-idioma");
+  cont.innerHTML = "";
+  Object.entries(idiomas).forEach(([cod, datos]) => {
+    const b = document.createElement("button");
+    b.className = "op-idioma";
+    b.innerHTML = '<span class="bandera">' + datos.bandera + '</span>' + datos.nombre_idioma;
+    b.onclick = () => {
+      idioma = cod;
+      localStorage.setItem("carta_idioma", cod);
+      velo.hidden = true;
+      aplicarIdioma();
+    };
+    cont.appendChild(b);
+  });
+  velo.hidden = false;
+}
+
+function pintarCarrusel(){
+  const c = document.getElementById("carrusel");
+  c.innerHTML = "";
+  categorias.forEach((cat,i) => {
+    const n = carta.filter(p => p.categoria === cat.id && p.disponible).length;
+    const b = document.createElement("button");
+    b.className = "cat-card";
+    b.setAttribute("role","tab");
+    b.setAttribute("aria-selected", i === 0 ? "true" : "false");
+    b.dataset.id = cat.id;
+    const nomCat = (cat.nombre_i18n && cat.nombre_i18n[idioma]) || cat.nombre;
+    b.innerHTML =
+      '<div class="cat-visual" style="background:' + degradado(cat.id) + '">' +
+        (ICONO_CAT[cat.id] || "🍽️") + '</div>' +
+      '<div class="cat-nombre">' + nomCat + '</div>' +
+      '<div class="cat-cuenta">' + n + " " + (n === 1 ? t("platos_uno") : t("platos_varios")) + '</div>';
+    b.onclick = () => seleccionar(cat.id);
+    c.appendChild(b);
+  });
+}
+
+function seleccionar(catId){
+  document.querySelectorAll(".cat-card").forEach(b =>
+    b.setAttribute("aria-selected", b.dataset.id === catId ? "true" : "false"));
+  const cat = categorias.find(c => c.id === catId);
+  document.getElementById("titulo-cat").textContent =
+    cat ? ((cat.nombre_i18n && cat.nombre_i18n[idioma]) || cat.nombre) : "";
+  pintar(catId);
+}
+
+function pintar(catId){
+  const platos = carta.filter(p => p.categoria === catId && p.disponible);
+  const lista = document.getElementById("lista");
+  const moneda = config.moneda || "€";
+  lista.innerHTML = "";
+
+  if (!platos.length){
+    lista.innerHTML = '<p class="vacio">' + t("sin_platos") + '</p>';
+    return;
+  }
+
+  platos.forEach(p => {
+    const art = document.createElement("article");
+    art.className = "plato";
+    const pendiente = !p.ingredientes || p.ingredientes.length === 0;
+    const dietas = [
+      p.vegano && txtDieta("vegano"),
+      !p.vegano && p.vegetariano && txtDieta("vegetariano"),
+      p.sin_gluten && txtDieta("sin_gluten"),
+      p.sin_lactosa && txtDieta("sin_lactosa"),
+    ].filter(Boolean);
+
+    art.innerHTML =
+      '<div class="plato-foto" style="background:' + degradado(p.categoria, p.id) + '">' +
+        (p.foto ? '<img src="' + p.foto + '" alt="">' : iconoPlato(p)) +
+      '</div>' +
+      '<div class="plato-info">' +
+        (p.etiqueta
+          ? '<span class="etiqueta etq-' + p.etiqueta + '">' +
+              '<span class="ico">' + (ICONO_ETQ[p.etiqueta] || "") + '</span>' +
+              txtEtiqueta(p.etiqueta) +
+            '</span>'
+          : "") +
+        '<div class="plato-top">' +
+          '<h3 class="nombre">' + p.nombre + '</h3>' +
+          '<span class="precio">' + p.precio.toFixed(2).replace(".",",") + " " + moneda + '</span>' +
+        '</div>' +
+        '<p class="desc' + (pendiente ? " pendiente" : "") + '">' +
+          ((p.descripcion_i18n && p.descripcion_i18n[idioma]) || p.descripcion) + '</p>' +
+        '<div class="chips">' +
+          dietas.map(d => '<span class="chip dieta">' + d + '</span>').join("") +
+          (p.alergenos || []).map(a => '<span class="chip alergeno">' + txtAlergeno(a) + '</span>').join("") +
+          (pendiente ? '<span class="chip aviso">' + t("consultar_alergenos") + '</span>' : "") +
+        '</div>' +
+      '</div>';
+    lista.appendChild(art);
+  });
+}
+
+// ---------- chat ----------
+
+const panel = document.getElementById("panel");
+const hilo = document.getElementById("hilo");
+const entrada = document.getElementById("entrada");
+const enviar = document.getElementById("enviar");
+
+document.getElementById("abrir").onclick = () => {
+  panel.classList.add("abierto");
+  panel.setAttribute("aria-hidden","false");
+  setTimeout(() => entrada.focus(), 320);
+};
+document.getElementById("cerrar").onclick = () => {
+  panel.classList.remove("abierto");
+  panel.setAttribute("aria-hidden","true");
+};
+
+document.getElementById("barra").onsubmit = e => { e.preventDefault(); preguntar(); };
+document.getElementById("btn-idioma").onclick = () => mostrarSelectorIdioma();
+
+function escapar(t){
+  return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function burbuja(clase, html){
+  const d = document.createElement("div");
+  d.className = "msg " + clase;
+  d.innerHTML = html;
+  hilo.appendChild(d);
+  hilo.scrollTop = hilo.scrollHeight;
+  return d;
+}
+
+async function preguntar(){
+  const texto = entrada.value.trim();
+  if (!texto) return;
+  const primero = document.querySelector(".hilo .msg.bot");
+  if (primero) primero.dataset.usuario = "1";
+  burbuja("yo", escapar(texto));
+  entrada.value = "";
+  enviar.disabled = true;
+  const esperando = burbuja("bot",
+    '<span class="puntos"><span></span><span></span><span></span></span>');
+  try{
+    const r = await fetch("/preguntar",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({texto, idioma}),
+    });
+    const d = await r.json();
+    esperando.remove();
+    burbuja("bot", escapar(d.respuesta).replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>"));
+  }catch{
+    esperando.remove();
+    burbuja("bot", t("error_chat"));
+  }finally{
+    enviar.disabled = false;
+    entrada.focus();
+  }
+}
+
+cargar();
+</script>
+<div class="velo" id="velo" hidden>
+  <div class="caja-idioma">
+    <h2 id="titulo-idioma">Elige tu idioma</h2>
+    <p>Choose your language · Sprache wählen</p>
+    <div class="opciones-idioma" id="opciones-idioma"></div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -20,6 +20,15 @@ class Alergeno(str, Enum):
     MOLUSCOS = "moluscos"
 
 
+class Etiqueta(str, Enum):
+    MAS_VENDIDO = "mas_vendido"
+    RECOMENDACION_CHEF = "recomendacion_chef"
+    NUEVO = "nuevo"
+    PICANTE = "picante"
+    PARA_COMPARTIR = "para_compartir"
+    TEMPORADA = "temporada"
+
+
 class Plato(BaseModel):
     id: str
     nombre: str
@@ -33,6 +42,7 @@ class Plato(BaseModel):
     sin_gluten: bool = False
     sin_lactosa: bool = False
     disponible: bool = True
+    etiqueta: Etiqueta | None = None
 
     @field_validator("precio")
     @classmethod

@@ -1,0 +1,280 @@
+[
+  {
+    "id": "p001",
+    "hash": "34efa022440d7f1b",
+    "nombre": "CatedRal",
+    "descripcion": "Sprossen, Kirschtomaten, Walnüsse, Ziegenkäse und karamellisierte Zwiebeln",
+    "ingredientes": [
+      "Sprossen",
+      "Kirschtomaten",
+      "Walnüsse",
+      "Ziegenkäse",
+      "karamellisierte Zwiebeln"
+    ]
+  },
+  {
+    "id": "p002",
+    "hash": "a57cf05b8a306e7d",
+    "nombre": "César",
+    "descripcion": "Sprossen, knuspriges Hähnchen, Parmesankäse und Croutons",
+    "ingredientes": [
+      "Sprossen",
+      "knuspriges Hähnchen",
+      "Parmesankäse",
+      "Croutons"
+    ]
+  },
+  {
+    "id": "p003",
+    "hash": "20fa39ef7cbcbf61",
+    "nombre": "Caprese",
+    "descripcion": "Tomate, Avocado, Mozzarella, Kapern und Pesto",
+    "ingredientes": [
+      "Tomate",
+      "Avocado",
+      "Mozzarella",
+      "Kapern",
+      "Pesto"
+    ]
+  },
+  {
+    "id": "p004",
+    "hash": "fea82c291af8cb16",
+    "nombre": "Abanico Ibérico",
+    "descripcion": "Zutaten müssen mit dem Restaurant bestätigt werden",
+    "ingredientes": []
+  },
+  {
+    "id": "p005",
+    "hash": "b9b311a49f332df2",
+    "nombre": "Chorizo Criollo",
+    "descripcion": "Zutaten werden mit dem Restaurant bestätigt",
+    "ingredientes": []
+  },
+  {
+    "id": "p006",
+    "hash": "8d89938b4a4473a0",
+    "nombre": "Lomo Alto de Angus",
+    "descripcion": "Zutaten mit dem Restaurant zu bestätigen ausstehend",
+    "ingredientes": []
+  },
+  {
+    "id": "p007",
+    "hash": "600fcfa84e62db22",
+    "nombre": "Costillar 1/2",
+    "descripcion": "Zutaten müssen mit dem Restaurant bestätigt werden",
+    "ingredientes": []
+  },
+  {
+    "id": "p008",
+    "hash": "ae53c66e1b1bbe55",
+    "nombre": "Salmón Plancha",
+    "descripcion": "Zutaten müssen mit dem Restaurant bestätigt werden",
+    "ingredientes": [
+      "Lachs"
+    ]
+  },
+  {
+    "id": "p009",
+    "hash": "f3628f41c73d4d2c",
+    "nombre": "Lubina al Cava",
+    "descripcion": "Wartend auf Bestätigung der Zutaten durch das Restaurant",
+    "ingredientes": [
+      "Wolfsbarsch",
+      "Cava"
+    ]
+  },
+  {
+    "id": "p010",
+    "hash": "220719624bd9ee9f",
+    "nombre": "Rosada a la Plancha",
+    "descripcion": "Zutaten mit dem Restaurant zu bestätigen",
+    "ingredientes": [
+      "Goldbrasse"
+    ]
+  },
+  {
+    "id": "p011",
+    "hash": "6d92eb56cf1a98cf",
+    "nombre": "Completa (Smash)",
+    "descripcion": "Angus, Ei, Speck und Cheddar-Käse",
+    "ingredientes": [
+      "Angus",
+      "Ei",
+      "Speck",
+      "Cheddar-Käse",
+      "Hamburger-Brötchen"
+    ]
+  },
+  {
+    "id": "p012",
+    "hash": "e32c8b1869b071cd",
+    "nombre": "CatedRal (Hamburger)",
+    "descripcion": "Angus-Rindfleisch, Ziegenkäse und karamellisierte Zwiebeln",
+    "ingredientes": [
+      "Angus-Rindfleisch",
+      "Ziegenkäse",
+      "karamellisierte Zwiebeln",
+      "Hamburgerbrötchen"
+    ]
+  },
+  {
+    "id": "p013",
+    "hash": "27dad8928108447b",
+    "nombre": "Brownie mit Vanilleeis",
+    "descripcion": "Zutaten werden noch mit dem Restaurant bestätigt",
+    "ingredientes": []
+  },
+  {
+    "id": "p014",
+    "hash": "76fb10c10854575b",
+    "nombre": "Tarta de Queso / Lotus",
+    "descripcion": "Zutaten müssen beim Restaurant bestätigt werden",
+    "ingredientes": []
+  },
+  {
+    "id": "p015",
+    "hash": "39de6c84ac658f7f",
+    "nombre": "Huevos rotos, jamón, patatas y ali oli",
+    "descripcion": "Zerbrochene Eier, Schinken, Kartoffeln und Knoblauchcreme",
+    "ingredientes": [
+      "Ei",
+      "Schinken",
+      "Kartoffeln",
+      "Aioli",
+      "Brot"
+    ]
+  },
+  {
+    "id": "p016",
+    "hash": "1fa04bd0d792f583",
+    "nombre": "Guacamole, Thunfisch und hartgekochtes Ei",
+    "descripcion": "Guacamole, Thunfisch und hartgekochtes Ei",
+    "ingredientes": [
+      "Guacamole",
+      "Thunfisch",
+      "hartgekochtes Ei",
+      "Brot"
+    ]
+  },
+  {
+    "id": "p017",
+    "hash": "5bf7249725a0dc10",
+    "nombre": "Boquerones en vinagre y tomate natural",
+    "descripcion": "Sardellen in Essig mit frischen Tomaten",
+    "ingredientes": [
+      "Sardellen",
+      "Essig",
+      "Tomate",
+      "Brot"
+    ]
+  },
+  {
+    "id": "p018",
+    "hash": "6fddb7a5570cb24b",
+    "nombre": "Lomo mit karamellisierter Zwiebel",
+    "descripcion": "Lendensteak mit karamellisierter Zwiebel, serviert mit Brot",
+    "ingredientes": [
+      "Rinderlendenbraten",
+      "karamellisierte Zwiebel",
+      "Brot"
+    ]
+  },
+  {
+    "id": "p019",
+    "hash": "ae63f01c74c84519",
+    "nombre": "Schinken, Brie und karamellisierte Zwiebel",
+    "descripcion": "Schinken, Brierkäse und karamellisierte Zwiebel",
+    "ingredientes": [
+      "Schinken",
+      "Brierkäse",
+      "karamellisierte Zwiebel",
+      "Brot"
+    ]
+  },
+  {
+    "id": "p020",
+    "hash": "e89071cedb9e237a",
+    "nombre": "Garnelenensalat mit Knoblauch",
+    "descripcion": "Russischer Salat mit Garnelen",
+    "ingredientes": [
+      "Russischer Salat",
+      "Garnelen",
+      "Knoblauch",
+      "Brot"
+    ]
+  },
+  {
+    "id": "p021",
+    "hash": "7c33f0fb3c64cd55",
+    "nombre": "Ziegenkäse, Marmelade und Nüsse",
+    "descripcion": "Ziegenkäse, Marmelade und Nüsse",
+    "ingredientes": [
+      "Ziegenkäse",
+      "Marmelade",
+      "Nüsse",
+      "Brot"
+    ]
+  },
+  {
+    "id": "p022",
+    "hash": "a8dc59d2571dfad3",
+    "nombre": "Salmón, Avocado, Frischkäse und Yuzu",
+    "descripcion": "Lachs, Avocado, Frischkäse und Yuzu-Sauce",
+    "ingredientes": [
+      "Lachs",
+      "Avocado",
+      "Frischkäse",
+      "Yuzu",
+      "Brot"
+    ]
+  },
+  {
+    "id": "p023",
+    "hash": "47b81cc058118ec5",
+    "nombre": "Ventresca, Tomate und rote Zwiebel gehackt",
+    "descripcion": "Bauchfleisch, Tomate und gehackte rote Zwiebel",
+    "ingredientes": [
+      "Ventresca",
+      "Tomate",
+      "rote Zwiebel",
+      "Brot"
+    ]
+  },
+  {
+    "id": "p024",
+    "hash": "c7d83f4d4d443de9",
+    "nombre": "Räucherlachs, Joghurt und Trüffelhonig",
+    "descripcion": "Räucherlachs, griechischer Joghurt und Trüffelhonig",
+    "ingredientes": [
+      "Räucherlachs",
+      "griechischer Joghurt",
+      "Trüffelhonig",
+      "Brot"
+    ]
+  },
+  {
+    "id": "p025",
+    "hash": "31c4897e56889207",
+    "nombre": "Lomo mit Philadelphia-Käse und Wachtelei",
+    "descripcion": "Rinderfilet, Philadelphia-Käse und Wachtelei",
+    "ingredientes": [
+      "Rinderfilet",
+      "Philadelphia-Käse",
+      "Wachtelei",
+      "Brot"
+    ]
+  },
+  {
+    "id": "p026",
+    "hash": "1c27b0d3c7ed59da",
+    "nombre": "Blutwurst mit Ziegenkäse und karamellisierter Zwiebel",
+    "descripcion": "Blutwurst mit Ziegenkäse und karamellisierter Zwiebel",
+    "ingredientes": [
+      "Blutwurst",
+      "Ziegenkäse",
+      "karamellisierte Zwiebel",
+      "Brot"
+    ]
+  }
+]
