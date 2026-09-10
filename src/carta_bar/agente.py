@@ -1,14 +1,31 @@
+from typing import Literal
+
 import numpy as np
+from anthropic.types import MessageParam
 from sentence_transformers import SentenceTransformer
 
 from carta_bar.busqueda import buscar_platos, filtrar_por_restricciones_cliente
+from carta_bar.costes import ConsumoTotal, medir
 from carta_bar.datos import cargar_categorias
 from carta_bar.interprete import extraer_restricciones
 from carta_bar.llm import MODELO, cliente
-from carta_bar.modelos import Plato
+from carta_bar.modelos import MensajeChat, Plato, RespuestaAgente
 from carta_bar.rag import texto_de_respuesta
 
 NOMBRES_IDIOMA = {"es": "español", "en": "inglés", "de": "alemán", "fr": "francés"}
+
+# Instrucción base del asistente. Se completa según el momento de la conversación.
+_INSTRUCCION_OFRECER = (
+    "Muestra TODAS las opciones relevantes del contexto que encajen, no solo una "
+    "— el cliente decide, tú le das el abanico. Sé breve y cercano al describirlas."
+)
+
+# Cuando el cliente ya ha elegido, seguir ofreciendo platos resulta insistente.
+_INSTRUCCION_CERRAR = (
+    "El cliente YA HA DECIDIDO lo que quiere. NO le ofrezcas más platos ni le "
+    "preguntes si quiere algo más: confirma su elección de forma breve y cordial, "
+    "y quédate a su disposición por si necesita algo."
+)
 
 SIN_RESULTADOS = {
     "es": "No tenemos ningún plato que cumpla esas condiciones ahora mismo.",
@@ -18,6 +35,21 @@ SIN_RESULTADOS = {
 }
 
 
+def turnos_para_el_modelo(historial: list[MensajeChat]) -> list[MessageParam]:
+    """Traduce el historial al formato de la API.
+
+    La API exige que el primer mensaje sea del usuario, y el chat abre con un
+    saludo del asistente: hay que descartar ese arranque o la llamada falla.
+    """
+    turnos: list[MessageParam] = []
+    for mensaje in historial:
+        rol: Literal["user", "assistant"] = "user" if mensaje.rol == "cliente" else "assistant"
+        if not turnos and rol == "assistant":
+            continue
+        turnos.append({"role": rol, "content": mensaje.texto})
+    return turnos
+
+
 def responder_cliente(
     pregunta: str,
     modelo: SentenceTransformer,
@@ -25,14 +57,21 @@ def responder_cliente(
     vectores: np.ndarray,
     restaurante_id: str,
     idioma: str = "es",
-) -> str:
+    historial: list[MensajeChat] | None = None,
+) -> RespuestaAgente:
+    historial = historial or []
     categorias = cargar_categorias(restaurante_id)
     nombres_categorias = [c.id for c in categorias]
-    restricciones = extraer_restricciones(pregunta, nombres_categorias)
+    restricciones, consumo_interprete = extraer_restricciones(
+        pregunta, nombres_categorias, historial
+    )
+    consumo = ConsumoTotal(consumos=[consumo_interprete])
     candidatos = filtrar_por_restricciones_cliente(carta, restricciones)
 
+    # Aunque no haya platos que ofrecer, el intérprete ya se ha pagado.
     if not candidatos:
-        return SIN_RESULTADOS.get(idioma, SIN_RESULTADOS["es"])
+        texto = SIN_RESULTADOS.get(idioma, SIN_RESULTADOS["es"])
+        return RespuestaAgente(texto=texto, consumo=consumo)
 
     indices = [carta.index(p) for p in candidatos]
     vectores_filtrados = vectores[indices]
@@ -49,25 +88,26 @@ def responder_cliente(
     )
 
     lengua = NOMBRES_IDIOMA.get(idioma, "español")
+    modo = _INSTRUCCION_CERRAR if restricciones.pedido_cerrado else _INSTRUCCION_OFRECER
+
+    # El historial va como turnos reales de conversación, no embutido en el
+    # prompt: así el modelo sabe qué se dijo antes y no repite lo ya resuelto.
+    mensajes = turnos_para_el_modelo(historial)
+    mensajes.append(
+        {
+            "role": "user",
+            "content": (
+                f"Responde SIEMPRE en {lengua}, sea cual sea el idioma de la pregunta. "
+                "Eres el asistente de un restaurante. Responde al cliente usando SOLO "
+                f"los platos de este contexto. {modo} "
+                "Mantén los nombres de los platos tal como aparecen en el contexto, "
+                "sin traducirlos.\n\n"
+                f"Platos disponibles:\n{contexto}\n\nMensaje del cliente: {pregunta}"
+            ),
+        }
+    )
 
     c = cliente()
-    respuesta = c.messages.create(
-        model=MODELO,
-        max_tokens=400,
-        messages=[
-            {
-                "role": "user",
-                "content": (
-                    f"Responde SIEMPRE en {lengua}, sea cual sea el idioma de la pregunta. "
-                    "Eres el asistente de un restaurante. Responde la pregunta del cliente "
-                    "usando SOLO los platos de este contexto. Muestra TODAS las opciones "
-                    "relevantes del contexto que encajen, no solo una — el cliente decide, "
-                    "tú le das el abanico. Sé breve y cercano en la descripción de cada una. "
-                    "Mantén los nombres de los platos tal como aparecen en el contexto, "
-                    "sin traducirlos.\n\n"
-                    f"Platos disponibles:\n{contexto}\n\nPregunta: {pregunta}"
-                ),
-            }
-        ],
-    )
-    return texto_de_respuesta(respuesta)
+    respuesta = c.messages.create(model=MODELO, max_tokens=400, messages=mensajes)
+    consumo.consumos.append(medir("respuesta", respuesta.usage))
+    return RespuestaAgente(texto=texto_de_respuesta(respuesta), consumo=consumo)

@@ -1,6 +1,9 @@
 from enum import Enum
+from typing import Literal
 
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from carta_bar.costes import ConsumoTotal
 
 
 class Alergeno(str, Enum):
@@ -67,9 +70,26 @@ class RestriccionesCliente(BaseModel):
     ingredientes_excluir: list[str] = []
     intencion_busqueda: str = ""
     categoria_pedida: str = ""
+    # El cliente ya ha elegido y no quiere mas sugerencias. Sin esto, el bot
+    # sigue ofreciendo platos despues de un "con esto voy servido".
+    pedido_cerrado: bool = False
+
+
+class MensajeChat(BaseModel):
+    """Un turno de la conversacion, tal y como lo manda el navegador."""
+
+    rol: Literal["cliente", "asistente"]
+    texto: str = Field(min_length=1, max_length=1000)
 
 
 class Categoria(BaseModel):
     id: str
     nombre: str
     orden: int
+
+
+class RespuestaAgente(BaseModel):
+    """Lo que el agente responde y lo que ha costado producirlo."""
+
+    texto: str
+    consumo: ConsumoTotal

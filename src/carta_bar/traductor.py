@@ -4,9 +4,12 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from carta_bar.datos import cargar_carta
+from carta_bar.costes import Consumo, ConsumoTotal, medir
+from carta_bar.datos import _validar_slug, cargar_carta
 from carta_bar.llm import MODELO, cliente
 from carta_bar.modelos import Plato
+from carta_bar.presupuesto import ControlGasto
+from carta_bar.uso import crear_repositorio
 
 IDIOMAS = ["en", "de", "fr"]
 
@@ -23,6 +26,8 @@ def huella(plato: Plato) -> str:
 
 
 def _ruta_traduccion(restaurante_id: str, idioma: str) -> Path:
+    _validar_slug(restaurante_id, "restaurante_id")
+    _validar_slug(idioma, "idioma")
     return Path(f"datos/{restaurante_id}/carta.{idioma}.json")
 
 
@@ -34,7 +39,7 @@ def cargar_traduccion(restaurante_id: str, idioma: str) -> dict[str, dict[str, o
     return {d["id"]: d for d in datos}
 
 
-def traducir_plato(plato: Plato, idioma: str) -> PlatoTraducido:
+def traducir_plato(plato: Plato, idioma: str) -> tuple[PlatoTraducido, Consumo]:
     c = cliente()
     nombres = {"en": "inglés", "de": "alemán", "fr": "francés"}
     respuesta = c.messages.parse(
@@ -61,15 +66,16 @@ def traducir_plato(plato: Plato, idioma: str) -> PlatoTraducido:
     )
     if respuesta.parsed_output is None:
         raise ValueError(f"No se pudo traducir el plato {plato.id}")
-    return respuesta.parsed_output
+    return respuesta.parsed_output, medir(f"traduccion:{idioma}", respuesta.usage)
 
 
-def traducir_carta(restaurante_id: str, idioma: str) -> None:
+def traducir_carta(restaurante_id: str, idioma: str) -> ConsumoTotal:
     carta = cargar_carta(restaurante_id)
     existentes = cargar_traduccion(restaurante_id, idioma)
 
     resultado = []
     traducidos = 0
+    consumo = ConsumoTotal()
 
     for plato in carta:
         h = huella(plato)
@@ -79,7 +85,8 @@ def traducir_carta(restaurante_id: str, idioma: str) -> None:
             resultado.append(previo)
             continue
 
-        t = traducir_plato(plato, idioma)
+        t, gasto = traducir_plato(plato, idioma)
+        consumo.consumos.append(gasto)
         resultado.append(
             {
                 "id": plato.id,
@@ -94,12 +101,24 @@ def traducir_carta(restaurante_id: str, idioma: str) -> None:
 
     ruta = _ruta_traduccion(restaurante_id, idioma)
     ruta.write_text(json.dumps(resultado, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"{idioma}: {traducidos} traducidos, {len(carta) - traducidos} sin cambios")
+    print(
+        f"{idioma}: {traducidos} traducidos, {len(carta) - traducidos} sin cambios "
+        f"- ${consumo.coste_usd:.4f}"
+    )
+    return consumo
 
 
 def main() -> None:
+    """Traducir es gasto real: se contabiliza igual que las preguntas."""
+    restaurante_id = "la-catedral"
+    control = ControlGasto(crear_repositorio())
+    total = ConsumoTotal()
+
     for idioma in IDIOMAS:
-        traducir_carta("la-catedral", idioma)
+        total.consumos.extend(traducir_carta(restaurante_id, idioma).consumos)
+
+    control.registrar(restaurante_id, MODELO, total)
+    print(f"\nTotal traduccion: ${total.coste_usd:.4f} ({len(total.consumos)} llamadas)")
 
 
 if __name__ == "__main__":

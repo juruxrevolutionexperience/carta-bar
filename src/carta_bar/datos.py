@@ -1,14 +1,26 @@
 import json
+import re
 from pathlib import Path
 
 from carta_bar.modelos import Categoria, Plato
 
+_SLUG = re.compile(r"^[a-z0-9-]+$")
+
+
+def _validar_slug(valor: str, campo: str) -> str:
+    """Impide que un valor externo se convierta en travesía de rutas."""
+    if not _SLUG.match(valor):
+        raise ValueError(f"{campo} no válido: {valor!r}")
+    return valor
+
 
 def _ruta_carta(restaurante_id: str) -> Path:
+    _validar_slug(restaurante_id, "restaurante_id")
     return Path(f"datos/{restaurante_id}/carta.json")
 
 
 def _ruta_categorias(restaurante_id: str) -> Path:
+    _validar_slug(restaurante_id, "restaurante_id")
     return Path(f"datos/{restaurante_id}/categorias.json")
 
 
@@ -38,6 +50,8 @@ def cargar_carta_traducida(restaurante_id: str, idioma: str) -> list[dict[str, o
     if idioma == "es":
         return base
 
+    _validar_slug(restaurante_id, "restaurante_id")
+    _validar_slug(idioma, "idioma")
     ruta = Path(f"datos/{restaurante_id}/carta.{idioma}.json")
     if not ruta.exists():
         return base

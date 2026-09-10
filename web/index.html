@@ -395,6 +395,17 @@
 let carta = [], categorias = [], config = {}, textos = {}, idiomas = {};
 let idioma = localStorage.getItem("carta_idioma") || null;
 
+// Conversacion del chat. Sin esto el bot no recuerda lo dicho hace dos mensajes
+// y acaba repitiendo sugerencias que el cliente ya ha descartado.
+// Los limites replican los del backend: 8 turnos y 1000 caracteres por mensaje.
+let historial = [];
+const MAX_HISTORIAL = 8, MAX_MENSAJE = 1000;
+
+function recordar(rol, texto){
+  historial.push({rol, texto: texto.slice(0, MAX_MENSAJE)});
+  if (historial.length > MAX_HISTORIAL) historial = historial.slice(-MAX_HISTORIAL);
+}
+
 function t(clave){ return (textos && textos[clave]) || clave; }
 
 const ICONO_CAT = {
@@ -688,11 +699,14 @@ async function preguntar(){
     const r = await fetch("/preguntar",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({texto, idioma}),
+      // El historial va SIN el mensaje actual: el backend lo recibe aparte.
+      body:JSON.stringify({texto, idioma, historial}),
     });
     const d = await r.json();
     esperando.remove();
     burbuja("bot", escapar(d.respuesta).replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>"));
+    recordar("cliente", texto);
+    recordar("asistente", d.respuesta);
   }catch{
     esperando.remove();
     burbuja("bot", t("error_chat"));
