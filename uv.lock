@@ -154,6 +154,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "esprima" },
     { name = "mypy" },
     { name = "pglast" },
     { name = "pytest" },
@@ -180,6 +181,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "esprima", specifier = ">=4.0.1" },
     { name = "mypy", specifier = ">=2.3.0" },
     { name = "pglast", specifier = ">=8.4" },
     { name = "pytest", specifier = ">=9.1.1" },
@@ -542,6 +544,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/e0/4d/f332313098c1de1b2
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a7/5f/ed01f9a3cdffbd5a008556fc7b2a08ddb1cc6ace7effa7340604b1d16699/docstring_parser-0.18.0-py3-none-any.whl", hash = "sha256:b3fcbed555c47d8479be0796ef7e19c2670d428d72e96da63f3a40122860374b", size = 22484, upload-time = "2026-04-14T04:09:18.638Z" },
 ]
+
+[[package]]
+name = "esprima"
+version = "4.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/cc/a1/50fccd68a12bcfc27adfc9969c090286670a9109a0259f3f70943390b721/esprima-4.0.1.tar.gz", hash = "sha256:08db1a876d3c2910db9cfaeb83108193af5411fc3a3a66ebefacd390d21323ee", size = 47021, upload-time = "2018-08-24T13:59:11.374Z" }
 
 [[package]]
 name = "fastapi"

@@ -15,6 +15,10 @@ from starlette.responses import JSONResponse, Response
 # Un comensal real no pasa de unas pocas preguntas por minuto; un bot, sí.
 LIMITE_PREGUNTAR = "10/minute;60/hour"
 
+# El resto de rutas (carta, categorías, config) no llaman al LLM, pero leen
+# disco en cada petición: sin tope siguen siendo un blanco fácil.
+LIMITE_GENERAL = "120/minute"
+
 # Detrás de nginx o Cloudflare, request.client.host es la IP del proxy y TODOS
 # los clientes compartirían el mismo cupo. Pero fiarse de X-Forwarded-For sin
 # un proxy delante permite falsificar la cabecera y saltarse el límite entero.
@@ -31,7 +35,7 @@ def ip_cliente(request: Request) -> str:
     return get_remote_address(request)
 
 
-limiter = Limiter(key_func=ip_cliente)
+limiter = Limiter(key_func=ip_cliente, default_limits=[LIMITE_GENERAL])
 
 
 # El handler que trae slowapi devuelve texto plano y una firma que mypy strict

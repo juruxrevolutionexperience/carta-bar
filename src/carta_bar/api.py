@@ -5,9 +5,10 @@ from typing import Literal
 
 import structlog
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from carta_bar.agente import responder_cliente
 from carta_bar.busqueda import indexar
@@ -18,6 +19,7 @@ from carta_bar.llm import MODELO
 from carta_bar.logging_config import configurar_logging
 from carta_bar.modelos import Categoria, MensajeChat
 from carta_bar.presupuesto import AVISO_SIN_PRESUPUESTO, ControlGasto
+from carta_bar.seguridad import CabecerasSeguridad
 from carta_bar.uso import crear_repositorio
 
 # En produccion conviene JSON: es lo que sabe agregar cualquier gestor de logs.
@@ -27,6 +29,10 @@ log = structlog.get_logger()
 app = FastAPI()
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, limite_superado)
+# Sin este middleware, el limite general no se aplica a las rutas que no
+# llevan decorador propio.
+app.add_middleware(SlowAPIMiddleware)
+app.add_middleware(CabecerasSeguridad)
 
 modelo = cargar_modelo()
 carta, vectores = indexar(modelo, "la-catedral")
@@ -57,11 +63,28 @@ def obtener_categorias() -> list[Categoria]:
     return cargar_categorias("la-catedral")
 
 
+# Lista blanca de lo que la carta publica puede ver. El fichero de configuracion
+# acabara teniendo datos de facturacion, claves o webhooks del restaurante:
+# devolverlo entero seria filtrarlos a cualquiera que abra la carta.
+CAMPOS_CONFIG_PUBLICOS = frozenset(
+    {
+        "nombre",
+        "subtitulo",
+        "color_marca",
+        "moneda",
+        "foto_portada",
+        "logo",
+        "aviso_alergenos",
+        "aviso_alergenos_i18n",
+    }
+)
+
+
 @app.get("/config")
 def obtener_config() -> dict[str, object]:
     ruta = Path("datos/la-catedral/config.json")
     datos: dict[str, object] = json.loads(ruta.read_text(encoding="utf-8"))
-    return datos
+    return {k: v for k, v in datos.items() if k in CAMPOS_CONFIG_PUBLICOS}
 
 
 @app.post("/preguntar")
@@ -106,5 +129,10 @@ def obtener_idiomas() -> dict[str, object]:
 
 
 @app.get("/")
-def inicio() -> FileResponse:
-    return FileResponse("web/index.html")
+def inicio(request: Request) -> HTMLResponse:
+    # El <script> de la pagina lleva el nonce de esta peticion. Cualquier otro
+    # script que apareciera en el HTML (inyectado) no lo tendria, y el navegador
+    # se negaria a ejecutarlo.
+    pagina = Path("web/index.html").read_text(encoding="utf-8")
+    with_nonce = pagina.replace("<script>", f'<script nonce="{request.state.nonce}">', 1)
+    return HTMLResponse(with_nonce)
