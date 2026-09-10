@@ -15,7 +15,12 @@
     "elige_idioma": "Elige tu idioma",
     "cambiar_idioma": "Cambiar idioma",
     "consultar_alergenos": "consultar alérgenos",
-    "sugerencias": ["Soy vegano", "Sin gluten", "Alérgico a los frutos secos", "Algo para compartir"],
+    "sugerencias": [
+      "Soy vegano",
+      "Sin gluten",
+      "Alérgico a los frutos secos",
+      "Algo para compartir"
+    ],
     "dietas": {
       "vegano": "vegano",
       "vegetariano": "vegetariano",
@@ -23,11 +28,20 @@
       "sin_lactosa": "sin lactosa"
     },
     "alergenos": {
-      "gluten": "gluten", "crustaceos": "crustáceos", "huevos": "huevo",
-      "pescado": "pescado", "cacahuetes": "cacahuete", "soja": "soja",
-      "lacteos": "lácteos", "frutos_cascara": "frutos secos", "apio": "apio",
-      "mostaza": "mostaza", "sesamo": "sésamo", "sulfitos": "sulfitos",
-      "altramuces": "altramuces", "moluscos": "moluscos"
+      "gluten": "gluten",
+      "crustaceos": "crustáceos",
+      "huevos": "huevo",
+      "pescado": "pescado",
+      "cacahuetes": "cacahuete",
+      "soja": "soja",
+      "lacteos": "lácteos",
+      "frutos_cascara": "frutos secos",
+      "apio": "apio",
+      "mostaza": "mostaza",
+      "sesamo": "sésamo",
+      "sulfitos": "sulfitos",
+      "altramuces": "altramuces",
+      "moluscos": "moluscos"
     },
     "etiquetas": {
       "mas_vendido": "Más vendido",
@@ -36,7 +50,11 @@
       "picante": "Picante",
       "para_compartir": "Para compartir",
       "temporada": "De temporada"
-    }
+    },
+    "voz_hablar": "Hablar",
+    "voz_parar": "Dejar de escuchar",
+    "voz_escuchando": "Te escucho…",
+    "voz_sin_permiso": "No puedo acceder al micrófono. Actívalo en tu navegador o escríbeme."
   },
   "en": {
     "nombre_idioma": "English",
@@ -54,7 +72,12 @@
     "elige_idioma": "Choose your language",
     "cambiar_idioma": "Change language",
     "consultar_alergenos": "ask about allergens",
-    "sugerencias": ["I'm vegan", "Gluten free", "Allergic to nuts", "Something to share"],
+    "sugerencias": [
+      "I'm vegan",
+      "Gluten free",
+      "Allergic to nuts",
+      "Something to share"
+    ],
     "dietas": {
       "vegano": "vegan",
       "vegetariano": "vegetarian",
@@ -62,11 +85,20 @@
       "sin_lactosa": "dairy free"
     },
     "alergenos": {
-      "gluten": "gluten", "crustaceos": "crustaceans", "huevos": "egg",
-      "pescado": "fish", "cacahuetes": "peanuts", "soja": "soya",
-      "lacteos": "dairy", "frutos_cascara": "nuts", "apio": "celery",
-      "mostaza": "mustard", "sesamo": "sesame", "sulfitos": "sulphites",
-      "altramuces": "lupin", "moluscos": "molluscs"
+      "gluten": "gluten",
+      "crustaceos": "crustaceans",
+      "huevos": "egg",
+      "pescado": "fish",
+      "cacahuetes": "peanuts",
+      "soja": "soya",
+      "lacteos": "dairy",
+      "frutos_cascara": "nuts",
+      "apio": "celery",
+      "mostaza": "mustard",
+      "sesamo": "sesame",
+      "sulfitos": "sulphites",
+      "altramuces": "lupin",
+      "moluscos": "molluscs"
     },
     "etiquetas": {
       "mas_vendido": "Best seller",
@@ -75,7 +107,11 @@
       "picante": "Spicy",
       "para_compartir": "To share",
       "temporada": "Seasonal"
-    }
+    },
+    "voz_hablar": "Speak",
+    "voz_parar": "Stop listening",
+    "voz_escuchando": "I'm listening…",
+    "voz_sin_permiso": "I can't access the microphone. Enable it in your browser or type instead."
   },
   "de": {
     "nombre_idioma": "Deutsch",
@@ -93,7 +129,12 @@
     "elige_idioma": "Wähle deine Sprache",
     "cambiar_idioma": "Sprache ändern",
     "consultar_alergenos": "Allergene erfragen",
-    "sugerencias": ["Ich bin Veganer", "Glutenfrei", "Nussallergie", "Etwas zum Teilen"],
+    "sugerencias": [
+      "Ich bin Veganer",
+      "Glutenfrei",
+      "Nussallergie",
+      "Etwas zum Teilen"
+    ],
     "dietas": {
       "vegano": "vegan",
       "vegetariano": "vegetarisch",
@@ -101,11 +142,20 @@
       "sin_lactosa": "laktosefrei"
     },
     "alergenos": {
-      "gluten": "Gluten", "crustaceos": "Krebstiere", "huevos": "Ei",
-      "pescado": "Fisch", "cacahuetes": "Erdnüsse", "soja": "Soja",
-      "lacteos": "Milch", "frutos_cascara": "Schalenfrüchte", "apio": "Sellerie",
-      "mostaza": "Senf", "sesamo": "Sesam", "sulfitos": "Sulfite",
-      "altramuces": "Lupinen", "moluscos": "Weichtiere"
+      "gluten": "Gluten",
+      "crustaceos": "Krebstiere",
+      "huevos": "Ei",
+      "pescado": "Fisch",
+      "cacahuetes": "Erdnüsse",
+      "soja": "Soja",
+      "lacteos": "Milch",
+      "frutos_cascara": "Schalenfrüchte",
+      "apio": "Sellerie",
+      "mostaza": "Senf",
+      "sesamo": "Sesam",
+      "sulfitos": "Sulfite",
+      "altramuces": "Lupinen",
+      "moluscos": "Weichtiere"
     },
     "etiquetas": {
       "mas_vendido": "Bestseller",
@@ -114,7 +164,11 @@
       "picante": "Scharf",
       "para_compartir": "Zum Teilen",
       "temporada": "Saisonal"
-    }
+    },
+    "voz_hablar": "Sprechen",
+    "voz_parar": "Nicht mehr zuhören",
+    "voz_escuchando": "Ich höre zu…",
+    "voz_sin_permiso": "Ich kann nicht auf das Mikrofon zugreifen. Aktiviere es im Browser oder schreib mir."
   },
   "fr": {
     "nombre_idioma": "Français",
@@ -132,7 +186,12 @@
     "elige_idioma": "Choisissez votre langue",
     "cambiar_idioma": "Changer de langue",
     "consultar_alergenos": "demander les allergènes",
-    "sugerencias": ["Je suis végétalien", "Sans gluten", "Allergique aux fruits à coque", "Quelque chose à partager"],
+    "sugerencias": [
+      "Je suis végétalien",
+      "Sans gluten",
+      "Allergique aux fruits à coque",
+      "Quelque chose à partager"
+    ],
     "dietas": {
       "vegano": "végétalien",
       "vegetariano": "végétarien",
@@ -140,11 +199,20 @@
       "sin_lactosa": "sans lactose"
     },
     "alergenos": {
-      "gluten": "gluten", "crustaceos": "crustacés", "huevos": "œuf",
-      "pescado": "poisson", "cacahuetes": "arachides", "soja": "soja",
-      "lacteos": "lait", "frutos_cascara": "fruits à coque", "apio": "céleri",
-      "mostaza": "moutarde", "sesamo": "sésame", "sulfitos": "sulfites",
-      "altramuces": "lupin", "moluscos": "mollusques"
+      "gluten": "gluten",
+      "crustaceos": "crustacés",
+      "huevos": "œuf",
+      "pescado": "poisson",
+      "cacahuetes": "arachides",
+      "soja": "soja",
+      "lacteos": "lait",
+      "frutos_cascara": "fruits à coque",
+      "apio": "céleri",
+      "mostaza": "moutarde",
+      "sesamo": "sésame",
+      "sulfitos": "sulfites",
+      "altramuces": "lupin",
+      "moluscos": "mollusques"
     },
     "etiquetas": {
       "mas_vendido": "Le plus commandé",
@@ -153,6 +221,10 @@
       "picante": "Épicé",
       "para_compartir": "À partager",
       "temporada": "De saison"
-    }
+    },
+    "voz_hablar": "Parler",
+    "voz_parar": "Arrêter d'écouter",
+    "voz_escuchando": "Je t'écoute…",
+    "voz_sin_permiso": "Je ne peux pas accéder au micro. Active-le dans ton navigateur ou écris-moi."
   }
 }

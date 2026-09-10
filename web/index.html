@@ -273,6 +273,28 @@
   }
   .barra button:disabled{opacity:.35;cursor:default}
 
+  /* Boton de dictado. Se oculta solo si el navegador no reconoce voz. */
+  .barra .microfono{
+    background:var(--fondo-alt);color:var(--tinta);
+    padding:0;width:46px;min-width:46px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;line-height:1;
+  }
+  .barra .microfono[hidden]{display:none}
+  .barra .microfono:focus-visible{outline:2px solid var(--marca);outline-offset:2px}
+  .barra .microfono.escuchando{
+    background:var(--marca);color:#fff;
+    animation:latido 1.3s ease-in-out infinite;
+  }
+  @keyframes latido{
+    0%,100%{transform:scale(1);opacity:1}
+    50%{transform:scale(1.09);opacity:.82}
+  }
+  /* Respeta a quien tiene desactivadas las animaciones por accesibilidad. */
+  @media (prefers-reduced-motion:reduce){
+    .barra .microfono.escuchando{animation:none}
+  }
+
   .puntos span{
     display:inline-block;width:6px;height:6px;border-radius:50%;
     background:var(--tinta-suave);margin-right:3px;
@@ -387,6 +409,7 @@
   <div class="sugerencias"></div>
   <form class="barra" id="barra">
     <input id="entrada" placeholder="Escribe aquí…" autocomplete="off">
+    <button type="button" class="microfono" id="microfono" aria-pressed="false" hidden>🎤</button>
     <button type="submit" id="enviar">Enviar</button>
   </form>
 </section>
@@ -495,12 +518,15 @@ async function cargar(){
     document.title = config.nombre;
     if (!config.logo) document.querySelector(".logo-orbe .inicial").textContent = config.nombre.trim()[0];
   }
-  if (config.logo) document.getElementById("logo").innerHTML = '<img src="' + config.logo + '" alt="">';
+  const logo = urlSegura(config.logo);
+  if (logo) document.getElementById("logo").innerHTML = '<img src="' + logo + '" alt="">';
   if (config.subtitulo) document.getElementById("sub-sitio").textContent = config.subtitulo;
-  if (config.color_marca) document.documentElement.style.setProperty("--marca", config.color_marca);
-  if (config.foto_portada){
+  const marca = colorSeguro(config.color_marca);
+  if (marca) document.documentElement.style.setProperty("--marca", marca);
+  const portada = urlSegura(config.foto_portada);
+  if (portada){
     document.getElementById("portada").style.backgroundImage =
-      "linear-gradient(180deg,rgba(23,19,16,.18),rgba(23,19,16,.5)),url('" + config.foto_portada + "')";
+      "linear-gradient(180deg,rgba(23,19,16,.18),rgba(23,19,16,.5)),url('" + portada + "')";
   }
 
   categorias = cats || [...new Set(carta.map(p => p.categoria))]
@@ -530,6 +556,8 @@ function aplicarIdioma(){
   document.querySelector(".panel-top h2").textContent = t("titulo_chat");
   document.getElementById("entrada").placeholder = t("escribe");
   document.getElementById("enviar").textContent = t("enviar");
+  // El microfono tambien cambia de idioma: su rotulo y el que se le dicta.
+  if (!micro.hidden) pintarMicro(escuchando);
   document.getElementById("titulo-idioma").textContent = t("elige_idioma");
   document.getElementById("pie").textContent =
     (config.aviso_alergenos_i18n && config.aviso_alergenos_i18n[idioma]) ||
@@ -561,7 +589,8 @@ function mostrarSelectorIdioma(){
   Object.entries(idiomas).forEach(([cod, datos]) => {
     const b = document.createElement("button");
     b.className = "op-idioma";
-    b.innerHTML = '<span class="bandera">' + datos.bandera + '</span>' + datos.nombre_idioma;
+    b.innerHTML = '<span class="bandera">' + escapar(datos.bandera) + '</span>' +
+      escapar(datos.nombre_idioma);
     b.onclick = () => {
       idioma = cod;
       localStorage.setItem("carta_idioma", cod);
@@ -587,7 +616,7 @@ function pintarCarrusel(){
     b.innerHTML =
       '<div class="cat-visual" style="background:' + degradado(cat.id) + '">' +
         (ICONO_CAT[cat.id] || "🍽️") + '</div>' +
-      '<div class="cat-nombre">' + nomCat + '</div>' +
+      '<div class="cat-nombre">' + escapar(nomCat) + '</div>' +
       '<div class="cat-cuenta">' + n + " " + (n === 1 ? t("platos_uno") : t("platos_varios")) + '</div>';
     b.onclick = () => seleccionar(cat.id);
     c.appendChild(b);
@@ -610,7 +639,7 @@ function pintar(catId){
   lista.innerHTML = "";
 
   if (!platos.length){
-    lista.innerHTML = '<p class="vacio">' + t("sin_platos") + '</p>';
+    lista.innerHTML = '<p class="vacio">' + escapar(t("sin_platos")) + '</p>';
     return;
   }
 
@@ -625,27 +654,32 @@ function pintar(catId){
       p.sin_lactosa && txtDieta("sin_lactosa"),
     ].filter(Boolean);
 
+    const foto = urlSegura(p.foto);
+    // Todo dato del restaurante va escapado: la carta la escribe el cliente
+    // del SaaS, no nosotros, y acaba en el navegador de sus comensales.
     art.innerHTML =
       '<div class="plato-foto" style="background:' + degradado(p.categoria, p.id) + '">' +
-        (p.foto ? '<img src="' + p.foto + '" alt="">' : iconoPlato(p)) +
+        (foto ? '<img src="' + foto + '" alt="">' : iconoPlato(p)) +
       '</div>' +
       '<div class="plato-info">' +
         (p.etiqueta
-          ? '<span class="etiqueta etq-' + p.etiqueta + '">' +
+          ? '<span class="etiqueta etq-' + escapar(p.etiqueta) + '">' +
               '<span class="ico">' + (ICONO_ETQ[p.etiqueta] || "") + '</span>' +
-              txtEtiqueta(p.etiqueta) +
+              escapar(txtEtiqueta(p.etiqueta)) +
             '</span>'
           : "") +
         '<div class="plato-top">' +
-          '<h3 class="nombre">' + p.nombre + '</h3>' +
-          '<span class="precio">' + p.precio.toFixed(2).replace(".",",") + " " + moneda + '</span>' +
+          '<h3 class="nombre">' + escapar(p.nombre) + '</h3>' +
+          '<span class="precio">' + Number(p.precio).toFixed(2).replace(".",",") +
+            " " + escapar(moneda) + '</span>' +
         '</div>' +
         '<p class="desc' + (pendiente ? " pendiente" : "") + '">' +
-          ((p.descripcion_i18n && p.descripcion_i18n[idioma]) || p.descripcion) + '</p>' +
+          escapar((p.descripcion_i18n && p.descripcion_i18n[idioma]) || p.descripcion) + '</p>' +
         '<div class="chips">' +
-          dietas.map(d => '<span class="chip dieta">' + d + '</span>').join("") +
-          (p.alergenos || []).map(a => '<span class="chip alergeno">' + txtAlergeno(a) + '</span>').join("") +
-          (pendiente ? '<span class="chip aviso">' + t("consultar_alergenos") + '</span>' : "") +
+          dietas.map(d => '<span class="chip dieta">' + escapar(d) + '</span>').join("") +
+          (p.alergenos || []).map(a =>
+            '<span class="chip alergeno">' + escapar(txtAlergeno(a)) + '</span>').join("") +
+          (pendiente ? '<span class="chip aviso">' + escapar(t("consultar_alergenos")) + '</span>' : "") +
         '</div>' +
       '</div>';
     lista.appendChild(art);
@@ -672,8 +706,32 @@ document.getElementById("cerrar").onclick = () => {
 document.getElementById("barra").onsubmit = e => { e.preventDefault(); preguntar(); };
 document.getElementById("btn-idioma").onclick = () => mostrarSelectorIdioma();
 
+/* Todo lo que venga del restaurante o del cliente pasa por aqui antes de
+   tocar innerHTML. En un SaaS la carta la escribe cada restaurante: un
+   nombre de plato con <img onerror=...> se ejecutaria en el movil de todos
+   sus comensales. Se escapan tambien las comillas porque varios de estos
+   valores caen dentro de atributos HTML. */
 function escapar(t){
-  return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  return String(t === null || t === undefined ? "" : t)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+/* Para src de imagenes: corta javascript:, vbscript: y data: que no sea imagen. */
+function urlSegura(u){
+  const s = String(u || "").trim();
+  const permitida = /^https?:\/\//i.test(s)
+    || /^data:image\/(png|jpe?g|gif|webp|svg\+xml);/i.test(s)
+    || /^\/[^/\\]/.test(s);
+  return permitida ? escapar(s) : "";
+}
+
+/* Para colores que se inyectan en CSS: solo hex y rgb()/hsl(). */
+function colorSeguro(c){
+  const s = String(c || "").trim();
+  const valido = /^#[0-9a-f]{3,8}$/i.test(s)
+    || /^(rgb|hsl)a?\([0-9\s.,%/]+\)$/i.test(s);
+  return valido ? s : "";
 }
 
 function burbuja(clase, html){
@@ -714,6 +772,64 @@ async function preguntar(){
     enviar.disabled = false;
     entrada.focus();
   }
+}
+
+/* --- Dictado por voz ------------------------------------------------------
+   Web Speech API: el reconocimiento lo hace el navegador, asi que no pasa por
+   nuestro backend, no consume tokens y no cuesta nada. El bot sigue
+   respondiendo escrito. Solo lo soportan Chrome, Edge y Safari; en el resto
+   el boton se queda oculto y el chat funciona igual escribiendo.
+   Requiere HTTPS (o localhost) para pedir permiso de microfono.          */
+const MotorVoz = window.SpeechRecognition || window.webkitSpeechRecognition;
+const VOZ_IDIOMA = {es:"es-ES", en:"en-US", de:"de-DE", fr:"fr-FR"};
+const micro = document.getElementById("microfono");
+let reconocedor = null, escuchando = false;
+
+function pintarMicro(activo){
+  escuchando = activo;
+  micro.classList.toggle("escuchando", activo);
+  micro.setAttribute("aria-pressed", activo ? "true" : "false");
+  micro.title = activo ? t("voz_parar") : t("voz_hablar");
+  micro.setAttribute("aria-label", micro.title);
+  entrada.placeholder = activo ? t("voz_escuchando") : t("escribe");
+}
+
+function escuchar(){
+  reconocedor = new MotorVoz();
+  reconocedor.lang = VOZ_IDIOMA[idioma] || "es-ES";
+  reconocedor.interimResults = true;   // el texto va apareciendo mientras habla
+  reconocedor.continuous = false;      // se corta solo al terminar la frase
+  reconocedor.maxAlternatives = 1;
+
+  reconocedor.onresult = e => {
+    let dicho = "";
+    for (const tramo of e.results) dicho += tramo[0].transcript;
+    entrada.value = dicho.slice(0, 500);   // el mismo tope que valida el backend
+    if (e.results[e.results.length - 1].isFinal){
+      pintarMicro(false);
+      reconocedor.stop();
+      if (entrada.value.trim()) preguntar();
+    }
+  };
+  reconocedor.onerror = e => {
+    pintarMicro(false);
+    if (e.error === "not-allowed" || e.error === "service-not-allowed"){
+      burbuja("bot", t("voz_sin_permiso"));
+    }
+  };
+  reconocedor.onend = () => pintarMicro(false);
+
+  reconocedor.start();
+  pintarMicro(true);
+}
+
+if (MotorVoz){
+  micro.hidden = false;
+  micro.title = micro.getAttribute("aria-label") || "";
+  micro.onclick = () => {
+    if (escuchando){ reconocedor.stop(); pintarMicro(false); return; }
+    try{ escuchar(); }catch{ pintarMicro(false); }
+  };
 }
 
 cargar();
