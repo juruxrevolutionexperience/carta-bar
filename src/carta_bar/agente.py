@@ -95,8 +95,11 @@ def responder_cliente(
     k = min(len(candidatos), 10)
     resultados = buscar_platos(texto_busqueda, modelo, candidatos, vectores_filtrados, k=k)
 
+    def _precio_txt(p: Plato) -> str:
+        return f"{p.precio}€" if p.precio is not None else "precio a consultar"
+
     contexto = "\n\n".join(
-        f"{p.nombre} ({p.precio}€): {p.descripcion}. "
+        f"{p.nombre} ({_precio_txt(p)}): {p.descripcion}. "
         f"Ingredientes: {', '.join(p.ingredientes)}. "
         f"Alérgenos: {', '.join(a.value for a in p.alergenos) or 'ninguno'}."
         for _, p in resultados
