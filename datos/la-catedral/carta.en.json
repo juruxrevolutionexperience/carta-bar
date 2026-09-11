@@ -168,6 +168,13 @@
     "ingredientes": ["sea bass fillet", "cava sauce", "vegetables"]
   },
   {
+    "id": "p028",
+    "hash": "5033148347df50ab",
+    "nombre": "Beef Sirloin Steak",
+    "descripcion": "With baby potatoes.",
+    "ingredientes": ["beef sirloin", "baby potatoes"]
+  },
+  {
     "id": "p025",
     "hash": "47a9f444b53f4255",
     "nombre": "Cheesecake",

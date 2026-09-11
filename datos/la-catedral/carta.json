@@ -336,6 +336,20 @@
     "disponible": true
   },
   {
+    "id": "p028",
+    "nombre": "Solomillo de Ternera",
+    "descripcion": "Con patatas baby.",
+    "precio": null,
+    "categoria": "cocina",
+    "ingredientes": ["solomillo de ternera", "patatas baby"],
+    "alergenos": [],
+    "vegano": false,
+    "vegetariano": false,
+    "sin_gluten": true,
+    "sin_lactosa": true,
+    "disponible": true
+  },
+  {
     "id": "p025",
     "nombre": "Tarta de Queso",
     "descripcion": "Pendiente de confirmar ingredientes con el restaurante.",

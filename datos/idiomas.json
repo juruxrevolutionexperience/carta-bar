@@ -15,6 +15,7 @@
     "elige_idioma": "Elige tu idioma",
     "cambiar_idioma": "Cambiar idioma",
     "consultar_alergenos": "consultar alérgenos",
+    "precio_consultar": "Consultar",
     "sugerencias": [
       "Soy vegano",
       "Sin gluten",
@@ -72,6 +73,7 @@
     "elige_idioma": "Choose your language",
     "cambiar_idioma": "Change language",
     "consultar_alergenos": "ask about allergens",
+    "precio_consultar": "Ask",
     "sugerencias": [
       "I'm vegan",
       "Gluten free",
@@ -129,6 +131,7 @@
     "elige_idioma": "Wähle deine Sprache",
     "cambiar_idioma": "Sprache ändern",
     "consultar_alergenos": "Allergene erfragen",
+    "precio_consultar": "Auf Anfrage",
     "sugerencias": [
       "Ich bin Veganer",
       "Glutenfrei",
@@ -186,6 +189,7 @@
     "elige_idioma": "Choisissez votre langue",
     "cambiar_idioma": "Changer de langue",
     "consultar_alergenos": "demander les allergènes",
+    "precio_consultar": "Sur demande",
     "sugerencias": [
       "Je suis végétalien",
       "Sans gluten",

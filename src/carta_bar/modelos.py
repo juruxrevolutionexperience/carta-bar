@@ -36,7 +36,7 @@ class Plato(BaseModel):
     id: str
     nombre: str
     descripcion: str
-    precio: float
+    precio: float | None = None
     categoria: str
     ingredientes: list[str]
     alergenos: list[Alergeno]
@@ -49,8 +49,8 @@ class Plato(BaseModel):
 
     @field_validator("precio")
     @classmethod
-    def validar_precio(cls, precio: float) -> float:
-        if precio <= 0:
+    def validar_precio(cls, precio: float | None) -> float | None:
+        if precio is not None and precio <= 0:
             raise ValueError("El precio debe ser mayor que cero")
         return precio
 

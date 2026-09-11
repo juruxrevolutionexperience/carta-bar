@@ -670,8 +670,9 @@ function pintar(catId){
           : "") +
         '<div class="plato-top">' +
           '<h3 class="nombre">' + escapar(p.nombre) + '</h3>' +
-          '<span class="precio">' + Number(p.precio).toFixed(2).replace(".",",") +
-            " " + escapar(moneda) + '</span>' +
+          '<span class="precio">' + (p.precio == null
+            ? escapar(t("precio_consultar"))
+            : Number(p.precio).toFixed(2).replace(".",",") + " " + escapar(moneda)) + '</span>' +
         '</div>' +
         '<p class="desc' + (pendiente ? " pendiente" : "") + '">' +
           escapar((p.descripcion_i18n && p.descripcion_i18n[idioma]) || p.descripcion) + '</p>' +
