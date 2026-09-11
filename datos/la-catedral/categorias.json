@@ -1,7 +1,8 @@
 [
-  {"id": "ensaladas", "nombre": "Ensaladas", "orden": 1},
-  {"id": "tierra_y_mar", "nombre": "Tierra y Mar", "orden": 2},
-  {"id": "hamburguesas", "nombre": "Hamburguesas", "orden": 3},
-  {"id": "postres", "nombre": "Postres", "orden": 4},
-  {"id": "tostas", "nombre": "Tostas Mini", "orden": 5}
+  {"id": "para_empezar", "nombre": "Para Empezar y Compartir", "orden": 1},
+  {"id": "ensaladas_tartares", "nombre": "Frescos, Ensaladas y Tartares", "orden": 2},
+  {"id": "algo_diferente", "nombre": "Un Toque Diferente", "orden": 3},
+  {"id": "hamburguesas", "nombre": "Nuestras Burgers", "orden": 4},
+  {"id": "cocina", "nombre": "De la Cocina", "orden": 5},
+  {"id": "postres", "nombre": "Algo Dulce", "orden": 6}
 ]
