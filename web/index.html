@@ -440,6 +440,11 @@
   </form>
 </section>
 
+<div class="visor-foto" id="visor-foto" hidden>
+  <button class="visor-cerrar" id="visor-cerrar" aria-label="Cerrar">×</button>
+  <img id="visor-foto-img" src="" alt="">
+</div>
+
 <script>
 let carta = [], categorias = [], config = {}, textos = {}, idiomas = {};
 let idioma = localStorage.getItem("carta_idioma") || null;
@@ -897,11 +902,6 @@ cargar();
     <p>Choose your language · Sprache wählen</p>
     <div class="opciones-idioma" id="opciones-idioma"></div>
   </div>
-</div>
-
-<div class="visor-foto" id="visor-foto" hidden>
-  <button class="visor-cerrar" id="visor-cerrar" aria-label="Cerrar">×</button>
-  <img id="visor-foto-img" src="" alt="">
 </div>
 
 </body>
