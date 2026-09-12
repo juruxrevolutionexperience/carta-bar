@@ -3,10 +3,18 @@
     "id": "p001",
     "nombre": "Tabla Mixta de Jamón Ibérico y Queso Payoyo",
     "descripcion": "Jamón ibérico y queso Payoyo, acompañados de picos y regañás.",
-    "precio": 19.00,
+    "precio": 19.0,
     "categoria": "para_empezar",
-    "ingredientes": ["jamón ibérico", "queso payoyo", "picos", "regañás"],
-    "alergenos": ["lacteos", "gluten"],
+    "ingredientes": [
+      "jamón ibérico",
+      "queso payoyo",
+      "picos",
+      "regañás"
+    ],
+    "alergenos": [
+      "lacteos",
+      "gluten"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": false,
@@ -17,10 +25,19 @@
     "id": "p002",
     "nombre": "Ensaladilla Rusa de la Casa",
     "descripcion": "Con topping de huevo frito, gambas y ventresca. (Media ración: 5,95 €)",
-    "precio": 10.00,
+    "precio": 10.0,
     "categoria": "para_empezar",
-    "ingredientes": ["ensaladilla rusa", "huevo frito", "gambas", "ventresca"],
-    "alergenos": ["huevos", "crustaceos", "pescado"],
+    "ingredientes": [
+      "ensaladilla rusa",
+      "huevo frito",
+      "gambas",
+      "ventresca"
+    ],
+    "alergenos": [
+      "huevos",
+      "crustaceos",
+      "pescado"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": true,
@@ -31,10 +48,18 @@
     "id": "p003",
     "nombre": "Boquerones en Vinagre",
     "descripcion": "Con ajo, perejil, aceite de oliva virgen extra y aceitunas negras. (Media ración: 6,25 €)",
-    "precio": 10.50,
+    "precio": 10.5,
     "categoria": "para_empezar",
-    "ingredientes": ["boquerones", "ajo", "perejil", "aceite de oliva virgen extra", "aceitunas negras"],
-    "alergenos": ["pescado"],
+    "ingredientes": [
+      "boquerones",
+      "ajo",
+      "perejil",
+      "aceite de oliva virgen extra",
+      "aceitunas negras"
+    ],
+    "alergenos": [
+      "pescado"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": true,
@@ -45,10 +70,15 @@
     "id": "p004",
     "nombre": "Patatas Bravas La Catedral",
     "descripcion": "Patatas crujientes con salsa brava cremosa aragonesa. (Media ración: 5,25 €)",
-    "precio": 9.00,
+    "precio": 9.0,
     "categoria": "para_empezar",
-    "ingredientes": ["patatas", "salsa brava aragonesa"],
-    "alergenos": ["lacteos"],
+    "ingredientes": [
+      "patatas",
+      "salsa brava aragonesa"
+    ],
+    "alergenos": [
+      "lacteos"
+    ],
     "vegano": false,
     "vegetariano": true,
     "sin_gluten": true,
@@ -59,10 +89,18 @@
     "id": "p005",
     "nombre": "Croquetas de Jamón Ibérico",
     "descripcion": "Acompañadas de alioli casero. (Media ración: 5,95 €)",
-    "precio": 10.90,
+    "precio": 10.9,
     "categoria": "para_empezar",
-    "ingredientes": ["jamón ibérico", "bechamel", "alioli"],
-    "alergenos": ["gluten", "lacteos", "huevos"],
+    "ingredientes": [
+      "jamón ibérico",
+      "bechamel",
+      "alioli"
+    ],
+    "alergenos": [
+      "gluten",
+      "lacteos",
+      "huevos"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": false,
@@ -73,10 +111,18 @@
     "id": "p006",
     "nombre": "Croquetas de Cocido Madrileño",
     "descripcion": "Acompañadas de alioli casero. (Media ración: 5,00 €)",
-    "precio": 9.90,
+    "precio": 9.9,
     "categoria": "para_empezar",
-    "ingredientes": ["cocido madrileño", "bechamel", "alioli"],
-    "alergenos": ["gluten", "lacteos", "huevos"],
+    "ingredientes": [
+      "cocido madrileño",
+      "bechamel",
+      "alioli"
+    ],
+    "alergenos": [
+      "gluten",
+      "lacteos",
+      "huevos"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": false,
@@ -87,10 +133,17 @@
     "id": "p007",
     "nombre": "Tiras de Pollo Crujiente",
     "descripcion": "Acompañadas de salsa casera. (Media ración: 5,95 €)",
-    "precio": 10.90,
+    "precio": 10.9,
     "categoria": "para_empezar",
-    "ingredientes": ["pollo", "rebozado crujiente", "salsa casera"],
-    "alergenos": ["gluten", "huevos"],
+    "ingredientes": [
+      "pollo",
+      "rebozado crujiente",
+      "salsa casera"
+    ],
+    "alergenos": [
+      "gluten",
+      "huevos"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": false,
@@ -101,10 +154,20 @@
     "id": "p008",
     "nombre": "Ensalada César de Pollo Crujiente",
     "descripcion": "Lechuga, pollo crujiente, parmesano, picatostes y tomate cherry.",
-    "precio": 15.50,
+    "precio": 15.5,
     "categoria": "ensaladas_tartares",
-    "ingredientes": ["lechuga", "pollo crujiente", "queso parmesano", "picatostes", "tomate cherry"],
-    "alergenos": ["lacteos", "gluten", "huevos"],
+    "ingredientes": [
+      "lechuga",
+      "pollo crujiente",
+      "queso parmesano",
+      "picatostes",
+      "tomate cherry"
+    ],
+    "alergenos": [
+      "lacteos",
+      "gluten",
+      "huevos"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": false,
@@ -115,10 +178,19 @@
     "id": "p009",
     "nombre": "Ensalada Catedral",
     "descripcion": "Brotes tiernos, queso de cabra, nueces, tomate cherry y vinagre balsámico.",
-    "precio": 14.50,
+    "precio": 14.5,
     "categoria": "ensaladas_tartares",
-    "ingredientes": ["brotes tiernos", "queso de cabra", "nueces", "tomate cherry", "vinagre balsámico"],
-    "alergenos": ["lacteos", "frutos_cascara"],
+    "ingredientes": [
+      "brotes tiernos",
+      "queso de cabra",
+      "nueces",
+      "tomate cherry",
+      "vinagre balsámico"
+    ],
+    "alergenos": [
+      "lacteos",
+      "frutos_cascara"
+    ],
     "vegano": false,
     "vegetariano": true,
     "sin_gluten": true,
@@ -129,10 +201,14 @@
     "id": "p010",
     "nombre": "Tataki de Atún",
     "descripcion": "Pendiente de confirmar ingredientes con el restaurante.",
-    "precio": 17.00,
+    "precio": 17.0,
     "categoria": "ensaladas_tartares",
-    "ingredientes": ["atún"],
-    "alergenos": ["pescado"],
+    "ingredientes": [
+      "atún"
+    ],
+    "alergenos": [
+      "pescado"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": true,
@@ -143,10 +219,18 @@
     "id": "p011",
     "nombre": "Tartar de Salmón y Aguacate",
     "descripcion": "Salmón marinado y aguacate, sésamo y toque cítrico.",
-    "precio": 18.50,
+    "precio": 18.5,
     "categoria": "ensaladas_tartares",
-    "ingredientes": ["salmón marinado", "aguacate", "sésamo", "cítricos"],
-    "alergenos": ["pescado", "sesamo"],
+    "ingredientes": [
+      "salmón marinado",
+      "aguacate",
+      "sésamo",
+      "cítricos"
+    ],
+    "alergenos": [
+      "pescado",
+      "sesamo"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": true,
@@ -157,10 +241,18 @@
     "id": "p012",
     "nombre": "Tartar de Atún Rojo",
     "descripcion": "Atún rojo marinado con aguacate, mango y sésamo.",
-    "precio": 21.50,
+    "precio": 21.5,
     "categoria": "ensaladas_tartares",
-    "ingredientes": ["atún rojo marinado", "aguacate", "mango", "sésamo"],
-    "alergenos": ["pescado", "sesamo"],
+    "ingredientes": [
+      "atún rojo marinado",
+      "aguacate",
+      "mango",
+      "sésamo"
+    ],
+    "alergenos": [
+      "pescado",
+      "sesamo"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": true,
@@ -171,10 +263,18 @@
     "id": "p013",
     "nombre": "Tartar de Aguacate",
     "descripcion": "Aguacate, tomate, cebolla morada, sésamo y vinagreta cítrica.",
-    "precio": 11.90,
+    "precio": 11.9,
     "categoria": "ensaladas_tartares",
-    "ingredientes": ["aguacate", "tomate", "cebolla morada", "sésamo", "vinagreta cítrica"],
-    "alergenos": ["sesamo"],
+    "ingredientes": [
+      "aguacate",
+      "tomate",
+      "cebolla morada",
+      "sésamo",
+      "vinagreta cítrica"
+    ],
+    "alergenos": [
+      "sesamo"
+    ],
     "vegano": true,
     "vegetariano": true,
     "sin_gluten": true,
@@ -185,10 +285,18 @@
     "id": "p014",
     "nombre": "Tartar de Salchichón de Málaga",
     "descripcion": "Salchichón de Málaga macerado, nueces, miel de caña y huevo.",
-    "precio": 12.90,
+    "precio": 12.9,
     "categoria": "ensaladas_tartares",
-    "ingredientes": ["salchichón de Málaga", "nueces", "miel de caña", "huevo"],
-    "alergenos": ["frutos_cascara", "huevos"],
+    "ingredientes": [
+      "salchichón de Málaga",
+      "nueces",
+      "miel de caña",
+      "huevo"
+    ],
+    "alergenos": [
+      "frutos_cascara",
+      "huevos"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": true,
@@ -199,10 +307,20 @@
     "id": "p015",
     "nombre": "Bao de Langostino Crujiente",
     "descripcion": "Pan bao, langostino, cebolla encurtida y pepino encurtido, ligeramente picante, con sésamo.",
-    "precio": 5.90,
+    "precio": 5.9,
     "categoria": "algo_diferente",
-    "ingredientes": ["pan bao", "langostino crujiente", "cebolla encurtida", "pepino encurtido", "sésamo"],
-    "alergenos": ["gluten", "crustaceos", "sesamo"],
+    "ingredientes": [
+      "pan bao",
+      "langostino crujiente",
+      "cebolla encurtida",
+      "pepino encurtido",
+      "sésamo"
+    ],
+    "alergenos": [
+      "gluten",
+      "crustaceos",
+      "sesamo"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": false,
@@ -213,24 +331,47 @@
     "id": "p016",
     "nombre": "Burger La Catedral",
     "descripcion": "180 g de carne de retinto, brotes, tomate, queso de cabra y cebolla caramelizada.",
-    "precio": 15.50,
+    "precio": 15.5,
     "categoria": "hamburguesas",
-    "ingredientes": ["carne de retinto", "brotes", "tomate", "queso de cabra", "cebolla caramelizada", "pan de hamburguesa"],
-    "alergenos": ["lacteos", "gluten"],
+    "ingredientes": [
+      "carne de retinto",
+      "brotes",
+      "tomate",
+      "queso de cabra",
+      "cebolla caramelizada",
+      "pan de hamburguesa"
+    ],
+    "alergenos": [
+      "lacteos",
+      "gluten"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": false,
     "sin_lactosa": false,
-    "disponible": true
+    "disponible": true,
+    "foto": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIj4KPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+CjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzZCMkYyNCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzJCMTcxMiIvPgo8L2xpbmVhckdyYWRpZW50PjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI0MDAiIGZpbGw9InVybCgjZykiLz4KPHRleHQgeD0iMjAwIiB5PSIxODAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjcwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj4mIzEyNzgyODs8L3RleHQ+Cjx0ZXh0IHg9IjIwMCIgeT0iMjQ1IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNiIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iI0Y2RjNGMCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Rk9UTyBERSBQUlVFQkE8L3RleHQ+Cjx0ZXh0IHg9IjIwMCIgeT0iMjc4IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNyIgZmlsbD0iI0M5QkRCNiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+dG9jYSBwYXJhIGFtcGxpYXI8L3RleHQ+Cjwvc3ZnPg=="
   },
   {
     "id": "p017",
     "nombre": "Burger Completa",
     "descripcion": "Brotes, tomate, 180 g de carne de retinto, queso cheddar, bacon y huevo.",
-    "precio": 15.90,
+    "precio": 15.9,
     "categoria": "hamburguesas",
-    "ingredientes": ["brotes", "tomate", "carne de retinto", "queso cheddar", "bacon", "huevo", "pan de hamburguesa"],
-    "alergenos": ["lacteos", "gluten", "huevos"],
+    "ingredientes": [
+      "brotes",
+      "tomate",
+      "carne de retinto",
+      "queso cheddar",
+      "bacon",
+      "huevo",
+      "pan de hamburguesa"
+    ],
+    "alergenos": [
+      "lacteos",
+      "gluten",
+      "huevos"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": false,
@@ -241,10 +382,22 @@
     "id": "p018",
     "nombre": "Fanny Burger",
     "descripcion": "Brotes, tomate, carne de vacuno smash, queso cheddar, bacon tostado y mayo de albahaca.",
-    "precio": 15.50,
+    "precio": 15.5,
     "categoria": "hamburguesas",
-    "ingredientes": ["brotes", "tomate", "carne de vacuno smash", "queso cheddar", "bacon", "mayonesa de albahaca", "pan de hamburguesa"],
-    "alergenos": ["lacteos", "gluten", "huevos"],
+    "ingredientes": [
+      "brotes",
+      "tomate",
+      "carne de vacuno smash",
+      "queso cheddar",
+      "bacon",
+      "mayonesa de albahaca",
+      "pan de hamburguesa"
+    ],
+    "alergenos": [
+      "lacteos",
+      "gluten",
+      "huevos"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": false,
@@ -255,10 +408,20 @@
     "id": "p019",
     "nombre": "Japo Burger",
     "descripcion": "Carne de vacuno smash, queso cheddar, bacon y mayo kimchi.",
-    "precio": 14.50,
+    "precio": 14.5,
     "categoria": "hamburguesas",
-    "ingredientes": ["carne de vacuno smash", "queso cheddar", "bacon", "mayonesa de kimchi", "pan de hamburguesa"],
-    "alergenos": ["lacteos", "gluten", "huevos"],
+    "ingredientes": [
+      "carne de vacuno smash",
+      "queso cheddar",
+      "bacon",
+      "mayonesa de kimchi",
+      "pan de hamburguesa"
+    ],
+    "alergenos": [
+      "lacteos",
+      "gluten",
+      "huevos"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": false,
@@ -269,10 +432,17 @@
     "id": "p020",
     "nombre": "Huevos Rotos con Jamón Ibérico",
     "descripcion": "Patatas fritas, huevo, jamón ibérico y pimiento.",
-    "precio": 12.50,
+    "precio": 12.5,
     "categoria": "cocina",
-    "ingredientes": ["patatas fritas", "huevo", "jamón ibérico", "pimiento"],
-    "alergenos": ["huevos"],
+    "ingredientes": [
+      "patatas fritas",
+      "huevo",
+      "jamón ibérico",
+      "pimiento"
+    ],
+    "alergenos": [
+      "huevos"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": true,
@@ -283,10 +453,17 @@
     "id": "p021",
     "nombre": "Flamenquín Cordobés",
     "descripcion": "Con patatas fritas y alioli.",
-    "precio": 14.90,
+    "precio": 14.9,
     "categoria": "cocina",
-    "ingredientes": ["flamenquín", "patatas fritas", "alioli"],
-    "alergenos": ["gluten", "huevos"],
+    "ingredientes": [
+      "flamenquín",
+      "patatas fritas",
+      "alioli"
+    ],
+    "alergenos": [
+      "gluten",
+      "huevos"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": false,
@@ -297,10 +474,16 @@
     "id": "p022",
     "nombre": "Abanico Ibérico",
     "descripcion": "Con patatas fritas y alioli.",
-    "precio": 18.00,
+    "precio": 18.0,
     "categoria": "cocina",
-    "ingredientes": ["abanico ibérico", "patatas fritas", "alioli"],
-    "alergenos": ["huevos"],
+    "ingredientes": [
+      "abanico ibérico",
+      "patatas fritas",
+      "alioli"
+    ],
+    "alergenos": [
+      "huevos"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": true,
@@ -311,9 +494,13 @@
     "id": "p023",
     "nombre": "Chorizo Criollo",
     "descripcion": "Con patatas fritas y chimichurri.",
-    "precio": 9.50,
+    "precio": 9.5,
     "categoria": "cocina",
-    "ingredientes": ["chorizo criollo", "patatas fritas", "chimichurri"],
+    "ingredientes": [
+      "chorizo criollo",
+      "patatas fritas",
+      "chimichurri"
+    ],
     "alergenos": [],
     "vegano": false,
     "vegetariano": false,
@@ -325,10 +512,17 @@
     "id": "p024",
     "nombre": "Lubina al Cava",
     "descripcion": "Lomo de lubina con salsa al cava y guarnición.",
-    "precio": 17.90,
+    "precio": 17.9,
     "categoria": "cocina",
-    "ingredientes": ["lomo de lubina", "salsa al cava", "guarnición"],
-    "alergenos": ["pescado", "sulfitos"],
+    "ingredientes": [
+      "lomo de lubina",
+      "salsa al cava",
+      "guarnición"
+    ],
+    "alergenos": [
+      "pescado",
+      "sulfitos"
+    ],
     "vegano": false,
     "vegetariano": false,
     "sin_gluten": true,
@@ -341,7 +535,10 @@
     "descripcion": "Con patatas baby.",
     "precio": null,
     "categoria": "cocina",
-    "ingredientes": ["solomillo de ternera", "patatas baby"],
+    "ingredientes": [
+      "solomillo de ternera",
+      "patatas baby"
+    ],
     "alergenos": [],
     "vegano": false,
     "vegetariano": false,
@@ -353,10 +550,14 @@
     "id": "p025",
     "nombre": "Tarta de Queso",
     "descripcion": "Pendiente de confirmar ingredientes con el restaurante.",
-    "precio": 6.00,
+    "precio": 6.0,
     "categoria": "postres",
     "ingredientes": [],
-    "alergenos": ["gluten", "lacteos", "huevos"],
+    "alergenos": [
+      "gluten",
+      "lacteos",
+      "huevos"
+    ],
     "vegano": false,
     "vegetariano": true,
     "sin_gluten": false,
@@ -367,10 +568,14 @@
     "id": "p026",
     "nombre": "Tarta de Zanahoria",
     "descripcion": "Pendiente de confirmar ingredientes con el restaurante.",
-    "precio": 6.00,
+    "precio": 6.0,
     "categoria": "postres",
     "ingredientes": [],
-    "alergenos": ["gluten", "lacteos", "huevos"],
+    "alergenos": [
+      "gluten",
+      "lacteos",
+      "huevos"
+    ],
     "vegano": false,
     "vegetariano": true,
     "sin_gluten": false,
@@ -381,10 +586,14 @@
     "id": "p027",
     "nombre": "Tarta de Chocolate",
     "descripcion": "Pendiente de confirmar ingredientes con el restaurante.",
-    "precio": 6.00,
+    "precio": 6.0,
     "categoria": "postres",
     "ingredientes": [],
-    "alergenos": ["gluten", "lacteos", "huevos"],
+    "alergenos": [
+      "gluten",
+      "lacteos",
+      "huevos"
+    ],
     "vegano": false,
     "vegetariano": true,
     "sin_gluten": false,

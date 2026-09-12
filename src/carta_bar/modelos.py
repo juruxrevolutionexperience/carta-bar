@@ -46,6 +46,9 @@ class Plato(BaseModel):
     sin_lactosa: bool = False
     disponible: bool = True
     etiqueta: Etiqueta | None = None
+    # Sin foto, la tarjeta pinta un degradado con un icono. El frontend solo
+    # acepta http(s), rutas propias y data: de imagen, y descarta el resto.
+    foto: str | None = None
 
     @field_validator("precio")
     @classmethod
