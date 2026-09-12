@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Carta</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,8 +22,14 @@
     --ambar-suave:#FBF1DA;
   }
 
-  *{box-sizing:border-box;margin:0;padding:0}
-  html{-webkit-text-size-adjust:100%}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
+    /* El desplazamiento se mantiene, el zoom de pellizco no. Safari en iPhone
+       ignora user-scalable=no, asi que el meta viewport no basta por si solo. */
+    touch-action:pan-x pan-y;
+  }
 
   body{
     background:var(--fondo-alt);
@@ -31,6 +37,8 @@
     font-family:"Inter",system-ui,sans-serif;
     line-height:1.45;
     -webkit-font-smoothing:antialiased;
+    touch-action:pan-x pan-y;
+    overscroll-behavior:none;
   }
 
   .app{
@@ -448,6 +456,27 @@
 </div>
 
 <script>
+/* ---------- escala fija, como una app ----------
+   Safari en iPhone ignora user-scalable=no desde iOS 10, asi que el meta
+   viewport no basta. touch-action cubre el pellizco en casi todos los
+   navegadores; estos dos oyentes cubren lo que se le escapa en Safari: los
+   eventos de gesto y el zoom por doble toque.                              */
+["gesturestart", "gesturechange", "gestureend"].forEach(tipo =>
+  document.addEventListener(tipo, e => e.preventDefault(), { passive: false }));
+
+let ultimoToque = 0;
+document.addEventListener("touchend", e => {
+  const ahora = Date.now();
+  const esCampo = e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+  // En los campos de texto se respeta el comportamiento nativo: cancelar aqui
+  // se tragaria el foco y no llegaria a abrirse el teclado.
+  if (ahora - ultimoToque <= 300 && !esCampo){
+    e.preventDefault();                       // segundo toque: sin zoom...
+    if (typeof e.target.click === "function") e.target.click();  // ...pero cuenta
+  }
+  ultimoToque = ahora;
+}, { passive: false });
+
 let carta = [], categorias = [], config = {}, textos = {}, idiomas = {};
 let idioma = localStorage.getItem("carta_idioma") || null;
 

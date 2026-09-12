@@ -58,4 +58,10 @@ class CabecerasSeguridad(BaseHTTPMiddleware):
         respuesta.headers["Permissions-Policy"] = "microphone=(self), camera=(), geolocation=()"
         # Solo surte efecto sobre HTTPS; sobre HTTP el navegador la ignora.
         respuesta.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        # Nada de esta app debe quedarse guardado en el movil del comensal: el
+        # HTML lleva un nonce distinto en cada peticion (uno guardado dejaria de
+        # cuadrar con la politica) y la carta puede cambiar de precio o de plato
+        # en cualquier momento. Sin esta cabecera el navegador decide por su
+        # cuenta, y Safari en iPhone guarda durante bastante tiempo.
+        respuesta.headers["Cache-Control"] = "no-store"
         return respuesta
