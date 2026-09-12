@@ -875,7 +875,11 @@ function escuchar(){
   };
   reconocedor.onerror = e => {
     pintarMicro(false);
+    // Denegado el permiso, el navegador ya no vuelve a preguntar: el boton
+    // solo puede fallar otra vez, asi que se retira. Vuelve a aparecer al
+    // recargar, por si el cliente lo ha permitido entretanto en sus ajustes.
     if (e.error === "not-allowed" || e.error === "service-not-allowed"){
+      micro.hidden = true;
       burbuja("bot", t("voz_sin_permiso"));
     }
   };

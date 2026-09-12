@@ -55,7 +55,7 @@
     "voz_hablar": "Hablar",
     "voz_parar": "Dejar de escuchar",
     "voz_escuchando": "Te escucho…",
-    "voz_sin_permiso": "No puedo acceder al micrófono. Actívalo en tu navegador o escríbeme."
+    "voz_sin_permiso": "No puedo usar el micrófono en este móvil. Escríbeme aquí abajo y te contesto igual."
   },
   "en": {
     "nombre_idioma": "English",
@@ -113,7 +113,7 @@
     "voz_hablar": "Speak",
     "voz_parar": "Stop listening",
     "voz_escuchando": "I'm listening…",
-    "voz_sin_permiso": "I can't access the microphone. Enable it in your browser or type instead."
+    "voz_sin_permiso": "I can't use the microphone on this phone. Just type below and I'll answer all the same."
   },
   "de": {
     "nombre_idioma": "Deutsch",
@@ -171,7 +171,7 @@
     "voz_hablar": "Sprechen",
     "voz_parar": "Nicht mehr zuhören",
     "voz_escuchando": "Ich höre zu…",
-    "voz_sin_permiso": "Ich kann nicht auf das Mikrofon zugreifen. Aktiviere es im Browser oder schreib mir."
+    "voz_sin_permiso": "Ich kann das Mikrofon auf diesem Handy nicht nutzen. Schreib mir einfach unten, ich antworte genauso."
   },
   "fr": {
     "nombre_idioma": "Français",
@@ -229,6 +229,6 @@
     "voz_hablar": "Parler",
     "voz_parar": "Arrêter d'écouter",
     "voz_escuchando": "Je t'écoute…",
-    "voz_sin_permiso": "Je ne peux pas accéder au micro. Active-le dans ton navigateur ou écris-moi."
+    "voz_sin_permiso": "Je ne peux pas utiliser le micro sur ce téléphone. Écris-moi ci-dessous, je te réponds pareil."
   }
 }
