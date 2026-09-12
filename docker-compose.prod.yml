@@ -1,0 +1,10 @@
+services:
+  carta:
+    build: .
+    container_name: carta-bar
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      # Solo loopback: nginx en el host es la unica via de entrada, igual que
+      # el resto de apps de este servidor.
+      - "127.0.0.1:8001:8000"
