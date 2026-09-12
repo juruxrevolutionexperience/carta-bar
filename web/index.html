@@ -266,7 +266,9 @@
     flex:1;background:var(--fondo-alt);
     border:1px solid transparent;border-radius:100px;
     color:var(--tinta);font-family:"Inter",sans-serif;
-    font-size:15px;padding:13px 17px;
+    /* 16px es el minimo: por debajo, Safari en iPhone hace zoom a la pagina
+       al tocar el campo y descoloca toda la carta. */
+    font-size:16px;padding:13px 17px;
   }
   .barra input::placeholder{color:var(--tinta-suave)}
   .barra input:focus{outline:none;border-color:var(--tinta);background:var(--fondo)}
