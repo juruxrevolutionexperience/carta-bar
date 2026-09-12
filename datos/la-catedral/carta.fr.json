@@ -1,1 +1,323 @@
-[]
+[
+  {
+    "id": "p001",
+    "hash": "0e1aca33ea519024",
+    "nombre": "Tabla Mixta de Jamón Ibérico y Queso Payoyo",
+    "descripcion": "Jambon ibérique et fromage Payoyo, accompagnés de piques et de regañás.",
+    "ingredientes": [
+      "jambon ibérique",
+      "fromage Payoyo",
+      "piques",
+      "regañás"
+    ]
+  },
+  {
+    "id": "p002",
+    "hash": "f06c5dd996dd3d9e",
+    "nombre": "Ensaladilla Rusa de la Casa",
+    "descripcion": "Avec garniture d'œuf frit, crevettes et ventrèche. (Demi-portion : 5,95 €)",
+    "ingredientes": [
+      "ensaladilla rusa",
+      "œuf frit",
+      "crevettes",
+      "ventrèche"
+    ]
+  },
+  {
+    "id": "p003",
+    "hash": "8153c1619e4001aa",
+    "nombre": "Boquerones en Vinagre",
+    "descripcion": "Avec ail, persil, huile d'olive vierge extra et olives noires. (Demi-portion : 6,25 €)",
+    "ingredientes": [
+      "anchois",
+      "ail",
+      "persil",
+      "huile d'olive vierge extra",
+      "olives noires"
+    ]
+  },
+  {
+    "id": "p004",
+    "hash": "ed037d70ef6731f8",
+    "nombre": "Patatas Bravas La Catedral",
+    "descripcion": "Pommes croustillantes avec sauce brava crémeuse aragonaise. (Demi-portion : 5,25 €)",
+    "ingredientes": [
+      "pommes de terre",
+      "sauce brava aragonaise"
+    ]
+  },
+  {
+    "id": "p005",
+    "hash": "e1ac1db9768e68d4",
+    "nombre": "Croquetas de Jamón Ibérico",
+    "descripcion": "Accompagnées d'aïoli maison. (Demi-portion: 5,95 €)",
+    "ingredientes": [
+      "jambon ibérique",
+      "béchamel",
+      "aïoli"
+    ]
+  },
+  {
+    "id": "p006",
+    "hash": "11182c2d5d759fb4",
+    "nombre": "Croquetas de Cocido Madrileño",
+    "descripcion": "Accompagnées d'aïoli maison. (Demi-portion : 5,00 €)",
+    "ingredientes": [
+      "cocido madrileño",
+      "béchamel",
+      "aïoli"
+    ]
+  },
+  {
+    "id": "p007",
+    "hash": "e6d1792d70899e95",
+    "nombre": "Lanières de Poulet Croustillantes",
+    "descripcion": "Accompagnées d'une sauce maison. (Demi-portion : 5,95 €)",
+    "ingredientes": [
+      "poulet",
+      "panure croustillante",
+      "sauce maison"
+    ]
+  },
+  {
+    "id": "p008",
+    "hash": "101800f1e2ae7ddd",
+    "nombre": "Salade César au Poulet Croustillant",
+    "descripcion": "Laitue, poulet croustillant, parmesan, croûtons et tomates cerises.",
+    "ingredientes": [
+      "laitue",
+      "poulet croustillant",
+      "fromage parmesan",
+      "croûtons",
+      "tomates cerises"
+    ]
+  },
+  {
+    "id": "p009",
+    "hash": "9360d7750e82cfb7",
+    "nombre": "Ensalada Catedral",
+    "descripcion": "Jeunes pousses, fromage de chèvre, noix, tomates cerises et vinaigre balsamique.",
+    "ingredientes": [
+      "jeunes pousses",
+      "fromage de chèvre",
+      "noix",
+      "tomates cerises",
+      "vinaigre balsamique"
+    ]
+  },
+  {
+    "id": "p010",
+    "hash": "1f331c281d28ecf5",
+    "nombre": "Tataki de Atún",
+    "descripcion": "En attente de confirmation des ingrédients auprès du restaurant.",
+    "ingredientes": [
+      "thon"
+    ]
+  },
+  {
+    "id": "p011",
+    "hash": "c6a41680a96e1f20",
+    "nombre": "Tartare de Saumon et Avocat",
+    "descripcion": "Saumon mariné et avocat, sésame et touche d'agrumes.",
+    "ingredientes": [
+      "saumon mariné",
+      "avocat",
+      "sésame",
+      "agrumes"
+    ]
+  },
+  {
+    "id": "p012",
+    "hash": "673ce6758adc88bd",
+    "nombre": "Tartar de Atún Rojo",
+    "descripcion": "Thon rouge mariné avec avocat, mangue et sésame.",
+    "ingredientes": [
+      "thon rouge mariné",
+      "avocat",
+      "mangue",
+      "sésame"
+    ]
+  },
+  {
+    "id": "p013",
+    "hash": "2a875352d73e9d08",
+    "nombre": "Tartar d'Avocat",
+    "descripcion": "Avocat, tomate, oignon rouge, sésame et vinaigrette aux agrumes.",
+    "ingredientes": [
+      "avocat",
+      "tomate",
+      "oignon rouge",
+      "sésame",
+      "vinaigrette aux agrumes"
+    ]
+  },
+  {
+    "id": "p014",
+    "hash": "2ffc10e7c6fcd2ae",
+    "nombre": "Tartare de Saucisson de Málaga",
+    "descripcion": "Saucisson de Málaga macéré, noix, miel de canne et œuf.",
+    "ingredientes": [
+      "saucisson de Málaga",
+      "noix",
+      "miel de canne",
+      "œuf"
+    ]
+  },
+  {
+    "id": "p015",
+    "hash": "2b623a476d1fca2d",
+    "nombre": "Bao de Langostino Crujiente",
+    "descripcion": "Pain bao, langoustine croustillante, oignon mariné et concombre mariné, légèrement épicé, avec graines de sésame.",
+    "ingredientes": [
+      "pain bao",
+      "langoustine croustillante",
+      "oignon mariné",
+      "concombre mariné",
+      "graines de sésame"
+    ]
+  },
+  {
+    "id": "p016",
+    "hash": "111451eb87a53cb2",
+    "nombre": "Burger La Catedral",
+    "descripcion": "180 g de viande de retinto, germes, tomate, fromage de chèvre et oignons caramélisés.",
+    "ingredientes": [
+      "viande de retinto",
+      "germes",
+      "tomate",
+      "fromage de chèvre",
+      "oignons caramélisés",
+      "pain à burger"
+    ]
+  },
+  {
+    "id": "p017",
+    "hash": "794f0bbfa8cfb8b6",
+    "nombre": "Burger Complet",
+    "descripcion": "Germes, tomate, 180 g de viande de race retinta, fromage cheddar, bacon et œuf.",
+    "ingredientes": [
+      "germes",
+      "tomate",
+      "viande de race retinta",
+      "fromage cheddar",
+      "bacon",
+      "œuf",
+      "pain à burger"
+    ]
+  },
+  {
+    "id": "p018",
+    "hash": "a5dee7e84ce1c3d7",
+    "nombre": "Fanny Burger",
+    "descripcion": "Germes, tomate, steak haché smash, cheddar, bacon grillé et mayonnaise au basilic.",
+    "ingredientes": [
+      "germes",
+      "tomate",
+      "steak haché smash",
+      "cheddar",
+      "bacon",
+      "mayonnaise au basilic",
+      "pain à hamburger"
+    ]
+  },
+  {
+    "id": "p019",
+    "hash": "957622b3774f67cb",
+    "nombre": "Japo Burger",
+    "descripcion": "Steak haché smash, fromage cheddar, bacon et mayonnaise kimchi.",
+    "ingredientes": [
+      "steak haché smash",
+      "fromage cheddar",
+      "bacon",
+      "mayonnaise kimchi",
+      "pain à hamburger"
+    ]
+  },
+  {
+    "id": "p020",
+    "hash": "4682d8e9358ff663",
+    "nombre": "Huevos Rotos con Jamón Ibérico",
+    "descripcion": "Pommes frites, œuf, jambon ibérique et poivron.",
+    "ingredientes": [
+      "pommes frites",
+      "œuf",
+      "jambon ibérique",
+      "poivron"
+    ]
+  },
+  {
+    "id": "p021",
+    "hash": "6d00412bd7b85b47",
+    "nombre": "Flamenquín Cordobés",
+    "descripcion": "Avec frites et aïoli.",
+    "ingredientes": [
+      "flamenquín",
+      "frites",
+      "aïoli"
+    ]
+  },
+  {
+    "id": "p022",
+    "hash": "b8ae7ebe17545424",
+    "nombre": "Éventail Ibérique",
+    "descripcion": "Avec frites et aïoli.",
+    "ingredientes": [
+      "éventail ibérique",
+      "frites",
+      "aïoli"
+    ]
+  },
+  {
+    "id": "p023",
+    "hash": "c2a841dcf4bacb45",
+    "nombre": "Chorizo Criollo",
+    "descripcion": "Avec frites et chimichurri.",
+    "ingredientes": [
+      "chorizo criollo",
+      "frites",
+      "chimichurri"
+    ]
+  },
+  {
+    "id": "p024",
+    "hash": "cd4f121aa44f18c2",
+    "nombre": "Lubina al Cava",
+    "descripcion": "Filet de bar avec sauce au cava et garniture",
+    "ingredientes": [
+      "filet de bar",
+      "sauce au cava",
+      "garniture"
+    ]
+  },
+  {
+    "id": "p028",
+    "hash": "5033148347df50ab",
+    "nombre": "Filet de Veau",
+    "descripcion": "Avec pommes de terre nouvelles.",
+    "ingredientes": [
+      "filet de veau",
+      "pommes de terre nouvelles"
+    ]
+  },
+  {
+    "id": "p025",
+    "hash": "47a9f444b53f4255",
+    "nombre": "Tarte au Fromage",
+    "descripcion": "En attente de confirmation des ingrédients auprès du restaurant.",
+    "ingredientes": []
+  },
+  {
+    "id": "p026",
+    "hash": "cd93b2afbc23f621",
+    "nombre": "Gâteau de Carotte",
+    "descripcion": "En attente de confirmation des ingrédients auprès du restaurant.",
+    "ingredientes": []
+  },
+  {
+    "id": "p027",
+    "hash": "f7f93a1bff443248",
+    "nombre": "Tarte au Chocolat",
+    "descripcion": "En attente de confirmation des ingrédients auprès du restaurant.",
+    "ingredientes": []
+  }
+]
