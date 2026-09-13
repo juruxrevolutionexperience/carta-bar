@@ -25,9 +25,10 @@ con fotos reales, y el QR está listo para las mesas.
 - ⬜ Confirmar con el restaurante los alérgenos de 4 platos (Tataki de Atún y las
   3 tartas): la carta original no los detalla y hoy son estimados
 - ✅ Un plato sin alérgenos confirmados nunca aparece como apto (filtro determinista)
-- 🔍 Límite de peticiones por cliente. Detrás de nginx necesita `CONFIAR_PROXY=true`:
-  ya está puesto (sin él, todos los comensales compartían cupo). Falta comprobarlo
-  con peticiones reales desde dos IPs
+- ✅ Límite de peticiones por cliente detrás de nginx: `CONFIAR_PROXY=true` y la IP que
+  añade nginx, no la que manda el cliente. Probado en producción con 130 peticiones
+  con IP inventada: antes pasaban las 130, ahora se cortan al agotar el cupo. Que cada
+  comensal tenga su propio cupo lo cubre un test
 - ✅ Tope de gasto diario de 5 USD (el chat pasa a "consulta al personal", la carta sigue)
 - 🔍 Registro por llamada: pregunta, idioma, tokens, fecha. Se comprueba con la primera
   pregunta real en producción
@@ -53,13 +54,13 @@ Los 🔍 están desplegados; se dan por buenos al probarlos en el iPhone.
 ### Despliegue
 - ✅ Servidor y app funcionando con HTTPS
 - ✅ Claves y conexión a BD en variables de entorno, fuera del código
-- 🔍 Modelo de embeddings dentro de la imagen, no se descarga al arrancar. Pero el
-  arranque aún consulta Hugging Face (aviso en los logs): falta `HF_HUB_OFFLINE=1`
+- ✅ Modelo de embeddings dentro de la imagen, y el arranque ya no consulta Hugging Face
+  (`HF_HUB_OFFLINE=1`: 0 avisos en los logs; arranca en ~10 s)
 - ⬜ Desplegar desde GitHub, no copiando desde el portátil
-- ⬜ Dockerfile con dependencias y modelo antes que el código (build de ~6 min a ~30 s)
+- ✅ Dockerfile con dependencias y modelo antes que el código: build de 470 s a 4 s
 - ⬜ Copia de seguridad diaria de datos/
 - ⬜ Probado en móvil, con datos móviles, en los 4 idiomas
-- ⬜ QR generado
+- ✅ QR generado (PNG y SVG) y verificado leyéndolo: apunta a https://cartia.jurux.app
 - ⬜ Parar gym-app, que sigue corriendo sin dominio (sus datos quedan en su volumen)
 
 ---
@@ -83,7 +84,7 @@ Los 🔍 están desplegados; se dan por buenos al probarlos en el iPhone.
 - ⬜ La carta pasa de ficheros a la base de datos: cambiar un precio sin redesplegar
 - ⬜ Quitar `la-catedral` escrito en el código
 - ⬜ Almacenamiento para las fotos
-- ⬜ Desplegar sin caída (hoy ~25 s mientras arranca el contenedor)
+- ⬜ Desplegar sin caída (hoy ~10 s mientras arranca el contenedor)
 
 ### Pantallas
 - ⬜ Login por restaurante

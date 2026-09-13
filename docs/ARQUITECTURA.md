@@ -35,7 +35,7 @@ Cómo está montado hoy, qué es sólido y qué está cogido con pinzas.
 | Código | `/home/xele/cartaBar` |
 | Contenedor | `carta-bar`, solo en loopback `127.0.0.1:8001` |
 | nginx | `/etc/nginx/sites-available/carta`; certbot renueva el certificado solo |
-| DNS | Cloudflare, registro A `cartia` → 178.104.233.131, **solo DNS** (nube gris) |
+| DNS | Cloudflare, registro A `cartia` → 178.104.233.131, **solo DNS** (nube gris). Con la nube naranja, la IP que ve nginx sería la de Cloudflare y el límite de peticiones dejaría de distinguir comensales |
 | Base de datos | Supabase por el *Session pooler*: la conexión directa es solo IPv6 |
 | Variables | `/home/xele/cartaBar/.env` en el servidor, fuera de git |
 | Seguridad del host | ufw (22, 80, 443) y fail2ban. La IP de casa está en `ignoreip` de `/etc/fail2ban/jail.local` |
@@ -54,8 +54,10 @@ ssh xele@178.104.233.131 \
   `TOPE_DIARIO_USD`, `LOGS_JSON`). Copiarlo encima las borra.
 - **No lanzar dos despliegues a la vez**: se pisan y el contenedor puede quedar
   arrancado con la imagen anterior. Si pasa: `up -d --force-recreate`.
-- **~25 s de caída** al final, mientras el contenedor carga el modelo. No desplegar
+- **~10 s de caída** al final, mientras el contenedor carga el modelo. No desplegar
   en hora punta.
+- Si solo cambia el código, el build tarda unos segundos. Si cambian `pyproject.toml`,
+  `uv.lock` o el modelo de `embeddings.py`, vuelve a tardar ~8 min.
 
 ## Qué está sólido
 
@@ -76,9 +78,9 @@ ssh xele@178.104.233.131 \
 | 3 | `la-catedral` escrito en el código | Un segundo restaurante no cabe sin tocar código | Fase 3 |
 | 4 | Las fotos no tienen almacenamiento | Hoy solo admite enlaces externos o `data:` | Fase 3 |
 | 5 | `.env` editado a mano en el servidor | Nada lo versiona ni lo comprueba | Con el punto 2 |
-| 6 | El arranque consulta Hugging Face | Si Hugging Face falla, el arranque se resiente; falta `HF_HUB_OFFLINE=1` | Fase 1 |
-| 7 | ~25 s de caída en cada despliegue | El QR da error mientras arranca | Fase 3 |
-| 8 | El Dockerfile copia el código antes que las dependencias | Cualquier cambio reconstruye PyTorch y el modelo: ~6 min | Fase 1 |
+| 6 | El arranque consultaba Hugging Face | Resuelto con `HF_HUB_OFFLINE=1`: 0 avisos en los logs | ✅ |
+| 7 | Caída en cada despliegue mientras arranca | ~10 s medidos: el QR da error ese rato | Fase 3 |
+| 8 | El Dockerfile copiaba el código antes que las dependencias | Resuelto: el build pasa de 470 s a 4 s | ✅ |
 
 El 1, 3 y 4 son el mismo cambio de fondo: la carta pasa de ficheros a la base de datos.
 Es la condición para el panel de gestión, no una pantalla más.
