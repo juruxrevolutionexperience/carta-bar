@@ -19,10 +19,11 @@ LIMITE_PREGUNTAR = "10/minute;60/hour"
 # disco en cada petición: sin tope siguen siendo un blanco fácil.
 LIMITE_GENERAL = "120/minute"
 
-# Detrás de nginx o Cloudflare, request.client.host es la IP del proxy y TODOS
-# los clientes compartirían el mismo cupo. Pero fiarse de X-Forwarded-For sin
-# un proxy delante permite falsificar la cabecera y saltarse el límite entero.
-# Por eso es una decisión explícita de despliegue, no un automatismo.
+# Detrás de nginx, request.client.host es la IP del proxy y TODOS los clientes
+# compartirían el mismo cupo. Pero fiarse de X-Forwarded-For sin un proxy delante
+# permite falsificar la cabecera y saltarse el límite entero. Por eso es una
+# decisión explícita de despliegue, no un automatismo. Supone un único proxy: con
+# otro delante (Cloudflare con la nube naranja) la IP útil ya no es la última.
 CONFIAR_PROXY = os.getenv("CONFIAR_PROXY", "false").lower() == "true"
 
 
@@ -31,7 +32,8 @@ def ip_cliente(request: Request) -> str:
     if CONFIAR_PROXY:
         reenviada = request.headers.get("x-forwarded-for")
         if reenviada:
-            return reenviada.split(",")[0].strip()
+            # El último valor lo añade nginx; los anteriores los manda el cliente.
+            return reenviada.split(",")[-1].strip()
     return get_remote_address(request)
 
 
