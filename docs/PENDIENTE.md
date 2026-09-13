@@ -2,6 +2,9 @@
 
 Leyenda: ✅ hecho y probado · 🔍 hecho, falta verificar · ⬜ pendiente
 
+Producción: https://cartia.jurux.app · cómo está montado, en
+[docs/ARQUITECTURA.md](ARQUITECTURA.md)
+
 ## Reglas
 1. Solo se trabaja en la fase actual.
 2. Una fase se cierra cuando se cumple su "Terminada cuando".
@@ -18,30 +21,46 @@ con fotos reales, y el QR está listo para las mesas.
 ### Funciona y es seguro
 - ✅ Conexión a Supabase por el pooler
 - ✅ El agente responde en el idioma del cliente
-- ✅ Ingredientes de la carta confirmados (reemplazada por la carta oficial de 28 platos)
-- ✅ Un plato sin alérgenos confirmados nunca aparece como apto (filtro determinista;
-  4 platos tienen alérgenos estimados por falta de descripción de origen, no confirmados
-  por el restaurante — pendiente confirmar con ellos)
-- ✅ Límite de peticiones por IP/sesión y de longitud del mensaje
-- ✅ Tope de gasto diario (el chat pasa a "consulta al personal", la carta sigue)
-- ✅ Registro por llamada: pregunta, idioma, tokens, fecha (sin datos personales)
+- ✅ Carta oficial de 28 platos, en los 4 idiomas
+- ⬜ Confirmar con el restaurante los alérgenos de 4 platos (Tataki de Atún y las
+  3 tartas): la carta original no los detalla y hoy son estimados
+- ✅ Un plato sin alérgenos confirmados nunca aparece como apto (filtro determinista)
+- 🔍 Límite de peticiones por cliente. Detrás de nginx necesita `CONFIAR_PROXY=true`:
+  ya está puesto (sin él, todos los comensales compartían cupo). Falta comprobarlo
+  con peticiones reales desde dos IPs
+- ✅ Tope de gasto diario de 5 USD (el chat pasa a "consulta al personal", la carta sigue)
+- 🔍 Registro por llamada: pregunta, idioma, tokens, fecha. Se comprueba con la primera
+  pregunta real en producción
 - ✅ Aviso de alérgenos visible en la carta
+- ✅ Ni la página ni la carta se guardan en caché: un cambio llega al desplegar
+- ⬜ Probar el chat en producción con una pregunta real (no se ha hecho: gasta)
 
 ### Se ve bien (arreglos, no funciones nuevas)
-- ⬜ El botón del chat no tapa el último plato
-- ⬜ El selector de idioma no muestra "ES ES"
-- ⬜ Tarjetas de categoría alineadas
-- ⬜ Barra de categorías fija al hacer scroll
-- ⬜ Fotos reales de los platos (comprimidas, con carga diferida)
-- ⬜ Tocar la foto abre un visor (se cierra con X, tocando fuera y con "atrás")
+Los 🔍 están desplegados; se dan por buenos al probarlos en el iPhone.
+- 🔍 El botón del chat no tapa el último plato
+- 🔍 El selector de idioma no muestra "ES ES"
+- 🔍 Tarjetas de categoría alineadas
+- 🔍 Barra de categorías fija al hacer scroll
+- 🔍 Escala fija en móvil: sin zoom de pellizco ni de doble toque
+- 🔍 Safari no amplía la página al tocar el campo del chat
+- 🔍 El botón del micrófono se retira si el navegador deniega el permiso
+- ⬜ Fotos reales de los platos, comprimidas. El campo `foto` y la carga diferida ya
+  están: falta que el restaurante pase las fotos
+- 🔍 Tocar la foto abre un visor. Abrir y cerrar con la X, comprobado; tocar fuera y
+  "atrás", hechos pero sin probar en el iPhone
+- ⬜ Quitar la foto de prueba de la Burger La Catedral
 
 ### Despliegue
-- ⬜ Servidor elegido y app funcionando con HTTPS
-- ⬜ Claves y conexión a BD en variables de entorno, fuera del código
-- ⬜ Modelo de embeddings guardado en el servidor, no descargado al arrancar
+- ✅ Servidor y app funcionando con HTTPS
+- ✅ Claves y conexión a BD en variables de entorno, fuera del código
+- 🔍 Modelo de embeddings dentro de la imagen, no se descarga al arrancar. Pero el
+  arranque aún consulta Hugging Face (aviso en los logs): falta `HF_HUB_OFFLINE=1`
+- ⬜ Desplegar desde GitHub, no copiando desde el portátil
+- ⬜ Dockerfile con dependencias y modelo antes que el código (build de ~6 min a ~30 s)
 - ⬜ Copia de seguridad diaria de datos/
 - ⬜ Probado en móvil, con datos móviles, en los 4 idiomas
 - ⬜ QR generado
+- ⬜ Parar gym-app, que sigue corriendo sin dominio (sus datos quedan en su volumen)
 
 ---
 
@@ -60,6 +79,13 @@ con fotos reales, y el QR está listo para las mesas.
 
 **Se empieza solo si:** la Fase 2 da señal positiva.
 
+### Cimientos, antes de la primera pantalla
+- ⬜ La carta pasa de ficheros a la base de datos: cambiar un precio sin redesplegar
+- ⬜ Quitar `la-catedral` escrito en el código
+- ⬜ Almacenamiento para las fotos
+- ⬜ Desplegar sin caída (hoy ~25 s mientras arranca el contenedor)
+
+### Pantallas
 - ⬜ Login por restaurante
 - ⬜ CRUD de platos con checkboxes de alérgenos y etiquetas
 - ⬜ Gestión de categorías
@@ -90,7 +116,8 @@ con fotos reales, y el QR está listo para las mesas.
 - Cartas de distintos negocios (variantes, extras, combos, plantillas) → detalle en
   [docs/APARCADO-CARTAS-MULTINEGOCIO.md](APARCADO-CARTAS-MULTINEGOCIO.md)
 - Transformador de cartas PDF/foto → modelo de datos → mismo documento anterior
-- Revisar qué va en BD y qué en ficheros → al empezar el panel
+- Transcripción de voz en el servidor, para iPhone → solo si en Fase 2 se ve que la
+  gente usa el micrófono
 - VeriFactu → al montar la facturación
 
 ## EN PARALELO (días separados)
