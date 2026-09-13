@@ -1,7 +1,6 @@
 FROM python:3.12-slim
 
-# uv resuelve e instala desde uv.lock, asi la imagen usa las mismas versiones
-# exactas que en desarrollo.
+# uv instala desde uv.lock: las mismas versiones exactas que en desarrollo.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
@@ -11,15 +10,21 @@ ENV UV_COMPILE_BYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     HF_HOME=/opt/modelos
 
-COPY pyproject.toml uv.lock README.md ./
-COPY src ./src
+# Capas de lo que menos cambia a lo que más: tocar código no reinstala PyTorch.
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
 
+# Solo embeddings.py: esta capa se rehace únicamente si cambia el modelo.
+COPY src/carta_bar/embeddings.py /tmp/embeddings.py
+RUN uv run --no-sync python -c "import runpy; runpy.run_path('/tmp/embeddings.py')['cargar_modelo']()"
+
+COPY README.md ./
+COPY src ./src
 RUN uv sync --frozen --no-dev
 
-# El modelo de embeddings se descarga aqui, al construir la imagen, y no en
-# cada arranque: sin esto el contenedor tarda y depende de Hugging Face para
-# poder levantar.
-RUN uv run python -c "from carta_bar.embeddings import cargar_modelo; cargar_modelo()"
+# El modelo ya va en la imagen; sin esto el arranque consulta a Hugging Face.
+ENV HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1
 
 COPY datos ./datos
 COPY web ./web
@@ -27,4 +32,5 @@ COPY sql ./sql
 
 EXPOSE 8000
 
-CMD ["uv", "run", "uvicorn", "carta_bar.api:app", "--host", "0.0.0.0", "--port", "8000"]
+# El entorno se sincronizó al construir; sin --no-sync uv lo recompila al arrancar.
+CMD ["uv", "run", "--no-sync", "uvicorn", "carta_bar.api:app", "--host", "0.0.0.0", "--port", "8000"]
