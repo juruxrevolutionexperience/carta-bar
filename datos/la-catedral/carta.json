@@ -349,8 +349,7 @@
     "vegetariano": false,
     "sin_gluten": false,
     "sin_lactosa": false,
-    "disponible": true,
-    "foto": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIj4KPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+CjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzZCMkYyNCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzJCMTcxMiIvPgo8L2xpbmVhckdyYWRpZW50PjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI0MDAiIGZpbGw9InVybCgjZykiLz4KPHRleHQgeD0iMjAwIiB5PSIxODAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjcwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj4mIzEyNzgyODs8L3RleHQ+Cjx0ZXh0IHg9IjIwMCIgeT0iMjQ1IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNiIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iI0Y2RjNGMCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Rk9UTyBERSBQUlVFQkE8L3RleHQ+Cjx0ZXh0IHg9IjIwMCIgeT0iMjc4IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNyIgZmlsbD0iI0M5QkRCNiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+dG9jYSBwYXJhIGFtcGxpYXI8L3RleHQ+Cjwvc3ZnPg=="
+    "disponible": true
   },
   {
     "id": "p017",

@@ -49,7 +49,7 @@ Los 🔍 están desplegados; se dan por buenos al probarlos en el iPhone.
   están: falta que el restaurante pase las fotos
 - 🔍 Tocar la foto abre un visor. Abrir y cerrar con la X, comprobado; tocar fuera y
   "atrás", hechos pero sin probar en el iPhone
-- ⬜ Quitar la foto de prueba de la Burger La Catedral
+- ✅ Quitar la foto de prueba de la Burger La Catedral
 
 ### Despliegue
 - ✅ Servidor y app funcionando con HTTPS
