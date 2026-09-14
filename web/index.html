@@ -93,16 +93,20 @@
     padding:0 22px 14px;
   }
 
+  #titulo-cat{
+    position:sticky;top:0;z-index:10;
+    background:var(--fondo);
+    padding:14px 22px 12px;
+    border-bottom:1px solid var(--borde);
+  }
   .carrusel{
     display:flex;gap:13px;
     overflow-x:auto;overflow-y:hidden;
-    padding:12px 22px 26px;
+    padding:2px 22px 26px;
     scroll-snap-type:x proximity;
     scroll-padding-left:22px;
     scrollbar-width:none;
     -webkit-overflow-scrolling:touch;
-    position:sticky;top:0;z-index:10;
-    background:var(--fondo);
   }
   .carrusel::-webkit-scrollbar{display:none}
 
@@ -202,19 +206,23 @@
   /* ---------- chat ---------- */
 
   .lanzador{
-    position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));
-    transform:translateX(-50%);z-index:30;
-    display:flex;align-items:center;gap:10px;
+    position:fixed;right:calc(18px + env(safe-area-inset-right));
+    bottom:calc(18px + env(safe-area-inset-bottom));
+    z-index:30;
+    width:56px;height:56px;border-radius:50%;
+    display:grid;place-items:center;
     background:var(--tinta);color:#fff;
-    border:0;border-radius:100px;
-    padding:15px 27px;
-    font-family:"Inter",sans-serif;
-    font-size:15px;font-weight:500;
+    border:0;
+    font-size:24px;line-height:1;
     cursor:pointer;
     box-shadow:0 10px 30px rgba(23,19,16,.32);
   }
   .lanzador:focus-visible{outline:2px solid var(--marca);outline-offset:3px}
-  .punto{width:7px;height:7px;border-radius:50%;background:#4ADE80;flex-shrink:0}
+  .punto{
+    position:absolute;top:5px;right:5px;
+    width:11px;height:11px;border-radius:50%;
+    background:#4ADE80;border:2px solid var(--tinta);
+  }
 
   .panel{
     position:fixed;inset:0;z-index:40;
@@ -422,16 +430,16 @@
   <div class="divisor"></div>
 
   <main>
-    <h2 class="seccion-tit" id="titulo-cat" style="padding:0 0 6px"></h2>
+    <h2 class="seccion-tit" id="titulo-cat"></h2>
     <div id="lista"></div>
   </main>
 
   <p class="pie" id="pie"></p>
 </div>
 
-<button class="lanzador" id="abrir">
+<button class="lanzador" id="abrir" aria-label="Pregunta lo que quieras">
   <span class="punto"></span>
-  Pregunta lo que quieras
+  💬
 </button>
 
 <section class="panel" id="panel" aria-hidden="true">
@@ -613,7 +621,7 @@ function aplicarIdioma(){
 
   document.getElementById("bandera-actual").textContent = textos.bandera || idioma.toUpperCase();
   document.querySelector(".seccion-tit").textContent = t("menu");
-  document.querySelector(".lanzador").lastChild.textContent = " " + t("preguntar");
+  document.querySelector(".lanzador").setAttribute("aria-label", t("preguntar"));
   document.querySelector(".panel-top h2").textContent = t("titulo_chat");
   document.getElementById("entrada").placeholder = t("escribe");
   document.getElementById("enviar").textContent = t("enviar");
