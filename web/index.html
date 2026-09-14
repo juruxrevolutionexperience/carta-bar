@@ -928,7 +928,12 @@ function escuchar(){
   pintarMicro(true);
 }
 
-if (MotorVoz){
+// Desactivado tras la prueba en produccion: daba problemas. Reactivar
+// cambiando esta constante a true cuando se retome (ver APARCADO en
+// docs/PENDIENTE.md: "Transcripcion de voz en el servidor, para iPhone").
+const MICROFONO_ACTIVADO = false;
+
+if (MotorVoz && MICROFONO_ACTIVADO){
   micro.hidden = false;
   micro.title = micro.getAttribute("aria-label") || "";
   micro.onclick = () => {
