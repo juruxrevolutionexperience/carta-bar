@@ -78,11 +78,19 @@ Probado en el iPhone, confirmado bueno.
 
 ## FASE 3 · Panel de gestión (Bloque 2)
 
-**Se empieza solo si:** la Fase 2 da señal positiva.
+**Se empieza solo si:** la Fase 2 da señal positiva — condición saltada
+a propósito: se decidió empezar los cimientos ya, sin esperar la prueba
+real, porque lo único que falta de Fase 1 son las fotos y depende del
+restaurante.
 
 ### Cimientos, antes de la primera pantalla
-- ⬜ La carta pasa de ficheros a la base de datos: cambiar un precio sin redesplegar
-- ⬜ Quitar `la-catedral` escrito en el código
+- ✅ La carta pasa de ficheros a la base de datos: 4 tablas nuevas en
+  Supabase (`restaurantes`, `categorias`, `platos`, `traducciones_platos`),
+  migradas y verificadas — un `UPDATE` en Supabase cambia un precio sin
+  redesplegar. Interruptor `CARTA_BD_ACTIVA` en `.env`: si Postgres falla,
+  se cae a los ficheros JSON solos
+- ✅ Quitar `la-catedral` escrito en el código: ahora `RESTAURANTE_ID` en
+  `.env`
 - ⬜ Almacenamiento para las fotos
 - ⬜ Desplegar sin caída (hoy ~10 s mientras arranca el contenedor)
 

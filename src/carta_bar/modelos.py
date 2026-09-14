@@ -88,6 +88,7 @@ class MensajeChat(BaseModel):
 class Categoria(BaseModel):
     id: str
     nombre: str
+    nombre_i18n: dict[str, str] = {}
     orden: int
 
 

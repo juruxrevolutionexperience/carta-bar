@@ -12,7 +12,7 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from carta_bar.agente import responder_cliente
 from carta_bar.busqueda import indexar
-from carta_bar.datos import cargar_carta_traducida, cargar_categorias
+from carta_bar.datos import cargar_carta_traducida, cargar_categorias, cargar_config
 from carta_bar.embeddings import cargar_modelo
 from carta_bar.limites import LIMITE_PREGUNTAR, limite_superado, limiter
 from carta_bar.llm import MODELO
@@ -34,8 +34,10 @@ app.add_exception_handler(RateLimitExceeded, limite_superado)
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(CabecerasSeguridad)
 
+RESTAURANTE_ID = os.getenv("RESTAURANTE_ID", "la-catedral")
+
 modelo = cargar_modelo()
-carta, vectores = indexar(modelo, "la-catedral")
+carta, vectores = indexar(modelo, RESTAURANTE_ID)
 control = ControlGasto(crear_repositorio())
 
 
@@ -55,12 +57,12 @@ class Pregunta(BaseModel):
 
 @app.get("/carta")
 def obtener_carta(idioma: Idioma = "es") -> list[dict[str, object]]:
-    return cargar_carta_traducida("la-catedral", idioma)
+    return cargar_carta_traducida(RESTAURANTE_ID, idioma)
 
 
 @app.get("/categorias")
 def obtener_categorias() -> list[Categoria]:
-    return cargar_categorias("la-catedral")
+    return cargar_categorias(RESTAURANTE_ID)
 
 
 # Lista blanca de lo que la carta publica puede ver. El fichero de configuracion
@@ -82,15 +84,14 @@ CAMPOS_CONFIG_PUBLICOS = frozenset(
 
 @app.get("/config")
 def obtener_config() -> dict[str, object]:
-    ruta = Path("datos/la-catedral/config.json")
-    datos: dict[str, object] = json.loads(ruta.read_text(encoding="utf-8"))
+    datos = cargar_config(RESTAURANTE_ID)
     return {k: v for k, v in datos.items() if k in CAMPOS_CONFIG_PUBLICOS}
 
 
 @app.post("/preguntar")
 @limiter.limit(LIMITE_PREGUNTAR)
 def preguntar(request: Request, pregunta: Pregunta) -> dict[str, str]:
-    restaurante_id = "la-catedral"
+    restaurante_id = RESTAURANTE_ID
 
     # El corte va ANTES de llamar al LLM: comprobarlo despues no ahorraria nada.
     if not control.hay_presupuesto(restaurante_id):

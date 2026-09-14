@@ -1,11 +1,10 @@
 import hashlib
-import json
-from pathlib import Path
+import os
 
 from pydantic import BaseModel
 
 from carta_bar.costes import Consumo, ConsumoTotal, medir
-from carta_bar.datos import _validar_slug, cargar_carta
+from carta_bar.datos import cargar_carta, cargar_traducciones, guardar_traducciones
 from carta_bar.llm import MODELO, cliente
 from carta_bar.modelos import Plato
 from carta_bar.presupuesto import ControlGasto
@@ -23,20 +22,6 @@ class PlatoTraducido(BaseModel):
 def huella(plato: Plato) -> str:
     base = plato.nombre + "|" + plato.descripcion + "|" + "|".join(plato.ingredientes)
     return hashlib.sha256(base.encode("utf-8")).hexdigest()[:16]
-
-
-def _ruta_traduccion(restaurante_id: str, idioma: str) -> Path:
-    _validar_slug(restaurante_id, "restaurante_id")
-    _validar_slug(idioma, "idioma")
-    return Path(f"datos/{restaurante_id}/carta.{idioma}.json")
-
-
-def cargar_traduccion(restaurante_id: str, idioma: str) -> dict[str, dict[str, object]]:
-    ruta = _ruta_traduccion(restaurante_id, idioma)
-    if not ruta.exists():
-        return {}
-    datos = json.loads(ruta.read_text(encoding="utf-8"))
-    return {d["id"]: d for d in datos}
 
 
 def traducir_plato(plato: Plato, idioma: str) -> tuple[PlatoTraducido, Consumo]:
@@ -71,7 +56,7 @@ def traducir_plato(plato: Plato, idioma: str) -> tuple[PlatoTraducido, Consumo]:
 
 def traducir_carta(restaurante_id: str, idioma: str) -> ConsumoTotal:
     carta = cargar_carta(restaurante_id)
-    existentes = cargar_traduccion(restaurante_id, idioma)
+    existentes = cargar_traducciones(restaurante_id, idioma)
 
     resultado = []
     traducidos = 0
@@ -99,8 +84,7 @@ def traducir_carta(restaurante_id: str, idioma: str) -> ConsumoTotal:
         traducidos += 1
         print(f"  traducido: {plato.nombre}")
 
-    ruta = _ruta_traduccion(restaurante_id, idioma)
-    ruta.write_text(json.dumps(resultado, ensure_ascii=False, indent=2), encoding="utf-8")
+    guardar_traducciones(restaurante_id, idioma, resultado)
     print(
         f"{idioma}: {traducidos} traducidos, {len(carta) - traducidos} sin cambios "
         f"- ${consumo.coste_usd:.4f}"
@@ -110,7 +94,7 @@ def traducir_carta(restaurante_id: str, idioma: str) -> ConsumoTotal:
 
 def main() -> None:
     """Traducir es gasto real: se contabiliza igual que las preguntas."""
-    restaurante_id = "la-catedral"
+    restaurante_id = os.getenv("RESTAURANTE_ID", "la-catedral")
     control = ControlGasto(crear_repositorio())
     total = ConsumoTotal()
 

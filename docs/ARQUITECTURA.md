@@ -73,14 +73,23 @@ ssh xele@178.104.233.131 \
 
 | # | Problema | Consecuencia | Se arregla en |
 |---|---|---|---|
-| 1 | La carta vive en JSON dentro de la imagen | Cambiar un precio exige reconstruir y redesplegar. Sin esto no hay panel posible | Fase 3 |
+| 1 | La carta vive en JSON dentro de la imagen | Cambiar un precio exige reconstruir y redesplegar. Sin esto no hay panel posible | ✅ |
 | 2 | Se despliega copiando desde el portátil | El servidor no sabe qué versión corre; otro despliegue puede pisarlo | Fase 1 |
-| 3 | `la-catedral` escrito en el código | Un segundo restaurante no cabe sin tocar código | Fase 3 |
+| 3 | `la-catedral` escrito en el código | Un segundo restaurante no cabe sin tocar código | ✅ |
 | 4 | Las fotos no tienen almacenamiento | Hoy solo admite enlaces externos o `data:` | Fase 3 |
 | 5 | `.env` editado a mano en el servidor | Nada lo versiona ni lo comprueba | Con el punto 2 |
 | 6 | El arranque consultaba Hugging Face | Resuelto con `HF_HUB_OFFLINE=1`: 0 avisos en los logs | ✅ |
 | 7 | Caída en cada despliegue mientras arranca | ~10 s medidos: el QR da error ese rato | Fase 3 |
 | 8 | El Dockerfile copiaba el código antes que las dependencias | Resuelto: el build pasa de 470 s a 4 s | ✅ |
 
-El 1, 3 y 4 son el mismo cambio de fondo: la carta pasa de ficheros a la base de datos.
-Es la condición para el panel de gestión, no una pantalla más.
+El 1 y el 3 se resolvieron juntos: la carta pasa de ficheros a Postgres
+(tablas `restaurantes`, `categorias`, `platos`, `traducciones_platos`),
+migrada y verificada — un `UPDATE` en Supabase cambia un precio sin
+redesplegar. `RESTAURANTE_ID` en `.env` sustituye el literal en código.
+Interruptor `CARTA_BD_ACTIVA`: si Postgres falla, se cae a los ficheros
+JSON solos, igual que ya hacía `uso_llm`. **Pendiente en el servidor:**
+añadir `RESTAURANTE_ID` y `CARTA_BD_ACTIVA` a su `.env`, desplegar este
+código, y activar `CARTA_BD_ACTIVA=true` solo después de confirmar que
+sirve la carta bien.
+
+El 4 (almacenamiento de fotos) sigue pendiente para la Fase 3.
