@@ -19,7 +19,7 @@ import structlog
 from psycopg.types.json import Jsonb
 from psycopg_pool import ConnectionPool
 
-from carta_bar.modelos import Categoria, Plato
+from carta_bar.modelos import Alergeno, Categoria, Etiqueta, Plato
 
 log = structlog.get_logger()
 
@@ -53,6 +53,30 @@ class RepositorioCarta(Protocol):
     def guardar_traducciones(
         self, restaurante_id: str, idioma: str, filas: list[dict[str, object]]
     ) -> None: ...
+
+    def obtener_clave_hash(self, restaurante_id: str) -> str | None: ...
+
+    def guardar_clave_hash(self, restaurante_id: str, clave_hash: str) -> None: ...
+
+    def actualizar_plato_editable(
+        self,
+        restaurante_id: str,
+        plato_id: str,
+        nombre: str,
+        descripcion: str,
+        precio: float | None,
+        ingredientes: list[str],
+        alergenos: list[Alergeno],
+        etiqueta: Etiqueta | None,
+        vegano: bool,
+        vegetariano: bool,
+        sin_gluten: bool,
+        sin_lactosa: bool,
+    ) -> bool: ...
+
+    def actualizar_disponibilidad(
+        self, restaurante_id: str, plato_id: str, disponible: bool
+    ) -> bool: ...
 
 
 class RepositorioCartaFicheros:
@@ -133,6 +157,34 @@ class RepositorioCartaFicheros:
     ) -> None:
         ruta = self._ruta_traduccion(restaurante_id, idioma)
         ruta.write_text(json.dumps(filas, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def obtener_clave_hash(self, restaurante_id: str) -> str | None:
+        raise NotImplementedError("El login del panel requiere CARTA_BD_ACTIVA=true")
+
+    def guardar_clave_hash(self, restaurante_id: str, clave_hash: str) -> None:
+        raise NotImplementedError("El login del panel requiere CARTA_BD_ACTIVA=true")
+
+    def actualizar_plato_editable(
+        self,
+        restaurante_id: str,
+        plato_id: str,
+        nombre: str,
+        descripcion: str,
+        precio: float | None,
+        ingredientes: list[str],
+        alergenos: list[Alergeno],
+        etiqueta: Etiqueta | None,
+        vegano: bool,
+        vegetariano: bool,
+        sin_gluten: bool,
+        sin_lactosa: bool,
+    ) -> bool:
+        raise NotImplementedError("Editar platos requiere CARTA_BD_ACTIVA=true")
+
+    def actualizar_disponibilidad(
+        self, restaurante_id: str, plato_id: str, disponible: bool
+    ) -> bool:
+        raise NotImplementedError("Editar platos requiere CARTA_BD_ACTIVA=true")
 
 
 class RepositorioCartaPostgres:
@@ -270,6 +322,70 @@ class RepositorioCartaPostgres:
                     ),
                 )
 
+    def obtener_clave_hash(self, restaurante_id: str) -> str | None:
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT clave_hash FROM restaurantes WHERE id = %s",
+                (restaurante_id,),
+            )
+            fila = cur.fetchone()
+        return fila[0] if fila else None
+
+    def guardar_clave_hash(self, restaurante_id: str, clave_hash: str) -> None:
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE restaurantes SET clave_hash = %s WHERE id = %s",
+                (clave_hash, restaurante_id),
+            )
+
+    def actualizar_plato_editable(
+        self,
+        restaurante_id: str,
+        plato_id: str,
+        nombre: str,
+        descripcion: str,
+        precio: float | None,
+        ingredientes: list[str],
+        alergenos: list[Alergeno],
+        etiqueta: Etiqueta | None,
+        vegano: bool,
+        vegetariano: bool,
+        sin_gluten: bool,
+        sin_lactosa: bool,
+    ) -> bool:
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE platos SET nombre = %s, descripcion = %s, precio = %s, "
+                "ingredientes = %s, alergenos = %s, etiqueta = %s, vegano = %s, "
+                "vegetariano = %s, sin_gluten = %s, sin_lactosa = %s "
+                "WHERE restaurante_id = %s AND id = %s",
+                (
+                    nombre,
+                    descripcion,
+                    precio,
+                    Jsonb(ingredientes),
+                    Jsonb([a.value for a in alergenos]),
+                    etiqueta.value if etiqueta else None,
+                    vegano,
+                    vegetariano,
+                    sin_gluten,
+                    sin_lactosa,
+                    restaurante_id,
+                    plato_id,
+                ),
+            )
+            return cur.rowcount > 0
+
+    def actualizar_disponibilidad(
+        self, restaurante_id: str, plato_id: str, disponible: bool
+    ) -> bool:
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE platos SET disponible = %s WHERE restaurante_id = %s AND id = %s",
+                (disponible, restaurante_id, plato_id),
+            )
+            return cur.rowcount > 0
+
     def aplicar_esquema(self, ruta: str = "sql/esquema.sql") -> None:
         with open(ruta, encoding="utf-8") as f:
             sql = f.read()
@@ -359,3 +475,47 @@ def guardar_traducciones(
     restaurante_id: str, idioma: str, filas: list[dict[str, object]]
 ) -> None:
     obtener_repositorio_carta().guardar_traducciones(restaurante_id, idioma, filas)
+
+
+def obtener_clave_hash(restaurante_id: str) -> str | None:
+    return obtener_repositorio_carta().obtener_clave_hash(restaurante_id)
+
+
+def guardar_clave_hash(restaurante_id: str, clave_hash: str) -> None:
+    obtener_repositorio_carta().guardar_clave_hash(restaurante_id, clave_hash)
+
+
+def actualizar_plato_editable(
+    restaurante_id: str,
+    plato_id: str,
+    nombre: str,
+    descripcion: str,
+    precio: float | None,
+    ingredientes: list[str],
+    alergenos: list[Alergeno],
+    etiqueta: Etiqueta | None,
+    vegano: bool,
+    vegetariano: bool,
+    sin_gluten: bool,
+    sin_lactosa: bool,
+) -> bool:
+    return obtener_repositorio_carta().actualizar_plato_editable(
+        restaurante_id,
+        plato_id,
+        nombre,
+        descripcion,
+        precio,
+        ingredientes,
+        alergenos,
+        etiqueta,
+        vegano,
+        vegetariano,
+        sin_gluten,
+        sin_lactosa,
+    )
+
+
+def actualizar_disponibilidad(restaurante_id: str, plato_id: str, disponible: bool) -> bool:
+    return obtener_repositorio_carta().actualizar_disponibilidad(
+        restaurante_id, plato_id, disponible
+    )

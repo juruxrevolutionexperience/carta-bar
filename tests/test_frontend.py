@@ -12,10 +12,11 @@ import pytest
 
 INDICE = Path("web/index.html")
 IDIOMAS = Path("datos/idiomas.json")
+PAGINAS_ADMIN = [Path("web/admin_login.html"), Path("web/admin.html")]
 
 
-def javascript() -> str:
-    html = INDICE.read_text(encoding="utf-8")
+def javascript(ruta: Path = INDICE) -> str:
+    html = ruta.read_text(encoding="utf-8")
     js = "\n".join(re.findall(r"<script>(.*?)</script>", html, re.S))
     # esprima llega a ES2017 y no conoce el catch sin variable (ES2019),
     # que los navegadores soportan desde 2018. Se adapta solo para analizar.
@@ -24,6 +25,11 @@ def javascript() -> str:
 
 def test_el_javascript_de_la_interfaz_no_tiene_errores_de_sintaxis() -> None:
     esprima.parseScript(javascript())
+
+
+@pytest.mark.parametrize("pagina", PAGINAS_ADMIN)
+def test_el_javascript_del_panel_no_tiene_errores_de_sintaxis(pagina: Path) -> None:
+    esprima.parseScript(javascript(pagina))
 
 
 def test_el_boton_de_voz_nace_oculto() -> None:

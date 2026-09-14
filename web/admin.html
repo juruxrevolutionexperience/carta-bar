@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Panel de gestión</title>
+<style>
+  :root{
+    --marca:#B03A2E;
+    --tinta:#171310;
+    --tinta-media:#6A615B;
+    --fondo:#FFFFFF;
+    --fondo-alt:#F6F3F0;
+    --borde:#EDE8E3;
+    --verde:#1E7A48;
+    --verde-suave:#E7F4EC;
+    --rojo:#B03A2E;
+    --rojo-suave:#FBEAE8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
+    /* El desplazamiento se mantiene, el zoom de pellizco no. Safari en iPhone
+       ignora user-scalable=no, asi que el meta viewport no basta por si solo. */
+    touch-action:pan-x pan-y;
+  }
+  body{
+    background:var(--fondo-alt);
+    color:var(--tinta);
+    font-family:system-ui,sans-serif;
+    min-height:100vh;
+    padding:24px;
+    /* Sitio para la barra inferior fija, más el gesto de inicio del iPhone. */
+    padding-bottom:calc(88px + env(safe-area-inset-bottom));
+    touch-action:pan-x pan-y;
+    overscroll-behavior:none;
+  }
+  .app{max-width:480px;margin:0 auto}
+  header{margin-bottom:24px}
+  h1{font-size:20px}
+  .seccion[hidden]{display:none}
+  .tarjeta{
+    background:var(--fondo);
+    border:1px solid var(--borde);
+    border-radius:16px;
+    padding:24px;
+    margin-bottom:16px;
+  }
+  .tarjeta h2{font-size:15px;margin-bottom:8px}
+  .tarjeta p{color:var(--tinta-media);font-size:14px;line-height:1.5}
+  label{display:block;font-size:13px;color:var(--tinta-media);margin:14px 0 6px}
+  input,textarea{
+    width:100%;padding:11px 13px;
+    border:1px solid var(--borde);border-radius:10px;
+    /* 16px minimo: por debajo, Safari en iPhone hace zoom automatico al enfocar. */
+    font-size:16px;font-family:inherit;
+  }
+  textarea{resize:vertical;min-height:70px}
+  input:focus,textarea:focus{outline:2px solid var(--marca);outline-offset:1px}
+  button.primario{
+    margin-top:16px;padding:11px 16px;
+    background:var(--marca);color:#fff;border:none;border-radius:10px;
+    font-size:14px;font-weight:600;cursor:pointer;
+  }
+  button.primario:disabled{opacity:.6;cursor:default}
+  button.secundario{
+    margin-top:16px;margin-left:8px;padding:11px 16px;
+    background:none;color:var(--tinta-media);border:1px solid var(--borde);border-radius:10px;
+    font-size:14px;cursor:pointer;
+  }
+  .aviso{
+    display:none;border-radius:8px;padding:10px 12px;font-size:13px;margin-top:12px;
+  }
+  .aviso.visible{display:block}
+  .aviso.error{background:var(--rojo-suave);color:var(--rojo)}
+  .aviso.exito{background:var(--verde-suave);color:var(--verde)}
+
+  .fila-plato{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    padding:12px 0;border-bottom:1px solid var(--borde);
+  }
+  .fila-plato:last-child{border-bottom:none}
+  .fila-plato .info{min-width:0}
+  .fila-plato .info .nombre{font-size:14px;font-weight:600}
+  .fila-plato .info .detalle{font-size:12px;color:var(--tinta-media);margin-top:2px}
+  .fila-plato button{
+    flex-shrink:0;padding:7px 14px;
+    background:none;color:var(--marca);border:1px solid var(--marca);border-radius:8px;
+    font-size:13px;cursor:pointer;
+  }
+  .cargando{color:var(--tinta-media);font-size:13px}
+
+  .grupo-campo{margin-top:14px}
+  .grupo-campo > span{display:block;font-size:13px;color:var(--tinta-media);margin-bottom:6px}
+  .rejilla-opciones{display:flex;flex-wrap:wrap;gap:8px}
+  .opcion{
+    display:flex;align-items:center;gap:6px;
+    border:1px solid var(--borde);border-radius:20px;
+    padding:6px 12px;font-size:13px;cursor:pointer;
+  }
+  .opcion input{width:auto;margin:0}
+  .fila-plato .detalle-extra{font-size:12px;color:var(--marca);margin-top:2px}
+  .fila-plato.agotado{opacity:.55}
+  .etiqueta-agotado{
+    display:inline-block;margin-left:6px;padding:1px 8px;border-radius:20px;
+    background:var(--rojo-suave);color:var(--rojo);font-size:11px;font-weight:600;
+    vertical-align:middle;
+  }
+
+  .interruptor{
+    flex-shrink:0;position:relative;width:42px;height:24px;
+  }
+  .interruptor input{
+    position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;
+  }
+  .interruptor .riel{
+    position:absolute;inset:0;background:var(--borde);border-radius:24px;
+    transition:background .15s;pointer-events:none;
+  }
+  .interruptor .riel::before{
+    content:'';position:absolute;left:3px;top:3px;width:18px;height:18px;
+    background:#fff;border-radius:50%;transition:transform .15s;
+    box-shadow:0 1px 2px rgba(0,0,0,.25);
+  }
+  .interruptor input:checked + .riel{background:var(--verde)}
+  .interruptor input:checked + .riel::before{transform:translateX(18px)}
+  .interruptor input:disabled + .riel{opacity:.6}
+
+  .nav-inferior{
+    position:fixed;left:0;right:0;bottom:0;
+    display:flex;justify-content:space-around;
+    background:var(--fondo);
+    border-top:1px solid var(--borde);
+    padding:8px 0 calc(8px + env(safe-area-inset-bottom));
+    z-index:10;
+  }
+  .nav-item{
+    background:none;border:none;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:6px 22px;color:var(--tinta-media);font-size:11px;
+  }
+  .nav-item svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+  .nav-item.activo{color:var(--marca)}
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Panel de gestión</h1>
+    </header>
+
+    <section class="seccion" id="seccion-platos">
+      <div class="tarjeta">
+        <h2>Platos</h2>
+        <div id="lista-platos"><p class="cargando">Cargando…</p></div>
+      </div>
+    </section>
+
+    <section class="seccion" id="seccion-cuenta" hidden>
+      <div class="tarjeta">
+        <h2>Cambiar contraseña</h2>
+        <form id="form-clave">
+          <label for="actual">Contraseña actual</label>
+          <input type="password" id="actual" autocomplete="current-password" required>
+          <label for="nueva">Contraseña nueva</label>
+          <input type="password" id="nueva" autocomplete="new-password" minlength="8" required>
+          <button type="submit" class="primario" id="boton-clave">Guardar</button>
+          <div class="aviso" id="aviso-clave"></div>
+        </form>
+      </div>
+
+      <div class="tarjeta">
+        <button type="button" class="secundario" id="salir" style="margin:0;width:100%">Cerrar sesión</button>
+      </div>
+    </section>
+  </div>
+
+  <nav class="nav-inferior">
+    <button type="button" class="nav-item activo" data-seccion="platos">
+      <svg viewBox="0 0 24 24"><path d="M4 3v18M4 3c0 4 3 5 3 9s-3 5-3 9M20 3v18M20 8c-3 0-3 2-3 4s0 4 3 4"/></svg>
+      Platos
+    </button>
+    <button type="button" class="nav-item" data-seccion="cuenta">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+      Cuenta
+    </button>
+  </nav>
+
+  <script>
+    /* touch-action (CSS) no cubre del todo Safari en iPhone: estos dos
+       oyentes tapan el pellizco y el doble toque que se le escapan. */
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach((tipo) =>
+      document.addEventListener(tipo, (e) => e.preventDefault(), { passive: false }));
+
+    let ultimoToque = 0;
+    document.addEventListener('touchend', (e) => {
+      const ahora = Date.now();
+      const esCampo = e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+      if (ahora - ultimoToque <= 300 && !esCampo) {
+        e.preventDefault();
+        if (typeof e.target.click === 'function') e.target.click();
+      }
+      ultimoToque = ahora;
+    }, { passive: false });
+
+    document.querySelectorAll('.nav-item').forEach((boton) => {
+      boton.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach((b) => b.classList.remove('activo'));
+        boton.classList.add('activo');
+        document.querySelectorAll('.seccion').forEach((s) => {
+          s.hidden = s.id !== 'seccion-' + boton.dataset.seccion;
+        });
+      });
+    });
+
+    function escapar(t) {
+      return String(t === null || t === undefined ? '' : t)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    document.getElementById('salir').addEventListener('click', async () => {
+      await fetch('/admin/logout', { method: 'POST' });
+      window.location.href = '/admin/login';
+    });
+
+    // --------------------------------------------------------- platos
+    const listaPlatos = document.getElementById('lista-platos');
+    let categoriasPorId = {};
+
+    // Mismo texto que ya usa datos/idiomas.json (es.alergenos) y web/index.html
+    // (es.etiquetas) para el cliente. El panel es solo en espanol, sin pedirlo
+    // aparte a /idiomas.
+    const TEXTO_ALERGENO = {
+      gluten: 'Gluten', crustaceos: 'Crustáceos', huevos: 'Huevo', pescado: 'Pescado',
+      cacahuetes: 'Cacahuete', soja: 'Soja', lacteos: 'Lácteos',
+      frutos_cascara: 'Frutos secos', apio: 'Apio', mostaza: 'Mostaza',
+      sesamo: 'Sésamo', sulfitos: 'Sulfitos', altramuces: 'Altramuces', moluscos: 'Moluscos',
+    };
+    const TEXTO_ETIQUETA = {
+      mas_vendido: 'Más vendido', recomendacion_chef: 'Recomendación del chef',
+      nuevo: 'Nuevo', picante: 'Picante', para_compartir: 'Para compartir',
+      temporada: 'De temporada',
+    };
+    const TEXTO_DIETA = {
+      vegano: 'Vegano', vegetariano: 'Vegetariano',
+      sin_gluten: 'Sin gluten', sin_lactosa: 'Sin lactosa',
+    };
+
+    function formatoPrecio(precio) {
+      return precio === null || precio === undefined ? 'a consultar' : precio.toFixed(2) + ' €';
+    }
+
+    function resumenExtra(plato) {
+      const partes = [];
+      if (plato.etiqueta) partes.push(TEXTO_ETIQUETA[plato.etiqueta] || plato.etiqueta);
+      Object.keys(TEXTO_DIETA).forEach((clave) => {
+        if (plato[clave]) partes.push(TEXTO_DIETA[clave]);
+      });
+      return partes.join(' · ');
+    }
+
+    function filaLectura(plato) {
+      const fila = document.createElement('div');
+      fila.className = 'fila-plato' + (plato.disponible === false ? ' agotado' : '');
+      const extra = resumenExtra(plato);
+      fila.innerHTML =
+        '<div class="info">' +
+          '<div class="nombre">' + escapar(plato.nombre) +
+            (plato.disponible === false
+              ? '<span class="etiqueta-agotado">Agotado hoy</span>' : '') +
+          '</div>' +
+          '<div class="detalle">' +
+            escapar(categoriasPorId[plato.categoria] || plato.categoria) +
+            ' · ' + escapar(formatoPrecio(plato.precio)) +
+          '</div>' +
+          (extra ? '<div class="detalle-extra">' + escapar(extra) + '</div>' : '') +
+        '</div>' +
+        '<label class="interruptor">' +
+          '<input type="checkbox" class="i-disponible"' +
+          (plato.disponible !== false ? ' checked' : '') + '>' +
+          '<span class="riel"></span>' +
+        '</label>' +
+        '<button type="button">Editar</button>';
+
+      fila.querySelector('.i-disponible').addEventListener('change', async (ev) => {
+        const casilla = ev.target;
+        const nuevoValor = casilla.checked;
+        // Se actualiza la fila en el sitio (sin reconstruirla ni deshabilitar
+        // el interruptor): reconstruirla a mitad de un toque en movil dejaba
+        // el interruptor visible "descolgado" del que de verdad tenia el
+        // listener, y hacia falta refrescar la pagina para volver a tocarlo.
+        try {
+          const resp = await fetch(
+            '/admin/api/platos/' + encodeURIComponent(plato.id) + '/disponibilidad',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ disponible: nuevoValor }),
+            }
+          );
+          if (resp.status === 401) {
+            window.location.href = '/admin/login';
+            return;
+          }
+          if (resp.status !== 204) {
+            casilla.checked = !nuevoValor;
+            return;
+          }
+          plato.disponible = nuevoValor;
+          fila.classList.toggle('agotado', !nuevoValor);
+          const nombreEl = fila.querySelector('.nombre');
+          const insignia = nombreEl.querySelector('.etiqueta-agotado');
+          if (!nuevoValor && !insignia) {
+            nombreEl.insertAdjacentHTML('beforeend', '<span class="etiqueta-agotado">Agotado hoy</span>');
+          } else if (nuevoValor && insignia) {
+            insignia.remove();
+          }
+        } catch (e) {
+          casilla.checked = !nuevoValor;
+        }
+      });
+
+      fila.querySelector('button').addEventListener('click', () => {
+        fila.replaceWith(filaEdicion(plato));
+      });
+      return fila;
+    }
+
+    function opcionesCheckbox(clase, mapa, marcados) {
+      return Object.entries(mapa).map(([valor, texto]) =>
+        '<label class="opcion"><input type="checkbox" class="' + clase + '" value="' +
+        escapar(valor) + '"' + (marcados.includes(valor) ? ' checked' : '') + '>' +
+        escapar(texto) + '</label>'
+      ).join('');
+    }
+
+    function opcionesRadio(clase, mapa, marcado) {
+      const ninguna = '<label class="opcion"><input type="radio" name="' + clase +
+        '" class="' + clase + '" value=""' + (!marcado ? ' checked' : '') + '>Ninguna</label>';
+      return ninguna + Object.entries(mapa).map(([valor, texto]) =>
+        '<label class="opcion"><input type="radio" name="' + clase + '" class="' + clase +
+        '" value="' + escapar(valor) + '"' + (marcado === valor ? ' checked' : '') + '>' +
+        escapar(texto) + '</label>'
+      ).join('');
+    }
+
+    function filaEdicion(plato) {
+      const fila = document.createElement('div');
+      fila.className = 'tarjeta';
+      fila.style.padding = '16px';
+      fila.style.margin = '12px 0';
+      const alergenosPlato = plato.alergenos || [];
+      const dietaPlato = Object.keys(TEXTO_DIETA).filter((clave) => plato[clave]);
+      fila.innerHTML =
+        '<label>Nombre</label><input class="e-nombre" value="' + escapar(plato.nombre) + '">' +
+        '<label>Descripción</label><textarea class="e-descripcion">' +
+          escapar(plato.descripcion) + '</textarea>' +
+        '<label>Precio (vacío = a consultar)</label>' +
+          '<input class="e-precio" type="number" step="0.01" min="0.01" value="' +
+          (plato.precio === null || plato.precio === undefined ? '' : plato.precio) + '">' +
+        '<label>Ingredientes (uno por línea)</label>' +
+          '<textarea class="e-ingredientes">' +
+          escapar((plato.ingredientes || []).join('\n')) + '</textarea>' +
+        '<div class="grupo-campo"><span>Alérgenos</span><div class="rejilla-opciones">' +
+          opcionesCheckbox('e-alergeno', TEXTO_ALERGENO, alergenosPlato) +
+        '</div></div>' +
+        '<div class="grupo-campo"><span>Etiqueta</span><div class="rejilla-opciones">' +
+          opcionesRadio('e-etiqueta', TEXTO_ETIQUETA, plato.etiqueta || '') +
+        '</div></div>' +
+        '<div class="grupo-campo"><span>Dieta</span><div class="rejilla-opciones">' +
+          opcionesCheckbox('e-dieta', TEXTO_DIETA, dietaPlato) +
+        '</div></div>' +
+        '<button type="button" class="primario e-guardar">Guardar</button>' +
+        '<button type="button" class="secundario e-cancelar">Cancelar</button>' +
+        '<div class="aviso e-aviso"></div>';
+
+      fila.querySelector('.e-cancelar').addEventListener('click', () => {
+        fila.replaceWith(filaLectura(plato));
+      });
+
+      fila.querySelector('.e-guardar').addEventListener('click', async () => {
+        const aviso = fila.querySelector('.e-aviso');
+        const boton = fila.querySelector('.e-guardar');
+        aviso.className = 'aviso';
+        boton.disabled = true;
+
+        const precioTxt = fila.querySelector('.e-precio').value.trim();
+        const etiquetaMarcada = fila.querySelector('.e-etiqueta:checked').value;
+        const dietaMarcada = Array.from(fila.querySelectorAll('.e-dieta:checked'))
+          .map((c) => c.value);
+        const cuerpo = {
+          nombre: fila.querySelector('.e-nombre').value,
+          descripcion: fila.querySelector('.e-descripcion').value,
+          precio: precioTxt === '' ? null : parseFloat(precioTxt),
+          ingredientes: fila.querySelector('.e-ingredientes').value
+            .split('\n').map((i) => i.trim()).filter((i) => i.length > 0),
+          alergenos: Array.from(fila.querySelectorAll('.e-alergeno:checked'))
+            .map((c) => c.value),
+          etiqueta: etiquetaMarcada === '' ? null : etiquetaMarcada,
+          vegano: dietaMarcada.includes('vegano'),
+          vegetariano: dietaMarcada.includes('vegetariano'),
+          sin_gluten: dietaMarcada.includes('sin_gluten'),
+          sin_lactosa: dietaMarcada.includes('sin_lactosa'),
+        };
+
+        try {
+          const resp = await fetch('/admin/api/platos/' + encodeURIComponent(plato.id), {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cuerpo),
+          });
+          if (resp.status === 204) {
+            fila.replaceWith(filaLectura({ ...plato, ...cuerpo }));
+            return;
+          }
+          if (resp.status === 401) {
+            window.location.href = '/admin/login';
+            return;
+          }
+          aviso.textContent = resp.status === 404
+            ? 'Este plato ya no existe.'
+            : 'Revisa los datos: el precio debe ser mayor que cero.';
+          aviso.classList.add('visible', 'error');
+        } catch (e) {
+          aviso.textContent = 'No se pudo conectar. Inténtalo de nuevo.';
+          aviso.classList.add('visible', 'error');
+        } finally {
+          boton.disabled = false;
+        }
+      });
+
+      return fila;
+    }
+
+    async function cargarPlatos() {
+      try {
+        const [platos, categorias] = await Promise.all([
+          fetch('/carta').then((r) => r.json()),
+          fetch('/categorias').then((r) => r.json()),
+        ]);
+        categoriasPorId = Object.fromEntries(categorias.map((c) => [c.id, c.nombre]));
+
+        listaPlatos.innerHTML = '';
+        if (platos.length === 0) {
+          listaPlatos.innerHTML = '<p class="cargando">No hay platos.</p>';
+          return;
+        }
+        platos.forEach((p) => listaPlatos.appendChild(filaLectura(p)));
+      } catch (e) {
+        listaPlatos.innerHTML = '<p class="cargando">No se pudo cargar la carta.</p>';
+      }
+    }
+
+    cargarPlatos();
+
+    const formClave = document.getElementById('form-clave');
+    const avisoClave = document.getElementById('aviso-clave');
+    const botonClave = document.getElementById('boton-clave');
+
+    formClave.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      avisoClave.className = 'aviso';
+      botonClave.disabled = true;
+
+      const clave_actual = document.getElementById('actual').value;
+      const clave_nueva = document.getElementById('nueva').value;
+
+      try {
+        const resp = await fetch('/admin/cambiar-clave', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clave_actual, clave_nueva }),
+        });
+        if (resp.ok) {
+          avisoClave.textContent = 'Contraseña actualizada.';
+          avisoClave.classList.add('visible', 'exito');
+          formClave.reset();
+        } else if (resp.status === 401) {
+          avisoClave.textContent = 'La contraseña actual no es correcta.';
+          avisoClave.classList.add('visible', 'error');
+        } else {
+          avisoClave.textContent = 'No se pudo guardar. Inténtalo de nuevo.';
+          avisoClave.classList.add('visible', 'error');
+        }
+      } catch (e) {
+        avisoClave.textContent = 'No se pudo conectar. Inténtalo de nuevo.';
+        avisoClave.classList.add('visible', 'error');
+      } finally {
+        botonClave.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

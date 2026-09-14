@@ -19,6 +19,9 @@ LIMITE_PREGUNTAR = "10/minute;60/hour"
 # disco en cada petición: sin tope siguen siendo un blanco fácil.
 LIMITE_GENERAL = "120/minute"
 
+# Login del panel: pocos intentos, para frenar fuerza bruta sobre la contraseña.
+LIMITE_LOGIN = "5/minute;20/hour"
+
 # Detrás de nginx, request.client.host es la IP del proxy y TODOS los clientes
 # compartirían el mismo cupo. Pero fiarse de X-Forwarded-For sin un proxy delante
 # permite falsificar la cabecera y saltarse el límite entero. Por eso es una

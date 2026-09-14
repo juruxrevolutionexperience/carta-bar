@@ -5,19 +5,28 @@ from typing import Literal
 
 import structlog
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel, Field
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from pydantic import BaseModel, Field, field_validator, model_validator
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from carta_bar.agente import responder_cliente
+from carta_bar.auth import crear_token_sesion, hash_clave, verificar_clave, verificar_token_sesion
 from carta_bar.busqueda import indexar
-from carta_bar.datos import cargar_carta_traducida, cargar_categorias, cargar_config
+from carta_bar.datos import (
+    actualizar_disponibilidad,
+    actualizar_plato_editable,
+    cargar_carta_traducida,
+    cargar_categorias,
+    cargar_config,
+    guardar_clave_hash,
+    obtener_clave_hash,
+)
 from carta_bar.embeddings import cargar_modelo
-from carta_bar.limites import LIMITE_PREGUNTAR, limite_superado, limiter
+from carta_bar.limites import LIMITE_LOGIN, LIMITE_PREGUNTAR, limite_superado, limiter
 from carta_bar.llm import MODELO
 from carta_bar.logging_config import configurar_logging
-from carta_bar.modelos import Categoria, MensajeChat
+from carta_bar.modelos import Alergeno, Categoria, Etiqueta, MensajeChat
 from carta_bar.presupuesto import AVISO_SIN_PRESUPUESTO, ControlGasto
 from carta_bar.seguridad import CabecerasSeguridad
 from carta_bar.uso import crear_repositorio
@@ -137,3 +146,149 @@ def inicio(request: Request) -> HTMLResponse:
     pagina = Path("web/index.html").read_text(encoding="utf-8")
     with_nonce = pagina.replace("<script>", f'<script nonce="{request.state.nonce}">', 1)
     return HTMLResponse(with_nonce)
+
+
+COOKIE_SESION = "sesion_admin"
+
+
+def _pagina_con_nonce(ruta: str, request: Request) -> HTMLResponse:
+    pagina = Path(ruta).read_text(encoding="utf-8")
+    with_nonce = pagina.replace("<script>", f'<script nonce="{request.state.nonce}">', 1)
+    return HTMLResponse(with_nonce)
+
+
+def _sesion_activa(request: Request) -> bool:
+    token = request.cookies.get(COOKIE_SESION)
+    if token is None:
+        return False
+    return verificar_token_sesion(token) == RESTAURANTE_ID
+
+
+class LoginPeticion(BaseModel):
+    clave: str = Field(min_length=1, max_length=200)
+
+
+class CambiarClavePeticion(BaseModel):
+    clave_actual: str = Field(min_length=1, max_length=200)
+    clave_nueva: str = Field(min_length=8, max_length=200)
+
+
+@app.get("/admin/login")
+def admin_login_pagina(request: Request) -> HTMLResponse:
+    return _pagina_con_nonce("web/admin_login.html", request)
+
+
+@app.post("/admin/login")
+@limiter.limit(LIMITE_LOGIN)
+def admin_login(request: Request, peticion: LoginPeticion) -> Response:
+    hash_guardado = obtener_clave_hash(RESTAURANTE_ID)
+    if hash_guardado is None or not verificar_clave(peticion.clave, hash_guardado):
+        return Response(status_code=401, content="Contraseña incorrecta")
+
+    token = crear_token_sesion(RESTAURANTE_ID)
+    respuesta = Response(status_code=204)
+    respuesta.set_cookie(
+        COOKIE_SESION,
+        token,
+        httponly=True,
+        # "secure" exige HTTPS. En local (http://127.0.0.1) se prueba sin TLS;
+        # en produccion, detras de nginx con HTTPS, el navegador la exige.
+        secure=request.url.scheme == "https",
+        samesite="lax",
+        max_age=12 * 60 * 60,
+    )
+    return respuesta
+
+
+@app.get("/admin")
+def admin_panel(request: Request) -> Response:
+    if not _sesion_activa(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    return _pagina_con_nonce("web/admin.html", request)
+
+
+@app.post("/admin/cambiar-clave")
+def admin_cambiar_clave(request: Request, peticion: CambiarClavePeticion) -> Response:
+    if not _sesion_activa(request):
+        return Response(status_code=401, content="Sesión no válida")
+
+    hash_guardado = obtener_clave_hash(RESTAURANTE_ID)
+    if hash_guardado is None or not verificar_clave(peticion.clave_actual, hash_guardado):
+        return Response(status_code=401, content="Contraseña actual incorrecta")
+
+    guardar_clave_hash(RESTAURANTE_ID, hash_clave(peticion.clave_nueva))
+    return Response(status_code=204)
+
+
+@app.post("/admin/logout")
+def admin_logout() -> Response:
+    respuesta = Response(status_code=204)
+    respuesta.delete_cookie(COOKIE_SESION)
+    return respuesta
+
+
+class ActualizarPlatoPeticion(BaseModel):
+    nombre: str = Field(min_length=1, max_length=200)
+    descripcion: str = Field(min_length=1, max_length=1000)
+    precio: float | None = None
+    ingredientes: list[str] = Field(default_factory=list, max_length=50)
+    alergenos: list[Alergeno] = Field(default_factory=list)
+    etiqueta: Etiqueta | None = None
+    vegano: bool = False
+    vegetariano: bool = False
+    sin_gluten: bool = False
+    sin_lactosa: bool = False
+
+    @field_validator("precio")
+    @classmethod
+    def validar_precio(cls, precio: float | None) -> float | None:
+        if precio is not None and precio <= 0:
+            raise ValueError("El precio debe ser mayor que cero")
+        return precio
+
+    @model_validator(mode="after")
+    def validar_coherencia_gluten(self) -> "ActualizarPlatoPeticion":
+        if self.sin_gluten and Alergeno.GLUTEN in self.alergenos:
+            raise ValueError("Un plato sin_gluten no puede listar GLUTEN entre sus alergenos")
+        return self
+
+
+@app.put("/admin/api/platos/{plato_id}")
+def admin_actualizar_plato(
+    plato_id: str, peticion: ActualizarPlatoPeticion, request: Request
+) -> Response:
+    if not _sesion_activa(request):
+        return Response(status_code=401, content="Sesión no válida")
+    encontrado = actualizar_plato_editable(
+        RESTAURANTE_ID,
+        plato_id,
+        peticion.nombre,
+        peticion.descripcion,
+        peticion.precio,
+        peticion.ingredientes,
+        peticion.alergenos,
+        peticion.etiqueta,
+        peticion.vegano,
+        peticion.vegetariano,
+        peticion.sin_gluten,
+        peticion.sin_lactosa,
+    )
+    if not encontrado:
+        return Response(status_code=404, content="Plato no encontrado")
+    return Response(status_code=204)
+
+
+class ActualizarDisponibilidadPeticion(BaseModel):
+    disponible: bool
+
+
+@app.post("/admin/api/platos/{plato_id}/disponibilidad")
+def admin_actualizar_disponibilidad(
+    plato_id: str, peticion: ActualizarDisponibilidadPeticion, request: Request
+) -> Response:
+    if not _sesion_activa(request):
+        return Response(status_code=401, content="Sesión no válida")
+    encontrado = actualizar_disponibilidad(RESTAURANTE_ID, plato_id, peticion.disponible)
+    if not encontrado:
+        return Response(status_code=404, content="Plato no encontrado")
+    return Response(status_code=204)

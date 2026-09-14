@@ -95,12 +95,21 @@ restaurante.
 - ⬜ Desplegar sin caída (hoy ~10 s mientras arranca el contenedor)
 
 ### Pantallas
-- ⬜ Login por restaurante, contraseña cifrada
-- ⬜ CRUD de platos: nombre, descripción, precio, ingredientes
-- ⬜ Checkboxes de alérgenos y de etiquetas (recomendación del chef, más
-  vendido, etc.) — nunca texto libre, mismo principio que ya tiene el modelo
-- ⬜ Marcar un plato "agotado hoy" — interruptor rápido, sin abrir el CRUD
-  completo; es lo que más se usa en el día a día de un restaurante
+- ✅ Login por restaurante, contraseña cifrada (pbkdf2, sin dependencias
+  nuevas) y sesión por cookie firmada. Contraseña inicial con
+  `scripts/establecer_clave_admin.py`; cambiarla luego desde el propio
+  panel. Desplegado y confirmado en producción, incluida la escala fija
+  en móvil (mismo arreglo que ya tenía la carta pública)
+- ✅ CRUD de platos (solo editar, por ahora — crear/borrar esperan a
+  poder confirmar categoría en el alta): nombre, descripción, precio,
+  ingredientes. Desplegado y confirmado en producción
+- ✅ Checkboxes de alérgenos y de etiquetas (recomendación del chef, más
+  vendido, etc.) y de dieta (vegano/vegetariano/sin gluten/sin
+  lactosa) en el mismo formulario de editar plato — nunca texto libre,
+  mismo principio que ya tiene el modelo. Desplegado y confirmado en
+  producción, incluida la regla de coherencia sin_gluten+alérgeno gluten
+- ✅ Marcar un plato "agotado hoy" — interruptor rápido en la propia
+  lista, sin abrir el CRUD completo. Desplegado y confirmado en producción
 - ⬜ Gestión de categorías: crear, renombrar, reordenar (arrastrar y soltar)
 - ⬜ "Fuera de carta": platos especiales del día, fuera de la carta fija
 - ⬜ Subida de fotos

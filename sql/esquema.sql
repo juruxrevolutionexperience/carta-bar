@@ -41,6 +41,10 @@ CREATE TABLE IF NOT EXISTS restaurantes (
     aviso_alergenos_i18n JSONB NOT NULL DEFAULT '{}'
 );
 
+-- NULL = sin contrasena establecida todavia (ver scripts/establecer_clave_admin.py).
+-- Nunca guarda la contrasena en claro: pbkdf2_sha256$<iteraciones>$<sal>$<hash>.
+ALTER TABLE restaurantes ADD COLUMN IF NOT EXISTS clave_hash TEXT;
+
 CREATE TABLE IF NOT EXISTS categorias (
     restaurante_id TEXT NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
     id             TEXT NOT NULL,
