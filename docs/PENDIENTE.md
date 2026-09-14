@@ -37,18 +37,18 @@ con fotos reales, y el QR está listo para las mesas.
 - ⬜ Probar el chat en producción con una pregunta real (no se ha hecho: gasta)
 
 ### Se ve bien (arreglos, no funciones nuevas)
-Los 🔍 están desplegados; se dan por buenos al probarlos en el iPhone.
-- 🔍 El botón del chat no tapa el último plato
-- 🔍 El selector de idioma no muestra "ES ES"
-- 🔍 Tarjetas de categoría alineadas
-- 🔍 Barra de categorías fija al hacer scroll
-- 🔍 Escala fija en móvil: sin zoom de pellizco ni de doble toque
-- 🔍 Safari no amplía la página al tocar el campo del chat
-- 🔍 El botón del micrófono se retira si el navegador deniega el permiso
+Probado en el iPhone, confirmado bueno.
+- ✅ El botón del chat no tapa el último plato
+- ✅ El selector de idioma no muestra "ES ES"
+- ✅ Tarjetas de categoría alineadas
+- ✅ Barra de categorías fija al hacer scroll
+- ✅ Escala fija en móvil: sin zoom de pellizco ni de doble toque
+- ✅ Safari no amplía la página al tocar el campo del chat
+- ✅ El botón del micrófono se retira si el navegador deniega el permiso
 - ⬜ Fotos reales de los platos, comprimidas. El campo `foto` y la carga diferida ya
   están: falta que el restaurante pase las fotos
-- 🔍 Tocar la foto abre un visor. Abrir y cerrar con la X, comprobado; tocar fuera y
-  "atrás", hechos pero sin probar en el iPhone
+- ✅ Tocar la foto abre un visor. Abrir, cerrar con la X, tocar fuera y "atrás",
+  todo comprobado
 - ✅ Quitar la foto de prueba de la Burger La Catedral
 
 ### Despliegue
