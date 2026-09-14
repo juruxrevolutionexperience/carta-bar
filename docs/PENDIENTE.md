@@ -87,12 +87,24 @@ Probado en el iPhone, confirmado bueno.
 - ⬜ Desplegar sin caída (hoy ~10 s mientras arranca el contenedor)
 
 ### Pantallas
-- ⬜ Login por restaurante
-- ⬜ CRUD de platos con checkboxes de alérgenos y etiquetas
-- ⬜ Gestión de categorías
+- ⬜ Login por restaurante, contraseña cifrada
+- ⬜ CRUD de platos: nombre, descripción, precio, ingredientes
+- ⬜ Checkboxes de alérgenos y de etiquetas (recomendación del chef, más
+  vendido, etc.) — nunca texto libre, mismo principio que ya tiene el modelo
+- ⬜ Marcar un plato "agotado hoy" — interruptor rápido, sin abrir el CRUD
+  completo; es lo que más se usa en el día a día de un restaurante
+- ⬜ Gestión de categorías: crear, renombrar, reordenar (arrastrar y soltar)
+- ⬜ "Fuera de carta": platos especiales del día, fuera de la carta fija
 - ⬜ Subida de fotos
-- ⬜ Guardar y traducir
-- ⬜ Configuración de marca
+- ⬜ Vista previa de cómo queda la carta para el cliente, antes de publicar
+  un cambio
+- ⬜ Guardar y traducir (dispara `traducir_carta()` en segundo plano, el
+  hash ya hace que solo traduzca lo que cambió)
+- ⬜ Configuración de marca: nombre del negocio, logo, foto de portada/banner
+- ⬜ Importador de carta (PDF o foto → borrador con alérgenos sin confirmar
+  → el gerente los confirma con checkboxes, nunca se dan por buenos solos)
+  → detalle completo en
+  [docs/APARCADO-CARTAS-MULTINEGOCIO.md](APARCADO-CARTAS-MULTINEGOCIO.md)
 - ⬜ Métricas básicas
 
 ---
