@@ -159,7 +159,7 @@ class RepositorioCartaPostgres:
             cur.execute(
                 "SELECT id, categoria_id, nombre, descripcion, precio, ingredientes, "
                 "alergenos, vegano, vegetariano, sin_gluten, sin_lactosa, disponible, "
-                "etiqueta, foto FROM platos WHERE restaurante_id = %s",
+                "etiqueta, foto FROM platos WHERE restaurante_id = %s ORDER BY id",
                 (restaurante_id,),
             )
             filas = cur.fetchall()
