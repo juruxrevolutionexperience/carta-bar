@@ -8,3 +8,8 @@ services:
       # Solo loopback: nginx en el host es la unica via de entrada, igual que
       # el resto de apps de este servidor.
       - "127.0.0.1:8001:8000"
+    volumes:
+      # Las fotos subidas desde el panel viven fuera de la imagen: sin esto,
+      # cada "up -d --build" las borraria (todo /app se sustituye por la
+      # imagen nueva).
+      - ./datos/fotos:/app/datos/fotos

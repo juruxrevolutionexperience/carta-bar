@@ -45,8 +45,9 @@ Probado en el iPhone, confirmado bueno.
 - ✅ Escala fija en móvil: sin zoom de pellizco ni de doble toque
 - ✅ Safari no amplía la página al tocar el campo del chat
 - ✅ El botón del micrófono se retira si el navegador deniega el permiso
-- ⬜ Fotos reales de los platos, comprimidas. El campo `foto` y la carga diferida ya
-  están: falta que el restaurante pase las fotos
+- 🔍 Fotos reales de los platos, comprimidas. 9 de 28 platos ya tienen
+  foto real, subidas desde el panel de gestión. Faltan las 19 restantes
+  (dependen de que el restaurante las vaya pasando)
 - ✅ Tocar la foto abre un visor. Abrir, cerrar con la X, tocar fuera y "atrás",
   todo comprobado
 - ✅ Quitar la foto de prueba de la Burger La Catedral
@@ -110,9 +111,15 @@ restaurante.
   producción, incluida la regla de coherencia sin_gluten+alérgeno gluten
 - ✅ Marcar un plato "agotado hoy" — interruptor rápido en la propia
   lista, sin abrir el CRUD completo. Desplegado y confirmado en producción
+- ✅ Subida de fotos: comprimidas en el propio navegador (canvas, sin
+  Pillow en el servidor), guardadas en disco con volumen persistente
+  (`docker-compose.prod.yml`), servidas en `/fotos/<restaurante>/<id>.jpg`.
+  Desplegado y confirmado en producción — las 9 fotos reales de La
+  CatedRal ya están subidas (Tabla mixta, boquerones, bravas, las dos
+  croquetas, tataki, bao de langostino, tartar de salchichón, Japo
+  Burger, solomillo)
 - ⬜ Gestión de categorías: crear, renombrar, reordenar (arrastrar y soltar)
 - ⬜ "Fuera de carta": platos especiales del día, fuera de la carta fija
-- ⬜ Subida de fotos
 - ⬜ Vista previa de cómo queda la carta para el cliente, antes de publicar
   un cambio
 - ⬜ Guardar y traducir (dispara `traducir_carta()` en segundo plano, el

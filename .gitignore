@@ -10,3 +10,6 @@ wheels/
 .venv
 .env
 corpus/
+
+# Fotos subidas desde el panel: datos del restaurante, no codigo.
+datos/fotos/

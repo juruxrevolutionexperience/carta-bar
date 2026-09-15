@@ -78,6 +78,10 @@ class RepositorioCarta(Protocol):
         self, restaurante_id: str, plato_id: str, disponible: bool
     ) -> bool: ...
 
+    def actualizar_foto_plato(
+        self, restaurante_id: str, plato_id: str, foto: str | None
+    ) -> bool: ...
+
 
 class RepositorioCartaFicheros:
     """Lee/escribe datos/<restaurante_id>/*.json.
@@ -183,6 +187,11 @@ class RepositorioCartaFicheros:
 
     def actualizar_disponibilidad(
         self, restaurante_id: str, plato_id: str, disponible: bool
+    ) -> bool:
+        raise NotImplementedError("Editar platos requiere CARTA_BD_ACTIVA=true")
+
+    def actualizar_foto_plato(
+        self, restaurante_id: str, plato_id: str, foto: str | None
     ) -> bool:
         raise NotImplementedError("Editar platos requiere CARTA_BD_ACTIVA=true")
 
@@ -386,6 +395,16 @@ class RepositorioCartaPostgres:
             )
             return cur.rowcount > 0
 
+    def actualizar_foto_plato(
+        self, restaurante_id: str, plato_id: str, foto: str | None
+    ) -> bool:
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE platos SET foto = %s WHERE restaurante_id = %s AND id = %s",
+                (foto, restaurante_id, plato_id),
+            )
+            return cur.rowcount > 0
+
     def aplicar_esquema(self, ruta: str = "sql/esquema.sql") -> None:
         with open(ruta, encoding="utf-8") as f:
             sql = f.read()
@@ -519,3 +538,7 @@ def actualizar_disponibilidad(restaurante_id: str, plato_id: str, disponible: bo
     return obtener_repositorio_carta().actualizar_disponibilidad(
         restaurante_id, plato_id, disponible
     )
+
+
+def actualizar_foto_plato(restaurante_id: str, plato_id: str, foto: str | None) -> bool:
+    return obtener_repositorio_carta().actualizar_foto_plato(restaurante_id, plato_id, foto)

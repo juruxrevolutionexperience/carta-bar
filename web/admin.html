@@ -127,6 +127,25 @@
   .interruptor input:checked + .riel::before{transform:translateX(18px)}
   .interruptor input:disabled + .riel{opacity:.6}
 
+  .bloque-foto{display:flex;align-items:center;gap:12px;margin-top:14px}
+  .miniatura-foto{
+    width:72px;height:72px;border-radius:10px;object-fit:cover;
+    border:1px solid var(--borde);background:var(--fondo-alt);flex-shrink:0;
+  }
+  .miniatura-foto.vacia{display:flex;align-items:center;justify-content:center;
+    color:var(--tinta-media);font-size:11px;text-align:center}
+  .acciones-foto{display:flex;flex-direction:column;gap:6px}
+  .acciones-foto label.boton-archivo{
+    display:inline-block;padding:8px 14px;border:1px solid var(--borde);
+    border-radius:8px;font-size:13px;cursor:pointer;text-align:center;
+    color:var(--tinta);
+  }
+  .acciones-foto input[type="file"]{display:none}
+  .acciones-foto button{
+    background:none;border:none;color:var(--tinta-media);font-size:12px;
+    text-decoration:underline;cursor:pointer;padding:0;text-align:left;
+  }
+
   .nav-inferior{
     position:fixed;left:0;right:0;bottom:0;
     display:flex;justify-content:space-around;
@@ -346,6 +365,130 @@
       ).join('');
     }
 
+    // Redimensiona a 1600px de ancho maximo y comprime a JPEG calidad 0.8 en
+    // el propio navegador: el servidor no necesita procesar imagenes.
+    function comprimirImagen(archivo) {
+      return new Promise((resolve, reject) => {
+        const lector = new FileReader();
+        lector.onerror = () => reject(new Error('lectura fallida'));
+        lector.onload = () => {
+          const img = new Image();
+          img.onerror = () => reject(new Error('imagen invalida'));
+          img.onload = () => {
+            const escala = Math.min(1, 1600 / img.width);
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.width * escala);
+            canvas.height = Math.round(img.height * escala);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(
+              (blob) => (blob ? resolve(blob) : reject(new Error('compresion fallida'))),
+              'image/jpeg',
+              0.8
+            );
+          };
+          img.src = lector.result;
+        };
+        lector.readAsDataURL(archivo);
+      });
+    }
+
+    function crearBloqueFoto(plato) {
+      const contenedor = document.createElement('div');
+      contenedor.className = 'bloque-foto';
+
+      const miniatura = document.createElement('img');
+      miniatura.className = 'miniatura-foto';
+      miniatura.alt = '';
+      const vacia = document.createElement('div');
+      vacia.className = 'miniatura-foto vacia';
+      vacia.textContent = 'Sin foto';
+
+      function mostrarMiniatura() {
+        if (plato.foto) {
+          miniatura.src = plato.foto;
+          miniatura.hidden = false;
+          vacia.hidden = true;
+        } else {
+          miniatura.hidden = true;
+          vacia.hidden = false;
+        }
+      }
+
+      const acciones = document.createElement('div');
+      acciones.className = 'acciones-foto';
+      acciones.innerHTML =
+        '<label class="boton-archivo">Subir foto' +
+          '<input type="file" accept="image/*" class="e-foto-input"></label>' +
+        '<button type="button" class="e-quitar-foto">Quitar foto</button>' +
+        '<div class="aviso e-aviso-foto"></div>';
+
+      const inputFoto = acciones.querySelector('.e-foto-input');
+      const botonQuitar = acciones.querySelector('.e-quitar-foto');
+      const avisoFoto = acciones.querySelector('.e-aviso-foto');
+
+      function actualizarBotonQuitar() {
+        botonQuitar.hidden = !plato.foto;
+      }
+
+      inputFoto.addEventListener('change', async () => {
+        const archivo = inputFoto.files[0];
+        if (!archivo) return;
+        avisoFoto.className = 'aviso';
+        try {
+          const blob = await comprimirImagen(archivo);
+          const formData = new FormData();
+          formData.append('foto', blob, plato.id + '.jpg');
+          const resp = await fetch(
+            '/admin/api/platos/' + encodeURIComponent(plato.id) + '/foto',
+            { method: 'POST', body: formData }
+          );
+          if (resp.status === 401) {
+            window.location.href = '/admin/login';
+            return;
+          }
+          if (!resp.ok) throw new Error('fallo al subir');
+          const datos = await resp.json();
+          plato.foto = datos.foto;
+          mostrarMiniatura();
+          actualizarBotonQuitar();
+        } catch (e) {
+          avisoFoto.textContent = 'No se pudo subir la foto.';
+          avisoFoto.classList.add('visible', 'error');
+        } finally {
+          inputFoto.value = '';
+        }
+      });
+
+      botonQuitar.addEventListener('click', async () => {
+        avisoFoto.className = 'aviso';
+        try {
+          const resp = await fetch(
+            '/admin/api/platos/' + encodeURIComponent(plato.id) + '/foto',
+            { method: 'DELETE' }
+          );
+          if (resp.status === 401) {
+            window.location.href = '/admin/login';
+            return;
+          }
+          if (resp.status !== 204) throw new Error('fallo al quitar');
+          plato.foto = null;
+          mostrarMiniatura();
+          actualizarBotonQuitar();
+        } catch (e) {
+          avisoFoto.textContent = 'No se pudo quitar la foto.';
+          avisoFoto.classList.add('visible', 'error');
+        }
+      });
+
+      contenedor.appendChild(miniatura);
+      contenedor.appendChild(vacia);
+      contenedor.appendChild(acciones);
+      mostrarMiniatura();
+      actualizarBotonQuitar();
+      return contenedor;
+    }
+
     function filaEdicion(plato) {
       const fila = document.createElement('div');
       fila.className = 'tarjeta';
@@ -360,6 +503,7 @@
         '<label>Precio (vacío = a consultar)</label>' +
           '<input class="e-precio" type="number" step="0.01" min="0.01" value="' +
           (plato.precio === null || plato.precio === undefined ? '' : plato.precio) + '">' +
+        '<label>Foto</label><div class="marcador-foto"></div>' +
         '<label>Ingredientes (uno por línea)</label>' +
           '<textarea class="e-ingredientes">' +
           escapar((plato.ingredientes || []).join('\n')) + '</textarea>' +
@@ -375,6 +519,8 @@
         '<button type="button" class="primario e-guardar">Guardar</button>' +
         '<button type="button" class="secundario e-cancelar">Cancelar</button>' +
         '<div class="aviso e-aviso"></div>';
+
+      fila.querySelector('.marcador-foto').replaceWith(crearBloqueFoto(plato));
 
       fila.querySelector('.e-cancelar').addEventListener('click', () => {
         fila.replaceWith(filaLectura(plato));

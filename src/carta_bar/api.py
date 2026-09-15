@@ -1,10 +1,12 @@
 import json
 import os
+import re
+import time
 from pathlib import Path
 from typing import Literal
 
 import structlog
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import BaseModel, Field, field_validator, model_validator
 from slowapi.errors import RateLimitExceeded
@@ -14,7 +16,9 @@ from carta_bar.agente import responder_cliente
 from carta_bar.auth import crear_token_sesion, hash_clave, verificar_clave, verificar_token_sesion
 from carta_bar.busqueda import indexar
 from carta_bar.datos import (
+    _validar_slug,
     actualizar_disponibilidad,
+    actualizar_foto_plato,
     actualizar_plato_editable,
     cargar_carta_traducida,
     cargar_categorias,
@@ -292,3 +296,62 @@ def admin_actualizar_disponibilidad(
     if not encontrado:
         return Response(status_code=404, content="Plato no encontrado")
     return Response(status_code=204)
+
+
+# Comprimida en el navegador (canvas, JPEG calidad 0.8) antes de llegar aqui:
+# el servidor no hace procesado de imagen, solo valida y guarda.
+DIR_FOTOS = Path("datos/fotos")
+TAMANO_MAX_FOTO = 3 * 1024 * 1024
+_CABECERA_JPEG = b"\xff\xd8\xff"
+_NOMBRE_ARCHIVO_FOTO = re.compile(r"^[a-zA-Z0-9_-]+\.jpg$")
+
+
+def _ruta_foto(restaurante_id: str, plato_id: str) -> Path:
+    _validar_slug(restaurante_id, "restaurante_id")
+    _validar_slug(plato_id, "plato_id")
+    return DIR_FOTOS / restaurante_id / f"{plato_id}.jpg"
+
+
+@app.post("/admin/api/platos/{plato_id}/foto")
+async def admin_subir_foto(plato_id: str, request: Request, foto: UploadFile) -> Response:
+    if not _sesion_activa(request):
+        return Response(status_code=401, content="Sesión no válida")
+
+    contenido = await foto.read(TAMANO_MAX_FOTO + 1)
+    if len(contenido) > TAMANO_MAX_FOTO:
+        return Response(status_code=413, content="La foto pesa demasiado")
+    if not contenido.startswith(_CABECERA_JPEG):
+        return Response(status_code=400, content="Solo se aceptan imagenes JPEG")
+
+    ruta = _ruta_foto(RESTAURANTE_ID, plato_id)
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    ruta.write_bytes(contenido)
+
+    url = f"/fotos/{RESTAURANTE_ID}/{plato_id}.jpg?v={int(time.time())}"
+    encontrado = actualizar_foto_plato(RESTAURANTE_ID, plato_id, url)
+    if not encontrado:
+        ruta.unlink(missing_ok=True)
+        return Response(status_code=404, content="Plato no encontrado")
+    return Response(content=json.dumps({"foto": url}), media_type="application/json")
+
+
+@app.delete("/admin/api/platos/{plato_id}/foto")
+def admin_borrar_foto(plato_id: str, request: Request) -> Response:
+    if not _sesion_activa(request):
+        return Response(status_code=401, content="Sesión no válida")
+    encontrado = actualizar_foto_plato(RESTAURANTE_ID, plato_id, None)
+    if not encontrado:
+        return Response(status_code=404, content="Plato no encontrado")
+    _ruta_foto(RESTAURANTE_ID, plato_id).unlink(missing_ok=True)
+    return Response(status_code=204)
+
+
+@app.get("/fotos/{restaurante_id}/{archivo}")
+def obtener_foto(restaurante_id: str, archivo: str) -> Response:
+    _validar_slug(restaurante_id, "restaurante_id")
+    if not _NOMBRE_ARCHIVO_FOTO.match(archivo):
+        return Response(status_code=404)
+    ruta = DIR_FOTOS / restaurante_id / archivo
+    if not ruta.is_file():
+        return Response(status_code=404)
+    return Response(content=ruta.read_bytes(), media_type="image/jpeg")
