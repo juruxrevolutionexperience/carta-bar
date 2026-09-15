@@ -119,7 +119,11 @@ restaurante.
   croquetas, tataki, bao de langostino, tartar de salchichón, Japo
   Burger, solomillo)
 - ⬜ Gestión de categorías: crear, renombrar, reordenar (arrastrar y soltar)
-- ⬜ "Fuera de carta": platos especiales del día, fuera de la carta fija
+- 🔍 "Fuera de carta": crear/eliminar especiales del día desde una sección
+  propia del panel (categoría centinela `especial-de-hoy`, sin tocar los 28
+  platos existentes), visibles en una tarjeta "⭐ Especial de hoy" al
+  principio de la carta pública solo si hay alguno activo. Probado en local
+  contra Supabase (crear, ver en `/carta`, eliminar). Falta desplegar
 - ⬜ Vista previa de cómo queda la carta para el cliente, antes de publicar
   un cambio
 - ⬜ Guardar y traducir (dispara `traducir_carta()` en segundo plano, el

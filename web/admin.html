@@ -176,6 +176,16 @@
       </div>
     </section>
 
+    <section class="seccion" id="seccion-especiales" hidden>
+      <div class="tarjeta">
+        <h2>Especial de hoy</h2>
+        <p>Platos fuera de la carta fija. Aparecen en una sección propia en
+          la carta pública mientras estén aquí; quítalos cuando ya no toque.</p>
+        <button type="button" class="primario" id="anadir-especial">+ Añadir especial</button>
+      </div>
+      <div id="lista-especiales"><p class="cargando">Cargando…</p></div>
+    </section>
+
     <section class="seccion" id="seccion-cuenta" hidden>
       <div class="tarjeta">
         <h2>Cambiar contraseña</h2>
@@ -199,6 +209,10 @@
     <button type="button" class="nav-item activo" data-seccion="platos">
       <svg viewBox="0 0 24 24"><path d="M4 3v18M4 3c0 4 3 5 3 9s-3 5-3 9M20 3v18M20 8c-3 0-3 2-3 4s0 4 3 4"/></svg>
       Platos
+    </button>
+    <button type="button" class="nav-item" data-seccion="especiales">
+      <svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L12 16.9 6.4 20l1.4-6.2L3 9.5l6.4-.6z"/></svg>
+      Especiales
     </button>
     <button type="button" class="nav-item" data-seccion="cuenta">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
@@ -246,6 +260,8 @@
 
     // --------------------------------------------------------- platos
     const listaPlatos = document.getElementById('lista-platos');
+    const listaEspeciales = document.getElementById('lista-especiales');
+    const CATEGORIA_ESPECIALES = 'especial-de-hoy';
     let categoriasPorId = {};
 
     // Mismo texto que ya usa datos/idiomas.json (es.alergenos) y web/index.html
@@ -503,7 +519,9 @@
         '<label>Precio (vacío = a consultar)</label>' +
           '<input class="e-precio" type="number" step="0.01" min="0.01" value="' +
           (plato.precio === null || plato.precio === undefined ? '' : plato.precio) + '">' +
-        '<label>Foto</label><div class="marcador-foto"></div>' +
+        (plato.id
+          ? '<label>Foto</label><div class="marcador-foto"></div>'
+          : '<p class="cargando" style="margin-top:14px">Guarda el especial para poder añadirle foto.</p>') +
         '<label>Ingredientes (uno por línea)</label>' +
           '<textarea class="e-ingredientes">' +
           escapar((plato.ingredientes || []).join('\n')) + '</textarea>' +
@@ -518,13 +536,47 @@
         '</div></div>' +
         '<button type="button" class="primario e-guardar">Guardar</button>' +
         '<button type="button" class="secundario e-cancelar">Cancelar</button>' +
+        (plato.categoria === CATEGORIA_ESPECIALES && plato.id
+          ? '<button type="button" class="secundario e-eliminar">Eliminar especial</button>' : '') +
         '<div class="aviso e-aviso"></div>';
 
-      fila.querySelector('.marcador-foto').replaceWith(crearBloqueFoto(plato));
+      const marcadorFoto = fila.querySelector('.marcador-foto');
+      if (marcadorFoto) marcadorFoto.replaceWith(crearBloqueFoto(plato));
 
       fila.querySelector('.e-cancelar').addEventListener('click', () => {
+        if (!plato.id) {
+          fila.remove();
+          return;
+        }
         fila.replaceWith(filaLectura(plato));
       });
+
+      const botonEliminar = fila.querySelector('.e-eliminar');
+      if (botonEliminar) {
+        botonEliminar.addEventListener('click', async () => {
+          if (!window.confirm('¿Eliminar este especial? No se puede deshacer.')) return;
+          const aviso = fila.querySelector('.e-aviso');
+          try {
+            const resp = await fetch(
+              '/admin/api/platos/especiales/' + encodeURIComponent(plato.id),
+              { method: 'DELETE' }
+            );
+            if (resp.status === 401) {
+              window.location.href = '/admin/login';
+              return;
+            }
+            if (resp.status === 204) {
+              fila.remove();
+              return;
+            }
+            aviso.textContent = 'No se pudo eliminar. Inténtalo de nuevo.';
+            aviso.className = 'aviso visible error';
+          } catch (e) {
+            aviso.textContent = 'No se pudo conectar. Inténtalo de nuevo.';
+            aviso.className = 'aviso visible error';
+          }
+        });
+      }
 
       fila.querySelector('.e-guardar').addEventListener('click', async () => {
         const aviso = fila.querySelector('.e-aviso');
@@ -551,14 +603,23 @@
           sin_lactosa: dietaMarcada.includes('sin_lactosa'),
         };
 
+        const esNuevo = !plato.id;
         try {
-          const resp = await fetch('/admin/api/platos/' + encodeURIComponent(plato.id), {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(cuerpo),
-          });
+          const resp = await fetch(
+            esNuevo ? '/admin/api/platos/especiales' : '/admin/api/platos/' + encodeURIComponent(plato.id),
+            {
+              method: esNuevo ? 'POST' : 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(cuerpo),
+            }
+          );
           if (resp.status === 204) {
             fila.replaceWith(filaLectura({ ...plato, ...cuerpo }));
+            return;
+          }
+          if (resp.status === 201) {
+            const creado = await resp.json();
+            fila.replaceWith(filaLectura(creado));
             return;
           }
           if (resp.status === 401) {
@@ -588,18 +649,41 @@
         ]);
         categoriasPorId = Object.fromEntries(categorias.map((c) => [c.id, c.nombre]));
 
+        const normales = platos.filter((p) => p.categoria !== CATEGORIA_ESPECIALES);
+        const especiales = platos.filter((p) => p.categoria === CATEGORIA_ESPECIALES);
+
         listaPlatos.innerHTML = '';
-        if (platos.length === 0) {
+        if (normales.length === 0) {
           listaPlatos.innerHTML = '<p class="cargando">No hay platos.</p>';
-          return;
+        } else {
+          normales.forEach((p) => listaPlatos.appendChild(filaLectura(p)));
         }
-        platos.forEach((p) => listaPlatos.appendChild(filaLectura(p)));
+
+        listaEspeciales.innerHTML = '';
+        if (especiales.length === 0) {
+          listaEspeciales.innerHTML = '<p class="cargando">No hay especiales activos.</p>';
+        } else {
+          especiales.forEach((p) => listaEspeciales.appendChild(filaLectura(p)));
+        }
       } catch (e) {
         listaPlatos.innerHTML = '<p class="cargando">No se pudo cargar la carta.</p>';
+        listaEspeciales.innerHTML = '<p class="cargando">No se pudo cargar la carta.</p>';
       }
     }
 
     cargarPlatos();
+
+    document.getElementById('anadir-especial').addEventListener('click', () => {
+      if (listaEspeciales.querySelector('.cargando')) listaEspeciales.innerHTML = '';
+      const nuevo = {
+        id: null,
+        nombre: '', descripcion: '', precio: null, categoria: CATEGORIA_ESPECIALES,
+        ingredientes: [], alergenos: [], etiqueta: null,
+        vegano: false, vegetariano: false, sin_gluten: false, sin_lactosa: false,
+        disponible: true, foto: null,
+      };
+      listaEspeciales.insertBefore(filaEdicion(nuevo), listaEspeciales.firstChild);
+    });
 
     const formClave = document.getElementById('form-clave');
     const avisoClave = document.getElementById('aviso-clave');

@@ -23,6 +23,8 @@ from carta_bar.datos import (
     cargar_carta_traducida,
     cargar_categorias,
     cargar_config,
+    crear_plato_especial,
+    eliminar_plato_especial,
     guardar_clave_hash,
     obtener_clave_hash,
 )
@@ -30,7 +32,7 @@ from carta_bar.embeddings import cargar_modelo
 from carta_bar.limites import LIMITE_LOGIN, LIMITE_PREGUNTAR, limite_superado, limiter
 from carta_bar.llm import MODELO
 from carta_bar.logging_config import configurar_logging
-from carta_bar.modelos import Alergeno, Categoria, Etiqueta, MensajeChat
+from carta_bar.modelos import Alergeno, Categoria, Etiqueta, MensajeChat, Plato
 from carta_bar.presupuesto import AVISO_SIN_PRESUPUESTO, ControlGasto
 from carta_bar.seguridad import CabecerasSeguridad
 from carta_bar.uso import crear_repositorio
@@ -295,6 +297,64 @@ def admin_actualizar_disponibilidad(
     encontrado = actualizar_disponibilidad(RESTAURANTE_ID, plato_id, peticion.disponible)
     if not encontrado:
         return Response(status_code=404, content="Plato no encontrado")
+    return Response(status_code=204)
+
+
+class CrearPlatoEspecialPeticion(BaseModel):
+    nombre: str = Field(min_length=1, max_length=200)
+    descripcion: str = Field(min_length=1, max_length=1000)
+    precio: float | None = None
+    ingredientes: list[str] = Field(default_factory=list, max_length=50)
+    alergenos: list[Alergeno] = Field(default_factory=list)
+    etiqueta: Etiqueta | None = None
+    vegano: bool = False
+    vegetariano: bool = False
+    sin_gluten: bool = False
+    sin_lactosa: bool = False
+
+    @field_validator("precio")
+    @classmethod
+    def validar_precio(cls, precio: float | None) -> float | None:
+        if precio is not None and precio <= 0:
+            raise ValueError("El precio debe ser mayor que cero")
+        return precio
+
+    @model_validator(mode="after")
+    def validar_coherencia_gluten(self) -> "CrearPlatoEspecialPeticion":
+        if self.sin_gluten and Alergeno.GLUTEN in self.alergenos:
+            raise ValueError("Un plato sin_gluten no puede listar GLUTEN entre sus alergenos")
+        return self
+
+
+@app.post("/admin/api/platos/especiales", status_code=201, response_model=None)
+def admin_crear_especial(
+    peticion: CrearPlatoEspecialPeticion, request: Request
+) -> Plato | Response:
+    if not _sesion_activa(request):
+        return Response(status_code=401, content="Sesión no válida")
+    return crear_plato_especial(
+        RESTAURANTE_ID,
+        peticion.nombre,
+        peticion.descripcion,
+        peticion.precio,
+        peticion.ingredientes,
+        peticion.alergenos,
+        peticion.etiqueta,
+        peticion.vegano,
+        peticion.vegetariano,
+        peticion.sin_gluten,
+        peticion.sin_lactosa,
+    )
+
+
+@app.delete("/admin/api/platos/especiales/{plato_id}")
+def admin_eliminar_especial(plato_id: str, request: Request) -> Response:
+    if not _sesion_activa(request):
+        return Response(status_code=401, content="Sesión no válida")
+    encontrado = eliminar_plato_especial(RESTAURANTE_ID, plato_id)
+    if not encontrado:
+        return Response(status_code=404, content="Plato no encontrado")
+    _ruta_foto(RESTAURANTE_ID, plato_id).unlink(missing_ok=True)
     return Response(status_code=204)
 
 
