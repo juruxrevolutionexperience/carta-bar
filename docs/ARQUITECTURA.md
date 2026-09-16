@@ -58,6 +58,9 @@ ssh xele@178.104.233.131 \
   en hora punta.
 - Si solo cambia el código, el build tarda unos segundos. Si cambian `pyproject.toml`,
   `uv.lock` o el modelo de `embeddings.py`, vuelve a tardar ~8 min.
+- El `Dockerfile` tiene una etapa Node aparte (`frontend/`, compilado con Vite)
+  antes de la imagen de Python: si solo cambia el código de `carta_bar`, esa
+  etapa se reutiliza en caché y no se recompila.
 
 ## Qué está sólido
 

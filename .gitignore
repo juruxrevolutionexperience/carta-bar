@@ -13,3 +13,7 @@ corpus/
 
 # Fotos subidas desde el panel: datos del restaurante, no codigo.
 datos/fotos/
+
+# Frontend (frontend/dist/ y web/dist/ ya caen en dist/ de arriba).
+node_modules/
+

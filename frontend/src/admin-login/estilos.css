@@ -1,0 +1,104 @@
+:root {
+  --marca: #b03a2e;
+  --tinta: #171310;
+  --tinta-media: #6a615b;
+  --fondo: #ffffff;
+  --fondo-alt: #f6f3f0;
+  --borde: #ede8e3;
+  --rojo: #b03a2e;
+  --rojo-suave: #fbeae8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* El desplazamiento se mantiene, el zoom de pellizco no. Safari en iPhone
+     ignora user-scalable=no, asi que el meta viewport no basta por si solo. */
+  touch-action: pan-x pan-y;
+}
+
+body {
+  background: var(--fondo-alt);
+  color: var(--tinta);
+  font-family: system-ui, sans-serif;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  touch-action: pan-x pan-y;
+  overscroll-behavior: none;
+}
+
+.tarjeta {
+  width: 100%;
+  max-width: 360px;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 16px;
+  padding: 32px 28px;
+}
+
+h1 {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+p.sub {
+  color: var(--tinta-media);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  color: var(--tinta-media);
+  margin-bottom: 6px;
+}
+
+input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+
+input:focus {
+  outline: 2px solid var(--marca);
+  outline-offset: 1px;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background: var(--marca);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.error {
+  background: var(--rojo-suave);
+  color: var(--rojo);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}

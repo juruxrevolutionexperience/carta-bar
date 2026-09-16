@@ -134,6 +134,11 @@ restaurante.
   → detalle completo en
   [docs/APARCADO-CARTAS-MULTINEGOCIO.md](APARCADO-CARTAS-MULTINEGOCIO.md)
 - ⬜ Métricas básicas
+- 🔍 Migrar el frontend a React + TypeScript, pantalla a pantalla, sin
+  romper nada entre medias (infraestructura con Vite, compilada en una
+  etapa nueva del `Dockerfile`, servida por FastAPI en `/assets`):
+  login ✅ (pendiente de desplegar), panel de admin completo ⬜, carta
+  pública ⬜
 
 ---
 

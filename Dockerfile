@@ -1,3 +1,12 @@
+# Pantallas ya migradas a React, compiladas antes de que empiece la imagen
+# de Python: capa aparte, no la reconstruye cambiar codigo de carta_bar.
+FROM node:20-slim AS frontend
+WORKDIR /frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
 FROM python:3.12-slim
 
 # uv instala desde uv.lock: las mismas versiones exactas que en desarrollo.
@@ -29,6 +38,7 @@ ENV HF_HUB_OFFLINE=1 \
 COPY datos ./datos
 COPY web ./web
 COPY sql ./sql
+COPY --from=frontend /frontend/dist ./web/dist
 
 EXPOSE 8000
 

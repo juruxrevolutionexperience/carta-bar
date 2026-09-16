@@ -58,10 +58,17 @@ class CabecerasSeguridad(BaseHTTPMiddleware):
         respuesta.headers["Permissions-Policy"] = "microphone=(self), camera=(), geolocation=()"
         # Solo surte efecto sobre HTTPS; sobre HTTP el navegador la ignora.
         respuesta.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        # Nada de esta app debe quedarse guardado en el movil del comensal: el
-        # HTML lleva un nonce distinto en cada peticion (uno guardado dejaria de
-        # cuadrar con la politica) y la carta puede cambiar de precio o de plato
-        # en cualquier momento. Sin esta cabecera el navegador decide por su
-        # cuenta, y Safari en iPhone guarda durante bastante tiempo.
-        respuesta.headers["Cache-Control"] = "no-store"
+        if request.url.path.startswith("/assets/"):
+            # Los bundles que genera Vite llevan un hash en el nombre: cambiar
+            # el contenido cambia la URL, asi que cachearlos mucho tiempo es
+            # seguro (nunca hay una version vieja sirviendose con esa URL).
+            respuesta.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        else:
+            # Nada mas en esta app debe quedarse guardado en el movil del
+            # comensal: el HTML lleva un nonce distinto en cada peticion (uno
+            # guardado dejaria de cuadrar con la politica) y la carta puede
+            # cambiar de precio o de plato en cualquier momento. Sin esta
+            # cabecera el navegador decide por su cuenta, y Safari en iPhone
+            # guarda durante bastante tiempo.
+            respuesta.headers["Cache-Control"] = "no-store"
         return respuesta

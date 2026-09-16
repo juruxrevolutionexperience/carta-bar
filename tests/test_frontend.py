@@ -12,7 +12,7 @@ import pytest
 
 INDICE = Path("web/index.html")
 IDIOMAS = Path("datos/idiomas.json")
-PAGINAS_ADMIN = [Path("web/admin_login.html"), Path("web/admin.html")]
+PAGINAS_ADMIN = [Path("web/admin.html")]  # admin_login.html ya esta en React (frontend/)
 
 
 def javascript(ruta: Path = INDICE) -> str:

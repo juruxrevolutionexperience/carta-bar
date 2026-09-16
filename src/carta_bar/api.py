@@ -8,6 +8,7 @@ from typing import Literal
 import structlog
 from fastapi import FastAPI, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator, model_validator
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -48,6 +49,11 @@ app.add_exception_handler(RateLimitExceeded, limite_superado)
 # llevan decorador propio.
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(CabecerasSeguridad)
+
+# Bundle de las pantallas ya migradas a React (Vite). check_dir=False: la
+# carpeta no existe hasta el primer "npm run build" (o en los tests, donde
+# nunca se pide un asset), y sin esto el montaje fallaria al arrancar.
+app.mount("/assets", StaticFiles(directory="web/dist/assets", check_dir=False), name="assets")
 
 RESTAURANTE_ID = os.getenv("RESTAURANTE_ID", "la-catedral")
 
@@ -180,8 +186,10 @@ class CambiarClavePeticion(BaseModel):
 
 
 @app.get("/admin/login")
-def admin_login_pagina(request: Request) -> HTMLResponse:
-    return _pagina_con_nonce("web/admin_login.html", request)
+def admin_login_pagina() -> HTMLResponse:
+    # Migrada a React (Vite): el bundle es un <script> externo del mismo
+    # origen, ya permitido por el CSP con 'self' sin necesitar el nonce.
+    return HTMLResponse(Path("web/dist/admin-login.html").read_text(encoding="utf-8"))
 
 
 @app.post("/admin/login")
