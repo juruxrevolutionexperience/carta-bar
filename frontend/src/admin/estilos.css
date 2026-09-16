@@ -1,0 +1,396 @@
+:root {
+  --marca: #b03a2e;
+  --tinta: #171310;
+  --tinta-media: #6a615b;
+  --fondo: #ffffff;
+  --fondo-alt: #f6f3f0;
+  --borde: #ede8e3;
+  --verde: #1e7a48;
+  --verde-suave: #e7f4ec;
+  --rojo: #b03a2e;
+  --rojo-suave: #fbeae8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* El desplazamiento se mantiene, el zoom de pellizco no. Safari en iPhone
+     ignora user-scalable=no, asi que el meta viewport no basta por si solo. */
+  touch-action: pan-x pan-y;
+}
+
+body {
+  background: var(--fondo-alt);
+  color: var(--tinta);
+  font-family: system-ui, sans-serif;
+  min-height: 100vh;
+  padding: 24px;
+  /* Sitio para la barra inferior fija, más el gesto de inicio del iPhone. */
+  padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  touch-action: pan-x pan-y;
+  overscroll-behavior: none;
+}
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+header {
+  margin-bottom: 24px;
+}
+
+h1 {
+  font-size: 20px;
+}
+
+.tarjeta {
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.tarjeta h2 {
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.tarjeta p {
+  color: var(--tinta-media);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  color: var(--tinta-media);
+  margin: 14px 0 6px;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  /* 16px minimo: por debajo, Safari en iPhone hace zoom automatico al enfocar. */
+  font-size: 16px;
+  font-family: inherit;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+input:focus,
+textarea:focus {
+  outline: 2px solid var(--marca);
+  outline-offset: 1px;
+}
+
+button.primario {
+  margin-top: 16px;
+  padding: 11px 16px;
+  background: var(--marca);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button.primario:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+button.secundario {
+  margin-top: 16px;
+  margin-left: 8px;
+  padding: 11px 16px;
+  background: none;
+  color: var(--tinta-media);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.aviso {
+  display: none;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+.aviso.visible {
+  display: block;
+}
+
+.aviso.error {
+  background: var(--rojo-suave);
+  color: var(--rojo);
+}
+
+.aviso.exito {
+  background: var(--verde-suave);
+  color: var(--verde);
+}
+
+.fila-plato {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--borde);
+}
+
+.fila-plato:last-child {
+  border-bottom: none;
+}
+
+.fila-plato .info {
+  min-width: 0;
+}
+
+.fila-plato .info .nombre {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.fila-plato .info .detalle {
+  font-size: 12px;
+  color: var(--tinta-media);
+  margin-top: 2px;
+}
+
+.fila-plato button {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  background: none;
+  color: var(--marca);
+  border: 1px solid var(--marca);
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.cargando {
+  color: var(--tinta-media);
+  font-size: 13px;
+}
+
+.grupo-campo {
+  margin-top: 14px;
+}
+
+.grupo-campo > span {
+  display: block;
+  font-size: 13px;
+  color: var(--tinta-media);
+  margin-bottom: 6px;
+}
+
+.rejilla-opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.opcion {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--borde);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.opcion input {
+  width: auto;
+  margin: 0;
+}
+
+.fila-plato .detalle-extra {
+  font-size: 12px;
+  color: var(--marca);
+  margin-top: 2px;
+}
+
+.fila-plato.agotado {
+  opacity: 0.55;
+}
+
+.etiqueta-agotado {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 20px;
+  background: var(--rojo-suave);
+  color: var(--rojo);
+  font-size: 11px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.interruptor {
+  flex-shrink: 0;
+  position: relative;
+  width: 42px;
+  height: 24px;
+}
+
+.interruptor input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+
+.interruptor .riel {
+  position: absolute;
+  inset: 0;
+  background: var(--borde);
+  border-radius: 24px;
+  transition: background 0.15s;
+  pointer-events: none;
+}
+
+.interruptor .riel::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.15s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.interruptor input:checked + .riel {
+  background: var(--verde);
+}
+
+.interruptor input:checked + .riel::before {
+  transform: translateX(18px);
+}
+
+.interruptor input:disabled + .riel {
+  opacity: 0.6;
+}
+
+.bloque-foto {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.miniatura-foto {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid var(--borde);
+  background: var(--fondo-alt);
+  flex-shrink: 0;
+}
+
+.miniatura-foto.vacia {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tinta-media);
+  font-size: 11px;
+  text-align: center;
+}
+
+.acciones-foto {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.acciones-foto label.boton-archivo {
+  display: inline-block;
+  padding: 8px 14px;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: center;
+  color: var(--tinta);
+}
+
+.acciones-foto input[type="file"] {
+  display: none;
+}
+
+.acciones-foto button {
+  background: none;
+  border: none;
+  color: var(--tinta-media);
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.nav-inferior {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-around;
+  background: var(--fondo);
+  border-top: 1px solid var(--borde);
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  z-index: 10;
+}
+
+.nav-item {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 22px;
+  color: var(--tinta-media);
+  font-size: 11px;
+}
+
+.nav-item svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+}
+
+.nav-item.activo {
+  color: var(--marca);
+}

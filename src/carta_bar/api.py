@@ -50,10 +50,12 @@ app.add_exception_handler(RateLimitExceeded, limite_superado)
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(CabecerasSeguridad)
 
-# Bundle de las pantallas ya migradas a React (Vite). check_dir=False: la
-# carpeta no existe hasta el primer "npm run build" (o en los tests, donde
-# nunca se pide un asset), y sin esto el montaje fallaria al arrancar.
-app.mount("/assets", StaticFiles(directory="web/dist/assets", check_dir=False), name="assets")
+# Bundle de las pantallas ya migradas a React (Vite).
+DIR_FRONTEND = Path("web/dist")
+# check_dir=False: la carpeta no existe hasta el primer "npm run build" (o en
+# los tests, donde nunca se pide un asset), y sin esto el montaje fallaria al
+# arrancar.
+app.mount("/assets", StaticFiles(directory=DIR_FRONTEND / "assets", check_dir=False), name="assets")
 
 RESTAURANTE_ID = os.getenv("RESTAURANTE_ID", "la-catedral")
 
@@ -163,12 +165,6 @@ def inicio(request: Request) -> HTMLResponse:
 COOKIE_SESION = "sesion_admin"
 
 
-def _pagina_con_nonce(ruta: str, request: Request) -> HTMLResponse:
-    pagina = Path(ruta).read_text(encoding="utf-8")
-    with_nonce = pagina.replace("<script>", f'<script nonce="{request.state.nonce}">', 1)
-    return HTMLResponse(with_nonce)
-
-
 def _sesion_activa(request: Request) -> bool:
     token = request.cookies.get(COOKIE_SESION)
     if token is None:
@@ -189,7 +185,7 @@ class CambiarClavePeticion(BaseModel):
 def admin_login_pagina() -> HTMLResponse:
     # Migrada a React (Vite): el bundle es un <script> externo del mismo
     # origen, ya permitido por el CSP con 'self' sin necesitar el nonce.
-    return HTMLResponse(Path("web/dist/admin-login.html").read_text(encoding="utf-8"))
+    return HTMLResponse((DIR_FRONTEND / "admin-login.html").read_text(encoding="utf-8"))
 
 
 @app.post("/admin/login")
@@ -218,7 +214,9 @@ def admin_login(request: Request, peticion: LoginPeticion) -> Response:
 def admin_panel(request: Request) -> Response:
     if not _sesion_activa(request):
         return RedirectResponse("/admin/login", status_code=303)
-    return _pagina_con_nonce("web/admin.html", request)
+    # Migrado a React (Vite), igual que /admin/login: el bundle es un
+    # <script> externo del mismo origen, ya permitido por el CSP con 'self'.
+    return HTMLResponse((DIR_FRONTEND / "admin.html").read_text(encoding="utf-8"))
 
 
 @app.post("/admin/cambiar-clave")

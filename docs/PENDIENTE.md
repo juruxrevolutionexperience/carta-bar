@@ -138,7 +138,8 @@ restaurante.
   romper nada entre medias (infraestructura con Vite, compilada en una
   etapa nueva del `Dockerfile`, servida por FastAPI en `/assets`):
   login ✅ desplegado y confirmado en producción, panel de admin
-  completo ⬜, carta pública ⬜
+  completo 🔍 (compilado y verificado por rutas/cabeceras, pendiente
+  de probar en el navegador y desplegar), carta pública ⬜
 
 ---
 

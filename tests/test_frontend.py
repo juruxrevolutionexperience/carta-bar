@@ -12,7 +12,8 @@ import pytest
 
 INDICE = Path("web/index.html")
 IDIOMAS = Path("datos/idiomas.json")
-PAGINAS_ADMIN = [Path("web/admin.html")]  # admin_login.html ya esta en React (frontend/)
+# El panel de admin (login + pantalla completa) ya esta migrado a React,
+# compilado con Vite (frontend/): sin JS inline que revisar aqui.
 
 
 def javascript(ruta: Path = INDICE) -> str:
@@ -25,11 +26,6 @@ def javascript(ruta: Path = INDICE) -> str:
 
 def test_el_javascript_de_la_interfaz_no_tiene_errores_de_sintaxis() -> None:
     esprima.parseScript(javascript())
-
-
-@pytest.mark.parametrize("pagina", PAGINAS_ADMIN)
-def test_el_javascript_del_panel_no_tiene_errores_de_sintaxis(pagina: Path) -> None:
-    esprima.parseScript(javascript(pagina))
 
 
 def test_el_boton_de_voz_nace_oculto() -> None:

@@ -115,7 +115,15 @@ def test_admin_sin_sesion_redirige_al_login(cliente: TestClient) -> None:
     assert r.headers["location"] == "/admin/login"
 
 
-def test_admin_con_sesion_valida_sirve_el_panel(cliente: TestClient) -> None:
+def test_admin_con_sesion_valida_sirve_el_panel(
+    cliente: TestClient, monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    # El panel real lo compila Vite (frontend/) a web/dist/admin.html; en los
+    # tests no hay build, asi que se sirve uno de mentira desde una carpeta
+    # aparte, igual que test_admin_fotos.py hace con DIR_FOTOS.
+    (tmp_path / "admin.html").write_text("<h1>Panel de gestión</h1>", encoding="utf-8")
+    monkeypatch.setattr("carta_bar.api.DIR_FRONTEND", tmp_path)
+
     cliente.cookies.set(COOKIE_SESION, auth.crear_token_sesion(RESTAURANTE_ID))
     r = cliente.get("/admin", follow_redirects=False)
     assert r.status_code == 200

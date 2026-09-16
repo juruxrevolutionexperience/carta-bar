@@ -16,4 +16,5 @@ datos/fotos/
 
 # Frontend (frontend/dist/ y web/dist/ ya caen en dist/ de arriba).
 node_modules/
+*.tsbuildinfo
 
