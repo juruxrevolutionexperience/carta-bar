@@ -137,8 +137,8 @@ restaurante.
 - 🔍 Migrar el frontend a React + TypeScript, pantalla a pantalla, sin
   romper nada entre medias (infraestructura con Vite, compilada en una
   etapa nueva del `Dockerfile`, servida por FastAPI en `/assets`):
-  login ✅ (pendiente de desplegar), panel de admin completo ⬜, carta
-  pública ⬜
+  login ✅ desplegado y confirmado en producción, panel de admin
+  completo ⬜, carta pública ⬜
 
 ---
 
