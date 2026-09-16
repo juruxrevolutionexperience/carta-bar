@@ -33,7 +33,6 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    "esprima>=4.0.1",
     "mypy>=2.3.0",
     "pglast>=8.4",
     "pytest>=9.1.1",
@@ -51,10 +50,5 @@ ignore = ["UP042"]
 
 [tool.mypy]
 python_version = "3.12"
-strict = true 
+strict = true
 warn_unreachable = true
-
-# esprima no publica tipos. Se usa solo en tests para validar el JS de la web.
-[[tool.mypy.overrides]]
-module = "esprima.*"
-ignore_missing_imports = true

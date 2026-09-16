@@ -153,13 +153,10 @@ def obtener_idiomas() -> dict[str, object]:
 
 
 @app.get("/")
-def inicio(request: Request) -> HTMLResponse:
-    # El <script> de la pagina lleva el nonce de esta peticion. Cualquier otro
-    # script que apareciera en el HTML (inyectado) no lo tendria, y el navegador
-    # se negaria a ejecutarlo.
-    pagina = Path("web/index.html").read_text(encoding="utf-8")
-    with_nonce = pagina.replace("<script>", f'<script nonce="{request.state.nonce}">', 1)
-    return HTMLResponse(with_nonce)
+def inicio() -> HTMLResponse:
+    # Migrada a React (Vite), igual que /admin/login y /admin: el bundle es
+    # un <script> externo del mismo origen, ya permitido por el CSP con 'self'.
+    return HTMLResponse((DIR_FRONTEND / "index.html").read_text(encoding="utf-8"))
 
 
 COOKIE_SESION = "sesion_admin"
