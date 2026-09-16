@@ -1,7 +1,15 @@
 import { useState } from "react";
 
-import { crearEspecial, eliminarEspecial, guardarPlatoExistente, type CuerpoPlato } from "./api";
+import {
+  crearEspecial,
+  eliminarEspecial,
+  guardarPlatoExistente,
+  subirFoto,
+  type CuerpoPlato,
+} from "./api";
 import { BloqueFoto } from "./BloqueFoto";
+import { comprimirImagen } from "./comprimirImagen";
+import { SelectorFotoNueva } from "./SelectorFotoNueva";
 import { TEXTO_ALERGENO, TEXTO_DIETA, TEXTO_ETIQUETA, type ClaveDieta } from "./textos";
 import { CATEGORIA_ESPECIALES, type Alergeno, type Etiqueta, type Plato } from "./types";
 
@@ -23,6 +31,7 @@ export function FormularioPlato({ plato, onGuardado, onCancelar, onEliminado }: 
     (Object.keys(TEXTO_DIETA) as ClaveDieta[]).filter((clave) => plato[clave])
   );
   const [fotoActual, setFotoActual] = useState(plato.foto);
+  const [fotoNueva, setFotoNueva] = useState<File | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
 
@@ -69,7 +78,28 @@ export function FormularioPlato({ plato, onGuardado, onCancelar, onEliminado }: 
         return;
       }
       if (resp.status === 201) {
-        const creado: Plato = await resp.json();
+        let creado: Plato = await resp.json();
+        if (fotoNueva) {
+          try {
+            const blob = await comprimirImagen(fotoNueva);
+            const respFoto = await subirFoto(creado.id as string, blob);
+            if (respFoto.ok) {
+              const datos = await respFoto.json();
+              creado = { ...creado, foto: datos.foto };
+            } else {
+              // El formulario se cierra justo despues (onGuardado): un aviso
+              // en pantalla no llegaria a verse, por eso aqui si hace falta
+              // interrumpir con un alert en vez del <div class="aviso"> normal.
+              window.alert(
+                "El especial se creó, pero no se pudo subir la foto. Edítalo para reintentarlo."
+              );
+            }
+          } catch {
+            window.alert(
+              "El especial se creó, pero no se pudo subir la foto. Edítalo para reintentarlo."
+            );
+          }
+        }
         onGuardado(creado);
         return;
       }
@@ -118,15 +148,11 @@ export function FormularioPlato({ plato, onGuardado, onCancelar, onEliminado }: 
         onChange={(e) => setPrecioTxt(e.target.value)}
       />
 
+      <label>Foto</label>
       {plato.id ? (
-        <>
-          <label>Foto</label>
-          <BloqueFoto plato={{ ...plato, foto: fotoActual }} onCambioFoto={setFotoActual} />
-        </>
+        <BloqueFoto plato={{ ...plato, foto: fotoActual }} onCambioFoto={setFotoActual} />
       ) : (
-        <p className="cargando" style={{ marginTop: "14px" }}>
-          Guarda el especial para poder añadirle foto.
-        </p>
+        <SelectorFotoNueva archivo={fotoNueva} onSeleccionar={setFotoNueva} />
       )}
 
       <label>Ingredientes (uno por línea)</label>
