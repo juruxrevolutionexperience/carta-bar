@@ -9,14 +9,14 @@ Cómo está montado hoy, qué es sólido y qué está cogido con pinzas.
        │  escanea QR → https://cartia.jurux.app
        ▼
  ┌──────────────── SERVIDOR HETZNER ────────────────────┐
- │  nginx  (HTTPS con certificado de Let's Encrypt)     │
+ │  nginx  (HTTPS, un subdominio por restaurante)       │
  │     │                                                │
  │     ▼  127.0.0.1:8001                                │
- │  Contenedor Docker "carta-bar"                       │
- │    ├─ web/index.html     la página que ve el cliente │
- │    ├─ API FastAPI        /carta, /preguntar...       │
- │    ├─ datos/*.json       LA CARTA, dentro de la imagen│
- │    └─ modelo embeddings  entiende "algo sin gluten"  │
+ │  Contenedor Docker "carta-bar" (uno para todos)      │
+ │    ├─ web/dist/*          React (Vite): carta, panel │
+ │    ├─ API FastAPI         /carta, /preguntar...      │
+ │    ├─ resuelve restaurante por el Host de la peticion│
+ │    └─ modelo embeddings   entiende "algo sin gluten" │
  │                                                      │
  │  Al lado: cuentas (:3000) y gym-app (:8080)          │
  └──────────┬───────────────────────────┬───────────────┘
@@ -35,7 +35,7 @@ Cómo está montado hoy, qué es sólido y qué está cogido con pinzas.
 | Código | `/home/xele/cartaBar` |
 | Contenedor | `carta-bar`, solo en loopback `127.0.0.1:8001` |
 | nginx | `/etc/nginx/sites-available/carta`; certbot renueva el certificado solo |
-| DNS | Cloudflare, registro A `cartia` → 178.104.233.131, **solo DNS** (nube gris). Con la nube naranja, la IP que ve nginx sería la de Cloudflare y el límite de peticiones dejaría de distinguir comensales |
+| DNS | Cloudflare, un registro A por restaurante (`cartia`, `demo`...) → 178.104.233.131, **solo DNS** (nube gris). Con la nube naranja, la IP que ve nginx sería la de Cloudflare y el límite de peticiones dejaría de distinguir comensales |
 | Base de datos | Supabase por el *Session pooler*: la conexión directa es solo IPv6 |
 | Variables | `/home/xele/cartaBar/.env` en el servidor, fuera de git |
 | Seguridad del host | ufw (22, 80, 443) y fail2ban. La IP de casa está en `ignoreip` de `/etc/fail2ban/jail.local` |
@@ -98,3 +98,17 @@ las fotos se comprimen en el propio navegador (sin Pillow en el
 servidor) y se guardan en `datos/fotos/<restaurante_id>/<plato_id>.jpg`,
 con un volumen persistente en `docker-compose.prod.yml` para que
 sobrevivan a `docker compose up -d --build`.
+
+**Multi-tenant real, adelantado a la Fase 4:** el mismo contenedor
+sirve ya varios restaurantes a la vez. `_resolver_restaurante()` en
+`api.py` decide qué restaurante atiende cada petición según el
+subdominio del `Host` (`cartia.jurux.app` → `la-catedral`,
+`demo.jurux.app` → `demo`), en vez de la antigua variable
+`RESTAURANTE_ID` fija por servidor (que se mantiene solo como
+respaldo para desarrollo local). Un nuevo restaurante no exige
+desplegar nada aparte — solo un registro DNS, ampliar el certificado
+de nginx, y sembrar sus filas en Supabase (todavía a mano; el alta
+automática es la pieza que falta). El aislamiento (datos y sesiones
+de un restaurante nunca se cruzan con otro) está cubierto por
+`tests/test_multitenant.py` y probado contra producción con un
+restaurante de prueba (`demo`).

@@ -3,10 +3,11 @@ import os
 import re
 import time
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
+import numpy as np
 import structlog
-from fastapi import FastAPI, Request, UploadFile
+from fastapi import Depends, FastAPI, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -59,9 +60,55 @@ app.mount("/assets", StaticFiles(directory=DIR_FRONTEND / "assets", check_dir=Fa
 
 RESTAURANTE_ID = os.getenv("RESTAURANTE_ID", "la-catedral")
 
+# "cartia" es el subdominio historico de La CatedRal; nuevos restaurantes
+# usan directamente su id como subdominio, sin hacer falta alias.
+ALIAS_SUBDOMINIO = {"cartia": "la-catedral"}
+
+
+def _restaurante_existe(restaurante_id: str) -> bool:
+    try:
+        cargar_config(restaurante_id)
+        return True
+    except (ValueError, FileNotFoundError):
+        return False
+
+
+def _resolver_restaurante(request: Request) -> str:
+    """Que restaurante sirve esta peticion, segun el subdominio del Host.
+
+    Sin esto, todo el sitio serviria siempre el mismo restaurante fijo -
+    es lo que separa `bar2.jurux.app` de `la-catedral.jurux.app` en el
+    mismo servidor, sin desplegar nada aparte por cliente.
+    """
+    subdominio = request.headers.get("host", "").split(":")[0].split(".")[0]
+    restaurante_id = ALIAS_SUBDOMINIO.get(subdominio, subdominio)
+    try:
+        _validar_slug(restaurante_id, "restaurante_id")
+    except ValueError:
+        return RESTAURANTE_ID
+    if _restaurante_existe(restaurante_id):
+        return restaurante_id
+    # Desarrollo local (localhost, 127.0.0.1) o un subdominio que no existe:
+    # se cae al restaurante fijo de siempre, igual que antes de esto.
+    return RESTAURANTE_ID
+
+
+RestauranteActual = Annotated[str, Depends(_resolver_restaurante)]
+
 modelo = cargar_modelo()
-carta, vectores = indexar(modelo, RESTAURANTE_ID)
 control = ControlGasto(crear_repositorio())
+
+# Indice de busqueda del chat: uno por restaurante, calculado la primera vez
+# que se le pregunta algo (no todos de golpe al arrancar). Se vacia para un
+# restaurante en concreto cuando se edita un plato suyo, para que el chat no
+# acabe respondiendo con datos viejos.
+_indices: dict[str, tuple[list[Plato], np.ndarray]] = {}
+
+
+def _indice_de(restaurante_id: str) -> tuple[list[Plato], np.ndarray]:
+    if restaurante_id not in _indices:
+        _indices[restaurante_id] = indexar(modelo, restaurante_id)
+    return _indices[restaurante_id]
 
 
 Idioma = Literal["es", "en", "de", "fr"]
@@ -79,13 +126,15 @@ class Pregunta(BaseModel):
 
 
 @app.get("/carta")
-def obtener_carta(idioma: Idioma = "es") -> list[dict[str, object]]:
-    return cargar_carta_traducida(RESTAURANTE_ID, idioma)
+def obtener_carta(
+    restaurante_id: RestauranteActual, idioma: Idioma = "es"
+) -> list[dict[str, object]]:
+    return cargar_carta_traducida(restaurante_id, idioma)
 
 
 @app.get("/categorias")
-def obtener_categorias() -> list[Categoria]:
-    return cargar_categorias(RESTAURANTE_ID)
+def obtener_categorias(restaurante_id: RestauranteActual) -> list[Categoria]:
+    return cargar_categorias(restaurante_id)
 
 
 # Lista blanca de lo que la carta publica puede ver. El fichero de configuracion
@@ -106,21 +155,22 @@ CAMPOS_CONFIG_PUBLICOS = frozenset(
 
 
 @app.get("/config")
-def obtener_config() -> dict[str, object]:
-    datos = cargar_config(RESTAURANTE_ID)
+def obtener_config(restaurante_id: RestauranteActual) -> dict[str, object]:
+    datos = cargar_config(restaurante_id)
     return {k: v for k, v in datos.items() if k in CAMPOS_CONFIG_PUBLICOS}
 
 
 @app.post("/preguntar")
 @limiter.limit(LIMITE_PREGUNTAR)
-def preguntar(request: Request, pregunta: Pregunta) -> dict[str, str]:
-    restaurante_id = RESTAURANTE_ID
-
+def preguntar(
+    request: Request, pregunta: Pregunta, restaurante_id: RestauranteActual
+) -> dict[str, str]:
     # El corte va ANTES de llamar al LLM: comprobarlo despues no ahorraria nada.
     if not control.hay_presupuesto(restaurante_id):
         aviso = AVISO_SIN_PRESUPUESTO.get(pregunta.idioma, AVISO_SIN_PRESUPUESTO["es"])
         return {"respuesta": aviso}
 
+    carta, vectores = _indice_de(restaurante_id)
     resultado = responder_cliente(
         pregunta.texto,
         modelo,
@@ -162,11 +212,14 @@ def inicio() -> HTMLResponse:
 COOKIE_SESION = "sesion_admin"
 
 
-def _sesion_activa(request: Request) -> bool:
+def _sesion_activa(request: Request, restaurante_id: str) -> bool:
+    # Compara contra el restaurante de ESTA peticion (por subdominio), no
+    # contra uno fijo: una sesion de bar2.jurux.app no debe valer en
+    # la-catedral.jurux.app aunque el token en si sea valido.
     token = request.cookies.get(COOKIE_SESION)
     if token is None:
         return False
-    return verificar_token_sesion(token) == RESTAURANTE_ID
+    return verificar_token_sesion(token) == restaurante_id
 
 
 class LoginPeticion(BaseModel):
@@ -187,12 +240,14 @@ def admin_login_pagina() -> HTMLResponse:
 
 @app.post("/admin/login")
 @limiter.limit(LIMITE_LOGIN)
-def admin_login(request: Request, peticion: LoginPeticion) -> Response:
-    hash_guardado = obtener_clave_hash(RESTAURANTE_ID)
+def admin_login(
+    request: Request, peticion: LoginPeticion, restaurante_id: RestauranteActual
+) -> Response:
+    hash_guardado = obtener_clave_hash(restaurante_id)
     if hash_guardado is None or not verificar_clave(peticion.clave, hash_guardado):
         return Response(status_code=401, content="Contraseña incorrecta")
 
-    token = crear_token_sesion(RESTAURANTE_ID)
+    token = crear_token_sesion(restaurante_id)
     respuesta = Response(status_code=204)
     respuesta.set_cookie(
         COOKIE_SESION,
@@ -208,8 +263,8 @@ def admin_login(request: Request, peticion: LoginPeticion) -> Response:
 
 
 @app.get("/admin")
-def admin_panel(request: Request) -> Response:
-    if not _sesion_activa(request):
+def admin_panel(request: Request, restaurante_id: RestauranteActual) -> Response:
+    if not _sesion_activa(request, restaurante_id):
         return RedirectResponse("/admin/login", status_code=303)
     # Migrado a React (Vite), igual que /admin/login: el bundle es un
     # <script> externo del mismo origen, ya permitido por el CSP con 'self'.
@@ -217,15 +272,17 @@ def admin_panel(request: Request) -> Response:
 
 
 @app.post("/admin/cambiar-clave")
-def admin_cambiar_clave(request: Request, peticion: CambiarClavePeticion) -> Response:
-    if not _sesion_activa(request):
+def admin_cambiar_clave(
+    request: Request, peticion: CambiarClavePeticion, restaurante_id: RestauranteActual
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
         return Response(status_code=401, content="Sesión no válida")
 
-    hash_guardado = obtener_clave_hash(RESTAURANTE_ID)
+    hash_guardado = obtener_clave_hash(restaurante_id)
     if hash_guardado is None or not verificar_clave(peticion.clave_actual, hash_guardado):
         return Response(status_code=401, content="Contraseña actual incorrecta")
 
-    guardar_clave_hash(RESTAURANTE_ID, hash_clave(peticion.clave_nueva))
+    guardar_clave_hash(restaurante_id, hash_clave(peticion.clave_nueva))
     return Response(status_code=204)
 
 
@@ -264,12 +321,15 @@ class ActualizarPlatoPeticion(BaseModel):
 
 @app.put("/admin/api/platos/{plato_id}")
 def admin_actualizar_plato(
-    plato_id: str, peticion: ActualizarPlatoPeticion, request: Request
+    plato_id: str,
+    peticion: ActualizarPlatoPeticion,
+    request: Request,
+    restaurante_id: RestauranteActual,
 ) -> Response:
-    if not _sesion_activa(request):
+    if not _sesion_activa(request, restaurante_id):
         return Response(status_code=401, content="Sesión no válida")
     encontrado = actualizar_plato_editable(
-        RESTAURANTE_ID,
+        restaurante_id,
         plato_id,
         peticion.nombre,
         peticion.descripcion,
@@ -284,6 +344,7 @@ def admin_actualizar_plato(
     )
     if not encontrado:
         return Response(status_code=404, content="Plato no encontrado")
+    _indices.pop(restaurante_id, None)
     return Response(status_code=204)
 
 
@@ -293,13 +354,17 @@ class ActualizarDisponibilidadPeticion(BaseModel):
 
 @app.post("/admin/api/platos/{plato_id}/disponibilidad")
 def admin_actualizar_disponibilidad(
-    plato_id: str, peticion: ActualizarDisponibilidadPeticion, request: Request
+    plato_id: str,
+    peticion: ActualizarDisponibilidadPeticion,
+    request: Request,
+    restaurante_id: RestauranteActual,
 ) -> Response:
-    if not _sesion_activa(request):
+    if not _sesion_activa(request, restaurante_id):
         return Response(status_code=401, content="Sesión no válida")
-    encontrado = actualizar_disponibilidad(RESTAURANTE_ID, plato_id, peticion.disponible)
+    encontrado = actualizar_disponibilidad(restaurante_id, plato_id, peticion.disponible)
     if not encontrado:
         return Response(status_code=404, content="Plato no encontrado")
+    _indices.pop(restaurante_id, None)
     return Response(status_code=204)
 
 
@@ -331,12 +396,12 @@ class CrearPlatoEspecialPeticion(BaseModel):
 
 @app.post("/admin/api/platos/especiales", status_code=201, response_model=None)
 def admin_crear_especial(
-    peticion: CrearPlatoEspecialPeticion, request: Request
+    peticion: CrearPlatoEspecialPeticion, request: Request, restaurante_id: RestauranteActual
 ) -> Plato | Response:
-    if not _sesion_activa(request):
+    if not _sesion_activa(request, restaurante_id):
         return Response(status_code=401, content="Sesión no válida")
-    return crear_plato_especial(
-        RESTAURANTE_ID,
+    creado = crear_plato_especial(
+        restaurante_id,
         peticion.nombre,
         peticion.descripcion,
         peticion.precio,
@@ -348,16 +413,21 @@ def admin_crear_especial(
         peticion.sin_gluten,
         peticion.sin_lactosa,
     )
+    _indices.pop(restaurante_id, None)
+    return creado
 
 
 @app.delete("/admin/api/platos/especiales/{plato_id}")
-def admin_eliminar_especial(plato_id: str, request: Request) -> Response:
-    if not _sesion_activa(request):
+def admin_eliminar_especial(
+    plato_id: str, request: Request, restaurante_id: RestauranteActual
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
         return Response(status_code=401, content="Sesión no válida")
-    encontrado = eliminar_plato_especial(RESTAURANTE_ID, plato_id)
+    encontrado = eliminar_plato_especial(restaurante_id, plato_id)
     if not encontrado:
         return Response(status_code=404, content="Plato no encontrado")
-    _ruta_foto(RESTAURANTE_ID, plato_id).unlink(missing_ok=True)
+    _ruta_foto(restaurante_id, plato_id).unlink(missing_ok=True)
+    _indices.pop(restaurante_id, None)
     return Response(status_code=204)
 
 
@@ -376,8 +446,10 @@ def _ruta_foto(restaurante_id: str, plato_id: str) -> Path:
 
 
 @app.post("/admin/api/platos/{plato_id}/foto")
-async def admin_subir_foto(plato_id: str, request: Request, foto: UploadFile) -> Response:
-    if not _sesion_activa(request):
+async def admin_subir_foto(
+    plato_id: str, request: Request, foto: UploadFile, restaurante_id: RestauranteActual
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
         return Response(status_code=401, content="Sesión no válida")
 
     contenido = await foto.read(TAMANO_MAX_FOTO + 1)
@@ -386,12 +458,12 @@ async def admin_subir_foto(plato_id: str, request: Request, foto: UploadFile) ->
     if not contenido.startswith(_CABECERA_JPEG):
         return Response(status_code=400, content="Solo se aceptan imagenes JPEG")
 
-    ruta = _ruta_foto(RESTAURANTE_ID, plato_id)
+    ruta = _ruta_foto(restaurante_id, plato_id)
     ruta.parent.mkdir(parents=True, exist_ok=True)
     ruta.write_bytes(contenido)
 
-    url = f"/fotos/{RESTAURANTE_ID}/{plato_id}.jpg?v={int(time.time())}"
-    encontrado = actualizar_foto_plato(RESTAURANTE_ID, plato_id, url)
+    url = f"/fotos/{restaurante_id}/{plato_id}.jpg?v={int(time.time())}"
+    encontrado = actualizar_foto_plato(restaurante_id, plato_id, url)
     if not encontrado:
         ruta.unlink(missing_ok=True)
         return Response(status_code=404, content="Plato no encontrado")
@@ -399,13 +471,15 @@ async def admin_subir_foto(plato_id: str, request: Request, foto: UploadFile) ->
 
 
 @app.delete("/admin/api/platos/{plato_id}/foto")
-def admin_borrar_foto(plato_id: str, request: Request) -> Response:
-    if not _sesion_activa(request):
+def admin_borrar_foto(
+    plato_id: str, request: Request, restaurante_id: RestauranteActual
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
         return Response(status_code=401, content="Sesión no válida")
-    encontrado = actualizar_foto_plato(RESTAURANTE_ID, plato_id, None)
+    encontrado = actualizar_foto_plato(restaurante_id, plato_id, None)
     if not encontrado:
         return Response(status_code=404, content="Plato no encontrado")
-    _ruta_foto(RESTAURANTE_ID, plato_id).unlink(missing_ok=True)
+    _ruta_foto(restaurante_id, plato_id).unlink(missing_ok=True)
     return Response(status_code=204)
 
 

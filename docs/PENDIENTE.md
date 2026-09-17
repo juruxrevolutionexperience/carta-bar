@@ -134,23 +134,32 @@ restaurante.
   → detalle completo en
   [docs/APARCADO-CARTAS-MULTINEGOCIO.md](APARCADO-CARTAS-MULTINEGOCIO.md)
 - ⬜ Métricas básicas
-- 🔍 Migrar el frontend a React + TypeScript, pantalla a pantalla, sin
+- ✅ Migrar el frontend a React + TypeScript, pantalla a pantalla, sin
   romper nada entre medias (infraestructura con Vite, compilada en una
   etapa nueva del `Dockerfile`, servida por FastAPI en `/assets`):
-  login ✅ y panel de admin completo ✅ desplegados y confirmados en
-  producción; carta pública 🔍 (compilada y verificada por
-  rutas/cabeceras, pendiente de probar en el navegador y desplegar).
-  Con las tres, `esprima` deja de hacer falta y sale de las
-  dependencias
+  login, panel de admin completo y carta pública, las tres
+  desplegadas y confirmadas en producción. `esprima` salió de las
+  dependencias al dejar de hacer falta
 
 ---
 
 ## FASE 4 · SaaS multi-cliente (Bloque 3)
 
-**Se empieza cuando:** hay un cliente de pago y llega el 2º o 3º.
+**Se empieza cuando:** hay un cliente de pago y llega el 2º o 3º —
+salvo el aislamiento por subdominio, adelantado a propósito (ver
+abajo) para saber que el sistema escala antes de necesitarlo, no
+porque haya ya un segundo cliente.
 
 - ⬜ Alta automática · facturación · panel superadmin
-- ⬜ Aislamiento verificado con tests · subdominios · logs por restaurante
+- ✅ Aislamiento por subdominio: el restaurante se resuelve por el
+  `Host` de cada petición (`_resolver_restaurante` en `api.py`), no
+  por una variable fija — un mismo servidor sirve ya
+  `cartia.jurux.app` (La CatedRal) y `demo.jurux.app` (restaurante de
+  prueba, sembrado a mano) sin mezclar datos ni sesiones entre los
+  dos. Probado con tests dedicados (`tests/test_multitenant.py`) y
+  contra Supabase de verdad. Dar de alta un restaurante sigue siendo
+  manual (SQL a mano) — el alta automática espera a la Fase 4 de
+  verdad, o al importador de cartas
 
 ---
 
