@@ -165,6 +165,12 @@ porque haya ya un segundo cliente.
 
 ## APARCADO (ideas, no tareas)
 
+- Pedido en mesa (comandas: anfitrión/invitados, cocina/barra en tiempo
+  real, cuenta) → especificación completa lista, pero no se empieza
+  hasta cumplir su propio requisito de entrada — un restaurante
+  usando la carta y el panel de verdad durante un mes (la Fase 2 que
+  aún no ha empezado). Detalle completo en
+  [docs/APARCADO-PEDIDO-EN-MESA.md](APARCADO-PEDIDO-EN-MESA.md)
 - Vídeo en los platos → después del panel
 - Botones de filtro sin LLM (sin gluten, vegetariano...) → decidir con el coste medido en Fase 2
 - Reducir coste del chat con niveles (filtros → plantillas → caché → LLM),
