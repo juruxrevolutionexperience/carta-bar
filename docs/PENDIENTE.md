@@ -62,7 +62,8 @@ Probado en el iPhone, confirmado bueno.
 - ⬜ Copia de seguridad diaria de datos/
 - ⬜ Probado en móvil, con datos móviles, en los 4 idiomas
 - ✅ QR generado (PNG y SVG) y verificado leyéndolo: apunta a https://cartia.jurux.app
-- ⬜ Parar gym-app, que sigue corriendo sin dominio (sus datos quedan en su volumen)
+- ✅ Parar gym-app: borrado del todo (contenedor, red, volumen de datos,
+  imagen y carpeta) — no solo parado, ya no queda rastro en el servidor
 
 ---
 
