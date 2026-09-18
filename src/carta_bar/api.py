@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Annotated, Literal
 
 import numpy as np
+import psycopg
 import structlog
 from fastapi import Depends, FastAPI, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -26,15 +27,17 @@ from carta_bar.datos import (
     cargar_categorias,
     cargar_config,
     crear_plato_especial,
+    crear_restaurante,
     eliminar_plato_especial,
     guardar_clave_hash,
+    listar_restaurantes,
     obtener_clave_hash,
 )
 from carta_bar.embeddings import cargar_modelo
 from carta_bar.limites import LIMITE_LOGIN, LIMITE_PREGUNTAR, limite_superado, limiter
 from carta_bar.llm import MODELO
 from carta_bar.logging_config import configurar_logging
-from carta_bar.modelos import Alergeno, Categoria, Etiqueta, MensajeChat, Plato
+from carta_bar.modelos import Alergeno, Categoria, Etiqueta, MensajeChat, Plato, ResumenRestaurante
 from carta_bar.presupuesto import AVISO_SIN_PRESUPUESTO, ControlGasto
 from carta_bar.seguridad import CabecerasSeguridad
 from carta_bar.uso import crear_repositorio
@@ -59,6 +62,12 @@ DIR_FRONTEND = Path("web/dist")
 app.mount("/assets", StaticFiles(directory=DIR_FRONTEND / "assets", check_dir=False), name="assets")
 
 RESTAURANTE_ID = os.getenv("RESTAURANTE_ID", "la-catedral")
+
+# Contraseña del dueño de la plataforma, no de ningun restaurante: vive en
+# .env, nunca en la base de datos de restaurantes.
+SUPERADMIN_CLAVE_HASH = os.getenv("SUPERADMIN_CLAVE_HASH")
+COOKIE_SESION_SUPERADMIN = "sesion_superadmin"
+TOKEN_SUPERADMIN = "__superadmin__"
 
 # "cartia" es el subdominio historico de La CatedRal; nuevos restaurantes
 # usan directamente su id como subdominio, sin hacer falta alias.
@@ -492,3 +501,88 @@ def obtener_foto(restaurante_id: str, archivo: str) -> Response:
     if not ruta.is_file():
         return Response(status_code=404)
     return Response(content=ruta.read_bytes(), media_type="image/jpeg")
+
+
+# ------------------------------------------------------ panel superadmin
+#
+# No es de ningun restaurante: es el panel del dueño de la plataforma, para
+# dar de alta restaurantes nuevos sin tocar la base de datos a mano. Sesion
+# y cookie completamente aparte de las de /admin.
+
+
+def _sesion_superadmin_activa(request: Request) -> bool:
+    token = request.cookies.get(COOKIE_SESION_SUPERADMIN)
+    return token is not None and verificar_token_sesion(token) == TOKEN_SUPERADMIN
+
+
+class SuperadminLoginPeticion(BaseModel):
+    clave: str = Field(min_length=1, max_length=200)
+
+
+@app.get("/superadmin/login")
+def superadmin_login_pagina() -> HTMLResponse:
+    return HTMLResponse((DIR_FRONTEND / "superadmin-login.html").read_text(encoding="utf-8"))
+
+
+@app.post("/superadmin/login")
+@limiter.limit(LIMITE_LOGIN)
+def superadmin_login(request: Request, peticion: SuperadminLoginPeticion) -> Response:
+    if SUPERADMIN_CLAVE_HASH is None or not verificar_clave(peticion.clave, SUPERADMIN_CLAVE_HASH):
+        return Response(status_code=401, content="Contraseña incorrecta")
+
+    token = crear_token_sesion(TOKEN_SUPERADMIN)
+    respuesta = Response(status_code=204)
+    respuesta.set_cookie(
+        COOKIE_SESION_SUPERADMIN,
+        token,
+        httponly=True,
+        secure=request.url.scheme == "https",
+        samesite="lax",
+        max_age=12 * 60 * 60,
+    )
+    return respuesta
+
+
+@app.get("/superadmin")
+def superadmin_panel(request: Request) -> Response:
+    if not _sesion_superadmin_activa(request):
+        return RedirectResponse("/superadmin/login", status_code=303)
+    return HTMLResponse((DIR_FRONTEND / "superadmin.html").read_text(encoding="utf-8"))
+
+
+@app.post("/superadmin/logout")
+def superadmin_logout() -> Response:
+    respuesta = Response(status_code=204)
+    respuesta.delete_cookie(COOKIE_SESION_SUPERADMIN)
+    return respuesta
+
+
+@app.get("/superadmin/api/restaurantes", response_model=None)
+def superadmin_listar_restaurantes(request: Request) -> list[ResumenRestaurante] | Response:
+    if not _sesion_superadmin_activa(request):
+        return Response(status_code=401, content="Sesión no válida")
+    return listar_restaurantes()
+
+
+class CrearRestaurantePeticion(BaseModel):
+    restaurante_id: str = Field(min_length=1, max_length=100)
+    nombre: str = Field(min_length=1, max_length=200)
+    clave: str = Field(min_length=8, max_length=200)
+
+    @field_validator("restaurante_id")
+    @classmethod
+    def validar_restaurante_id(cls, valor: str) -> str:
+        return _validar_slug(valor, "restaurante_id")
+
+
+@app.post("/superadmin/api/restaurantes", status_code=201, response_model=None)
+def superadmin_crear_restaurante(
+    peticion: CrearRestaurantePeticion, request: Request
+) -> ResumenRestaurante | Response:
+    if not _sesion_superadmin_activa(request):
+        return Response(status_code=401, content="Sesión no válida")
+    try:
+        crear_restaurante(peticion.restaurante_id, peticion.nombre, hash_clave(peticion.clave))
+    except psycopg.errors.UniqueViolation:
+        return Response(status_code=409, content="Ese subdominio ya está en uso")
+    return ResumenRestaurante(id=peticion.restaurante_id, nombre=peticion.nombre, num_platos=0)

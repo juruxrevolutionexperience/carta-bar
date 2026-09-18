@@ -92,6 +92,14 @@ class Categoria(BaseModel):
     orden: int
 
 
+class ResumenRestaurante(BaseModel):
+    """Una fila del panel superadmin: lo minimo para ver que restaurantes hay."""
+
+    id: str
+    nombre: str
+    num_platos: int
+
+
 class RespuestaAgente(BaseModel):
     """Lo que el agente responde y lo que ha costado producirlo."""
 

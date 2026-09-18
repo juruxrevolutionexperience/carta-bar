@@ -20,7 +20,7 @@ import structlog
 from psycopg.types.json import Jsonb
 from psycopg_pool import ConnectionPool
 
-from carta_bar.modelos import Alergeno, Categoria, Etiqueta, Plato
+from carta_bar.modelos import Alergeno, Categoria, Etiqueta, Plato, ResumenRestaurante
 
 log = structlog.get_logger()
 
@@ -101,6 +101,10 @@ class RepositorioCarta(Protocol):
     ) -> Plato: ...
 
     def eliminar_plato_especial(self, restaurante_id: str, plato_id: str) -> bool: ...
+
+    def listar_restaurantes(self) -> list[ResumenRestaurante]: ...
+
+    def crear_restaurante(self, restaurante_id: str, nombre: str, clave_hash: str) -> None: ...
 
 
 class RepositorioCartaFicheros:
@@ -233,6 +237,12 @@ class RepositorioCartaFicheros:
 
     def eliminar_plato_especial(self, restaurante_id: str, plato_id: str) -> bool:
         raise NotImplementedError("Los especiales requieren CARTA_BD_ACTIVA=true")
+
+    def listar_restaurantes(self) -> list[ResumenRestaurante]:
+        raise NotImplementedError("El panel superadmin requiere CARTA_BD_ACTIVA=true")
+
+    def crear_restaurante(self, restaurante_id: str, nombre: str, clave_hash: str) -> None:
+        raise NotImplementedError("El panel superadmin requiere CARTA_BD_ACTIVA=true")
 
 
 class RepositorioCartaPostgres:
@@ -513,6 +523,23 @@ class RepositorioCartaPostgres:
             )
             return cur.rowcount > 0
 
+    def listar_restaurantes(self) -> list[ResumenRestaurante]:
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT r.id, r.nombre, COUNT(p.id) "
+                "FROM restaurantes r LEFT JOIN platos p ON p.restaurante_id = r.id "
+                "GROUP BY r.id, r.nombre ORDER BY r.id"
+            )
+            filas = cur.fetchall()
+        return [ResumenRestaurante(id=f[0], nombre=f[1], num_platos=f[2]) for f in filas]
+
+    def crear_restaurante(self, restaurante_id: str, nombre: str, clave_hash: str) -> None:
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO restaurantes (id, nombre, clave_hash) VALUES (%s, %s, %s)",
+                (restaurante_id, nombre, clave_hash),
+            )
+
     def aplicar_esquema(self, ruta: str = "sql/esquema.sql") -> None:
         with open(ruta, encoding="utf-8") as f:
             sql = f.read()
@@ -682,3 +709,11 @@ def crear_plato_especial(
 
 def eliminar_plato_especial(restaurante_id: str, plato_id: str) -> bool:
     return obtener_repositorio_carta().eliminar_plato_especial(restaurante_id, plato_id)
+
+
+def listar_restaurantes() -> list[ResumenRestaurante]:
+    return obtener_repositorio_carta().listar_restaurantes()
+
+
+def crear_restaurante(restaurante_id: str, nombre: str, clave_hash: str) -> None:
+    obtener_repositorio_carta().crear_restaurante(restaurante_id, nombre, clave_hash)
