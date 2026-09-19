@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import { colorCategoria } from "../carta/iconos";
 import { FilaPlato } from "./FilaPlato";
 import type { Categoria, Plato } from "./types";
 
@@ -73,20 +74,25 @@ export function SeccionPlatos({ platos, error, categorias, onActualizar, onQuita
         )}
 
         {grupos?.map((grupo) => (
-          <div key={grupo.id} className="grupo-categoria">
-            <h3 className="titulo-categoria">
+          <details key={grupo.id} className="grupo-categoria" open>
+            <summary
+              className="titulo-categoria"
+              style={{ borderLeftColor: colorCategoria(grupo.id) }}
+            >
               {grupo.nombre} <span className="cuenta-categoria">({grupo.platos.length})</span>
-            </h3>
-            {grupo.platos.map((p) => (
-              <FilaPlato
-                key={p.id}
-                plato={p}
-                nombreCategoria={grupo.nombre}
-                onCambiado={(nuevo) => onActualizar(p, nuevo)}
-                onQuitarDeLista={() => onQuitar(p)}
-              />
-            ))}
-          </div>
+            </summary>
+            <div className="platos-categoria">
+              {grupo.platos.map((p) => (
+                <FilaPlato
+                  key={p.id}
+                  plato={p}
+                  nombreCategoria={grupo.nombre}
+                  onCambiado={(nuevo) => onActualizar(p, nuevo)}
+                  onQuitarDeLista={() => onQuitar(p)}
+                />
+              ))}
+            </div>
+          </details>
         ))}
       </div>
     </section>

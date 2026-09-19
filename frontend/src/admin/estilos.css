@@ -104,28 +104,56 @@ input[type="search"] {
 }
 
 .grupo-categoria {
-  margin-top: 20px;
+  margin-top: 12px;
 }
 
 .grupo-categoria:first-of-type {
   margin-top: 4px;
 }
 
+/* <summary> trae su propio triangulo segun el navegador; se sustituye por
+   una flecha propia que gira, consistente en todos. */
 .titulo-categoria {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
   font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--tinta-media);
-  border-bottom: 1px solid var(--borde);
-  padding-bottom: 6px;
-  margin-bottom: 8px;
+  background: var(--fondo-alt);
+  border-left: 4px solid transparent;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+}
+
+.titulo-categoria::-webkit-details-marker {
+  display: none;
+}
+
+.titulo-categoria::before {
+  content: "▸";
+  font-size: 11px;
+  transition: transform 0.15s ease;
+}
+
+.grupo-categoria[open] > .titulo-categoria::before {
+  transform: rotate(90deg);
 }
 
 .cuenta-categoria {
   font-weight: 400;
   text-transform: none;
   letter-spacing: normal;
+}
+
+.platos-categoria {
+  padding-top: 4px;
 }
 
 button.primario {

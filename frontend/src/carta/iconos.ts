@@ -66,9 +66,16 @@ function hash(s: string): number {
   return Math.abs(h);
 }
 
+// Categorias fuera de TONO (nombres propios de cada restaurante, no se
+// pueden prever todos) reciben un tono derivado de su propio id en vez de
+// caer todas en el mismo color por defecto.
+function tonoBase(catId: string): [number, number] {
+  return TONO[catId] || [hash(catId) % 360, 38];
+}
+
 /* cada plato recibe una variación del tono de su categoría */
 export function degradado(catId: string, semilla?: string): string {
-  const base = TONO[catId] || [30, 20];
+  const base = tonoBase(catId);
   const giro = semilla ? (hash(semilla) % 26) - 13 : 0;
   const h = (base[0] + giro + 360) % 360;
   const s = base[1];
@@ -83,6 +90,13 @@ export function degradado(catId: string, semilla?: string): string {
     s +
     "% 82%) 100%)"
   );
+}
+
+// Color solido (no degradado) para distinguir categorias en listas, no en
+// tarjetas: mismo tono que degradado(), pensado para un borde o una insignia.
+export function colorCategoria(catId: string): string {
+  const [h, s] = tonoBase(catId);
+  return `hsl(${h} ${s}% 45%)`;
 }
 
 export function iconoPlato(p: Plato): string {
