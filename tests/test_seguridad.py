@@ -6,7 +6,6 @@ verifica es que las defensas siguen presentes en el prompt.
 """
 
 import json
-import re
 from pathlib import Path
 
 import pglast
@@ -17,62 +16,35 @@ from carta_bar.api import CAMPOS_CONFIG_PUBLICOS
 from carta_bar.datos import _validar_slug
 from carta_bar.uso import _GASTO_DEL_DIA, _INSERTAR
 
-HTML = Path("web/index.html").read_text(encoding="utf-8")
-
-ATAQUES_XSS = [
-    "<script>alert(1)</script>",
-    "<img src=x onerror=alert(1)>",
-    '" onmouseover="alert(1)',
-    "' onfocus='alert(1)",
-    "<svg/onload=alert(1)>",
-]
-
-
-def escapar_como_el_navegador(texto: str) -> str:
-    """Replica escapar() del frontend para poder probarlo desde Python."""
-    return (
-        texto.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace('"', "&quot;")
-        .replace("'", "&#39;")
-    )
+# Las fuentes de React, no lo que compila Vite: asi la suite corre en una copia
+# recien clonada, sin compilar el frontend antes.
+FRONTEND = Path("frontend/src")
 
 
 # --------------------------------------------------------------- XSS
-@pytest.mark.parametrize("ataque", ATAQUES_XSS)
-def test_el_escapado_neutraliza_los_ataques_conocidos(ataque: str) -> None:
-    limpio = escapar_como_el_navegador(ataque)
-    # Lo que vuelve inerte a un ataque no es que desaparezca la palabra
-    # "onerror", sino que no quede NINGUN caracter con el que abrir una
-    # etiqueta o cerrar un atributo: el navegador lo pinta como texto plano.
-    for caracter in ["<", ">", '"', "'"]:
-        assert caracter not in limpio, f"sobrevive {caracter!r} en {limpio!r}"
-
-
-def test_el_escapado_del_frontend_cubre_las_comillas() -> None:
-    # Varios de estos valores caen dentro de atributos HTML: sin escapar las
-    # comillas, se puede cerrar el atributo e inyectar un manejador de evento.
-    funcion = re.search(r"function escapar\(t\)\{.*?\n\}", HTML, re.S)
-    assert funcion is not None
-    cuerpo = funcion.group()
-    for caracter in ["&amp;", "&lt;", "&gt;", "&quot;", "&#39;"]:
-        assert caracter in cuerpo
-
-
-def test_los_datos_del_restaurante_van_escapados() -> None:
-    # La carta la escribe el restaurante y se pinta en el movil del comensal.
-    for campo in ["escapar(p.nombre)", "escapar(nomCat)", "escapar(moneda)"]:
-        assert campo in HTML, f"sin escapar: {campo}"
+def test_ningun_sitio_pinta_html_crudo() -> None:
+    # JSX escapa cada texto solo; lo unico que lo anula es inyectar HTML a mano.
+    ficheros = list(FRONTEND.rglob("*.ts*"))
+    # Sin esto, mover la carpeta dejaria el test pasando sin revisar nada.
+    assert len(ficheros) > 10, f"solo {len(ficheros)} ficheros en {FRONTEND}"
+    for fichero in ficheros:
+        texto = fichero.read_text(encoding="utf-8")
+        assert "innerHTML" not in texto, f"HTML crudo en {fichero}"
 
 
 def test_las_urls_de_imagen_pasan_por_el_filtro() -> None:
-    for campo in ["urlSegura(config.logo)", "urlSegura(config.foto_portada)", "urlSegura(p.foto)"]:
-        assert campo in HTML, f"sin filtrar: {campo}"
+    # JSX no sanea lo que va dentro de src=: ahi hace falta urlSegura().
+    plato = (FRONTEND / "carta/PlatoCard.tsx").read_text(encoding="utf-8")
+    portada = (FRONTEND / "carta/Portada.tsx").read_text(encoding="utf-8")
+    assert "urlSegura(p.foto)" in plato
+    assert "urlSegura(config.logo)" in portada
+    assert "urlSegura(config.foto_portada)" in portada
 
 
 def test_el_color_de_marca_no_admite_css_arbitrario() -> None:
-    assert "colorSeguro(config.color_marca)" in HTML
+    # Tampoco sanea lo que se inyecta en style=.
+    app = (FRONTEND / "carta/App.tsx").read_text(encoding="utf-8")
+    assert "colorSeguro(config.color_marca)" in app
 
 
 # --------------------------------------------------------------- SQL
