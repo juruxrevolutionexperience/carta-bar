@@ -36,7 +36,6 @@ ENV HF_HUB_OFFLINE=1 \
     TRANSFORMERS_OFFLINE=1
 
 COPY datos ./datos
-COPY web ./web
 COPY sql ./sql
 COPY --from=frontend /frontend/dist ./web/dist
 
