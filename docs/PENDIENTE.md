@@ -168,24 +168,38 @@ porque haya ya un segundo cliente.
   a mano (el panel superadmin lo hace), pero el DNS y el certificado
   siguen siendo manuales — ver el plan del comodín justo abajo
 
-### Comodín de subdominio (adelantado, decidido el 2026-09-19)
+### ✅ Comodín de subdominio (adelantado, hecho el 2026-09-19)
 
 Un registro DNS y un certificado por restaurante no escala a 50-300
 bares. La corrección no es dejar de usar subdominios (dan sensación
 de que cada bar tiene su web propia, mejor que una carpeta dentro del
 dominio) — es dejar de crearlos uno a uno:
 
-1. Un único registro DNS comodín `*.jurux.app` → 178.104.233.131, en
-   vez de uno por restaurante
-2. Un único certificado HTTPS comodín, válido para cualquier
-   subdominio (desafío DNS-01 de Let's Encrypt con el plugin de
-   Cloudflare, porque un comodín no admite el desafío HTTP normal)
-3. Un único bloque de nginx que sirva cualquier subdominio con ese
-   certificado, en vez de un `sites-available/<restaurante>` por bar
+1. ✅ Registro DNS comodín `*.jurux.app` → 178.104.233.131 en Cloudflare
+2. ✅ Certificado HTTPS comodín (desafío DNS-01 con el plugin
+   `certbot-dns-cloudflare`, token con permiso mínimo — solo editar DNS
+   de `jurux.app`, restringido a las IPs del servidor). Token guardado
+   en `/etc/letsencrypt/cloudflare.ini` (permisos `600`, root); renueva
+   solo, certbot ya tiene la tarea programada
+3. ✅ Un único bloque de nginx (`sites-available/carta`) que sirve
+   `jurux.app` y `*.jurux.app` con ese certificado. Se quitó de paso
+   `sites-available/gym`, que llevaba días sin app detrás
+
+Verificado con `cartia`, `demo` y un subdominio inventado — los tres
+sirven bien con el certificado comodín. `cuentas.jurux.app` (finanzas)
+intacto, con su propio certificado, sin mezclarse.
 
 Con esto, el panel superadmin (formulario "Añadir restaurante") deja
 de necesitar ningún paso manual aparte para publicar el bar: darlo de
 alta ya es suficiente.
+
+**Efecto secundario encontrado al probarlo:** `_resolver_restaurante()`
+cae al `RESTAURANTE_ID` fijo (La CatedRal) cuando el subdominio no
+corresponde a ningún restaurante real — pensado como respaldo para
+desarrollo local, pero con el comodín activo cualquier subdominio
+inventado (`cosaquesea.jurux.app`) enseña ahora la carta de La
+CatedRal en vez de un error. No es fuga de datos (la carta ya es
+pública) pero da mala imagen. Pendiente decidir si se corrige.
 
 **Por qué ahora y no en la Fase 4 completa:** es infraestructura que
 se monta una sola vez, no una pantalla nueva — cuanto más se
