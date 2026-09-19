@@ -22,6 +22,19 @@ function normalizar(texto: string): string {
 
 export function SeccionPlatos({ platos, error, categorias, onActualizar, onQuitar }: Props) {
   const [busqueda, setBusqueda] = useState("");
+  // Categorias que el gerente ha desplegado a mano. Vacio = todo cerrado por
+  // defecto (mas comodo con 28 platos que empezar con todo abierto).
+  const [abiertas, setAbiertas] = useState<Set<string>>(new Set());
+  const buscando = busqueda.trim() !== "";
+
+  function alternar(id: string, abierta: boolean) {
+    setAbiertas((actual) => {
+      const siguiente = new Set(actual);
+      if (abierta) siguiente.add(id);
+      else siguiente.delete(id);
+      return siguiente;
+    });
+  }
 
   const filtrados = useMemo(() => {
     const termino = normalizar(busqueda.trim());
@@ -74,7 +87,15 @@ export function SeccionPlatos({ platos, error, categorias, onActualizar, onQuita
         )}
 
         {grupos?.map((grupo) => (
-          <details key={grupo.id} className="grupo-categoria" open>
+          <details
+            key={grupo.id}
+            className="grupo-categoria"
+            // Buscando, se fuerza abierto para que un resultado nunca quede
+            // escondido dentro de una categoria cerrada; al borrar la
+            // busqueda vuelve a lo que el gerente tenia puesto a mano.
+            open={buscando || abiertas.has(grupo.id)}
+            onToggle={(e) => alternar(grupo.id, e.currentTarget.open)}
+          >
             <summary
               className="titulo-categoria"
               style={{ borderLeftColor: colorCategoria(grupo.id) }}
