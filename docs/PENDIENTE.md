@@ -193,13 +193,14 @@ Con esto, el panel superadmin (formulario "Añadir restaurante") deja
 de necesitar ningún paso manual aparte para publicar el bar: darlo de
 alta ya es suficiente.
 
-**Efecto secundario encontrado al probarlo:** `_resolver_restaurante()`
-cae al `RESTAURANTE_ID` fijo (La CatedRal) cuando el subdominio no
-corresponde a ningún restaurante real — pensado como respaldo para
-desarrollo local, pero con el comodín activo cualquier subdominio
-inventado (`cosaquesea.jurux.app`) enseña ahora la carta de La
-CatedRal en vez de un error. No es fuga de datos (la carta ya es
-pública) pero da mala imagen. Pendiente decidir si se corrige.
+**✅ Efecto secundario encontrado al probarlo, ya corregido:**
+`_resolver_restaurante()` caía al `RESTAURANTE_ID` fijo (La CatedRal)
+para cualquier host sin restaurante real, mezclando el caso legítimo
+(desarrollo local: `localhost`, `127.0.0.1`, `testserver`) con el que
+no lo es (un subdominio inventado con el comodín activo, que enseñaba
+la carta de otro negocio). Ahora solo los hosts de desarrollo caen al
+fijo; cualquier otro subdominio sin restaurante da 404. Verificado en
+producción: `cosaquesea.jurux.app` → 404, `cartia`/`demo` siguen en 200.
 
 **Por qué ahora y no en la Fase 4 completa:** es infraestructura que
 se monta una sola vez, no una pantalla nueva — cuanto más se
