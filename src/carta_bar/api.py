@@ -8,7 +8,7 @@ from typing import Annotated, Literal
 import numpy as np
 import psycopg
 import structlog
-from fastapi import Depends, FastAPI, Request, UploadFile
+from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -82,6 +82,12 @@ def _restaurante_existe(restaurante_id: str) -> bool:
         return False
 
 
+# Hosts desde los que se trabaja en local (TestClient usa "testserver" por
+# defecto). Aqui, y solo aqui, cae al restaurante fijo: no son subdominios
+# de verdad, no tiene sentido pedirles que sean un restaurante real.
+_HOSTS_DESARROLLO_LOCAL = {"localhost", "127.0.0.1", "testserver"}
+
+
 def _resolver_restaurante(request: Request) -> str:
     """Que restaurante sirve esta peticion, segun el subdominio del Host.
 
@@ -89,17 +95,22 @@ def _resolver_restaurante(request: Request) -> str:
     es lo que separa `bar2.jurux.app` de `la-catedral.jurux.app` en el
     mismo servidor, sin desplegar nada aparte por cliente.
     """
-    subdominio = request.headers.get("host", "").split(":")[0].split(".")[0]
+    host = request.headers.get("host", "").split(":")[0]
+    if host in _HOSTS_DESARROLLO_LOCAL:
+        return RESTAURANTE_ID
+
+    subdominio = host.split(".")[0]
     restaurante_id = ALIAS_SUBDOMINIO.get(subdominio, subdominio)
     try:
         _validar_slug(restaurante_id, "restaurante_id")
     except ValueError:
-        return RESTAURANTE_ID
+        raise HTTPException(status_code=404, detail="Esta carta no existe") from None
     if _restaurante_existe(restaurante_id):
         return restaurante_id
-    # Desarrollo local (localhost, 127.0.0.1) o un subdominio que no existe:
-    # se cae al restaurante fijo de siempre, igual que antes de esto.
-    return RESTAURANTE_ID
+    # Con el DNS en comodin (*.jurux.app), cualquier subdominio inventado
+    # llega hasta aqui: sin este error, enseñaria el restaurante fijo de
+    # otro cliente en vez de decir que este no existe.
+    raise HTTPException(status_code=404, detail="Esta carta no existe")
 
 
 RestauranteActual = Annotated[str, Depends(_resolver_restaurante)]

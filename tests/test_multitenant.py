@@ -46,9 +46,12 @@ def test_el_alias_historico_de_cartia_resuelve_a_la_catedral(
     assert vistos == ["la-catedral"]
 
 
-def test_un_subdominio_que_no_existe_cae_al_restaurante_fijo(
+def test_un_subdominio_que_no_existe_da_404(
     sin_restaurante_fijo, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    # Con el DNS en comodin, un subdominio inventado llega igual al
+    # servidor: antes caia al restaurante fijo y enseñaba la carta de otro
+    # cliente. Ahora debe dar 404, nunca la carta de La CatedRal.
     def _cargar_config(rid: str) -> dict[str, object]:
         if rid == RESTAURANTE_ID:
             return {}
@@ -57,23 +60,22 @@ def test_un_subdominio_que_no_existe_cae_al_restaurante_fijo(
     monkeypatch.setattr("carta_bar.api.cargar_config", _cargar_config)
     vistos: list[str] = []
     monkeypatch.setattr("carta_bar.api.cargar_categorias", lambda rid: vistos.append(rid) or [])
-    TestClient(app).get("/categorias", headers={"Host": "no-existe.jurux.app"})
-    assert vistos == [RESTAURANTE_ID]
+    r = TestClient(app).get("/categorias", headers={"Host": "no-existe.jurux.app"})
+    assert r.status_code == 404
+    assert vistos == []
 
 
-def test_un_host_sin_subdominio_valido_cae_al_restaurante_fijo(
+def test_desarrollo_local_cae_al_restaurante_fijo(
     sin_restaurante_fijo, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    def _cargar_config(rid: str) -> dict[str, object]:
-        if rid == RESTAURANTE_ID:
-            return {}
-        raise ValueError("no existe")
-
-    monkeypatch.setattr("carta_bar.api.cargar_config", _cargar_config)
+    # localhost esta en la lista explicita de hosts de desarrollo: a
+    # diferencia de un subdominio inventado, aqui SI debe caer al
+    # restaurante fijo (no tiene sentido pedirle que sea un restaurante real).
+    monkeypatch.setattr("carta_bar.api.cargar_config", lambda rid: {})
     vistos: list[str] = []
     monkeypatch.setattr("carta_bar.api.cargar_categorias", lambda rid: vistos.append(rid) or [])
-    # "localhost" es un slug valido pero no un restaurante real.
-    TestClient(app).get("/categorias", headers={"Host": "localhost:8000"})
+    r = TestClient(app).get("/categorias", headers={"Host": "localhost:8000"})
+    assert r.status_code == 200
     assert vistos == [RESTAURANTE_ID]
 
 
