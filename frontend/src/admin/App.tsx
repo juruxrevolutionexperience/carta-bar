@@ -6,22 +6,24 @@ import { NavInferior, type Seccion } from "./NavInferior";
 import { SeccionCuenta } from "./SeccionCuenta";
 import { SeccionEspeciales } from "./SeccionEspeciales";
 import { SeccionPlatos } from "./SeccionPlatos";
-import { CATEGORIA_ESPECIALES, platoVacio, type Plato } from "./types";
+import { CATEGORIA_ESPECIALES, platoVacio, type Categoria, type Plato } from "./types";
 
 export function App() {
   const [seccion, setSeccion] = useState<Seccion>("platos");
   const [platos, setPlatos] = useState<Plato[] | null>(null);
-  const [categoriasPorId, setCategoriasPorId] = useState<Record<string, string>>({});
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     Promise.all([cargarCarta(), cargarCategorias()])
-      .then(([platosCargados, categorias]) => {
+      .then(([platosCargados, categoriasCargadas]) => {
         setPlatos(platosCargados);
-        setCategoriasPorId(Object.fromEntries(categorias.map((c) => [c.id, c.nombre])));
+        setCategorias([...categoriasCargadas].sort((a, b) => a.orden - b.orden));
       })
       .catch(() => setError(true));
   }, []);
+
+  const categoriasPorId = Object.fromEntries(categorias.map((c) => [c.id, c.nombre]));
 
   function actualizarPlato(anterior: Plato, nuevo: Plato) {
     setPlatos((actual) => actual?.map((p) => (p === anterior ? nuevo : p)) ?? actual);
@@ -48,7 +50,7 @@ export function App() {
         <SeccionPlatos
           platos={normales}
           error={error}
-          categoriasPorId={categoriasPorId}
+          categorias={categorias}
           onActualizar={actualizarPlato}
           onQuitar={quitarPlato}
         />

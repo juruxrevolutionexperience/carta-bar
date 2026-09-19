@@ -99,6 +99,35 @@ textarea:focus {
   outline-offset: 1px;
 }
 
+input[type="search"] {
+  margin-bottom: 12px;
+}
+
+.grupo-categoria {
+  margin-top: 20px;
+}
+
+.grupo-categoria:first-of-type {
+  margin-top: 4px;
+}
+
+.titulo-categoria {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--tinta-media);
+  border-bottom: 1px solid var(--borde);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+}
+
+.cuenta-categoria {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 button.primario {
   margin-top: 16px;
   padding: 11px 16px;
