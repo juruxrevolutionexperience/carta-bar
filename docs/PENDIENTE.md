@@ -57,7 +57,11 @@ Probado en el iPhone, confirmado bueno.
 - ✅ Claves y conexión a BD en variables de entorno, fuera del código
 - ✅ Modelo de embeddings dentro de la imagen, y el arranque ya no consulta Hugging Face
   (`HF_HUB_OFFLINE=1`: 0 avisos en los logs; arranca en ~10 s)
-- ⬜ Desplegar desde GitHub, no copiando desde el portátil
+- ✅ Desplegar desde GitHub (`git pull` con deploy key de solo lectura
+  propia del servidor), no copiando desde el portátil. De paso salió
+  y se arregló un `Dockerfile` roto (copiaba una carpeta `web/` que
+  `rsync` arrastraba sin querer pero un clon limpio no tiene) —
+  detalle en [docs/ARQUITECTURA.md](ARQUITECTURA.md)
 - ✅ Dockerfile con dependencias y modelo antes que el código: build de 470 s a 4 s
 - ⬜ Copia de seguridad diaria de datos/
 - ⬜ Probado en móvil, con datos móviles, en los 4 idiomas

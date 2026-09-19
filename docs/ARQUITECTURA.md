@@ -40,27 +40,41 @@ Cómo está montado hoy, qué es sólido y qué está cogido con pinzas.
 | Variables | `/home/xele/cartaBar/.env` en el servidor, fuera de git |
 | Seguridad del host | ufw (22, 80, 443) y fail2ban. La IP de casa está en `ignoreip` de `/etc/fail2ban/jail.local` |
 
-## Cómo se despliega hoy (provisional)
+## Cómo se despliega (desde el 2026-09-19)
+
+`/home/xele/cartaBar` es un clon de git de verdad, no una copia por `rsync`.
+Autenticado con una **deploy key de solo lectura** propia del servidor
+(`~/.ssh/github_carta_bar` en el propio servidor, añadida en GitHub →
+Settings → Deploy keys del repo, sin permiso de escritura). Nadie con acceso
+al servidor puede empujar cambios a GitHub con esa clave, solo traerlos.
+
+Desplegar es, en el servidor, con sesión SSH propia del usuario `xele`
+(no hay acceso SSH externo al servidor fuera de eso):
 
 ```bash
-rsync -az --exclude .venv --exclude .git --exclude .env \
-  --exclude __pycache__ --exclude '.*_cache' \
-  ./ xele@178.104.233.131:/home/xele/cartaBar/
-ssh xele@178.104.233.131 \
-  "cd /home/xele/cartaBar && docker compose -f docker-compose.prod.yml up -d --build"
+cd /home/xele/cartaBar
+git pull
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-- **Excluir `.env`**: el del servidor tiene variables que el local no (`CONFIAR_PROXY`,
-  `TOPE_DIARIO_USD`, `LOGS_JSON`). Copiarlo encima las borra.
-- **No lanzar dos despliegues a la vez**: se pisan y el contenedor puede quedar
-  arrancado con la imagen anterior. Si pasa: `up -d --force-recreate`.
+- **`.env` y `datos/fotos/` nunca se tocan**: están en `.gitignore`, así que
+  `git pull` no los borra ni los pisa.
 - **~10 s de caída** al final, mientras el contenedor carga el modelo. No desplegar
   en hora punta.
-- Si solo cambia el código, el build tarda unos segundos. Si cambian `pyproject.toml`,
-  `uv.lock` o el modelo de `embeddings.py`, vuelve a tardar ~8 min.
+- Si solo cambia el código, el build tarda segundos (capas en caché). Si cambian
+  `pyproject.toml`, `uv.lock` o el modelo de `embeddings.py`, vuelve a tardar ~8 min.
 - El `Dockerfile` tiene una etapa Node aparte (`frontend/`, compilado con Vite)
   antes de la imagen de Python: si solo cambia el código de `carta_bar`, esa
   etapa se reutiliza en caché y no se recompila.
+
+**Historial:** hasta esta fecha se desplegaba con `rsync` desde el portátil de
+quien tocara el código. Al montar el `git clone`, salió que `docker compose`
+fija el nombre del contenedor (`container_name: carta-bar`) — si hay uno
+corriendo con ese nombre desde otra carpeta, el nuevo choca al arrancar; hay
+que pararlo primero desde donde esté corriendo. Salió también un `Dockerfile`
+roto: copiaba una carpeta `web/` que ya no existe desde la migración a React
+(`rsync` la arrastraba sin querer porque nunca borra lo que sobra; un `git
+clone` limpio no tiene ni la carpeta, y el build fallaba a la primera).
 
 ## Qué está sólido
 
