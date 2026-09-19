@@ -151,16 +151,47 @@ salvo el aislamiento por subdominio, adelantado a propósito (ver
 abajo) para saber que el sistema escala antes de necesitarlo, no
 porque haya ya un segundo cliente.
 
-- ⬜ Alta automática · facturación · panel superadmin
+- ✅ Panel superadmin desplegado y probado en producción (login,
+  listado con nº de platos por restaurante, formulario de alta). El
+  diseño se afina más adelante
+- ⬜ Alta automática de verdad · facturación. El formulario del panel
+  crea el acceso (subdominio + contraseña) pero el DNS y el
+  certificado HTTPS siguen siendo manuales por restaurante — ver el
+  plan del comodín de subdominio más abajo
 - ✅ Aislamiento por subdominio: el restaurante se resuelve por el
   `Host` de cada petición (`_resolver_restaurante` en `api.py`), no
   por una variable fija — un mismo servidor sirve ya
   `cartia.jurux.app` (La CatedRal) y `demo.jurux.app` (restaurante de
   prueba, sembrado a mano) sin mezclar datos ni sesiones entre los
   dos. Probado con tests dedicados (`tests/test_multitenant.py`) y
-  contra Supabase de verdad. Dar de alta un restaurante sigue siendo
-  manual (SQL a mano) — el alta automática espera a la Fase 4 de
-  verdad, o al importador de cartas
+  contra Supabase de verdad. Dar de alta un restaurante ya no es SQL
+  a mano (el panel superadmin lo hace), pero el DNS y el certificado
+  siguen siendo manuales — ver el plan del comodín justo abajo
+
+### Comodín de subdominio (adelantado, decidido el 2026-09-19)
+
+Un registro DNS y un certificado por restaurante no escala a 50-300
+bares. La corrección no es dejar de usar subdominios (dan sensación
+de que cada bar tiene su web propia, mejor que una carpeta dentro del
+dominio) — es dejar de crearlos uno a uno:
+
+1. Un único registro DNS comodín `*.jurux.app` → 178.104.233.131, en
+   vez de uno por restaurante
+2. Un único certificado HTTPS comodín, válido para cualquier
+   subdominio (desafío DNS-01 de Let's Encrypt con el plugin de
+   Cloudflare, porque un comodín no admite el desafío HTTP normal)
+3. Un único bloque de nginx que sirva cualquier subdominio con ese
+   certificado, en vez de un `sites-available/<restaurante>` por bar
+
+Con esto, el panel superadmin (formulario "Añadir restaurante") deja
+de necesitar ningún paso manual aparte para publicar el bar: darlo de
+alta ya es suficiente.
+
+**Por qué ahora y no en la Fase 4 completa:** es infraestructura que
+se monta una sola vez, no una pantalla nueva — cuanto más se
+retrase, más restaurantes habrá que migrar del esquema manual al
+comodín. El resto de la Fase 4 (alta con pago, facturación) sí espera
+a tener clientes de pago de verdad.
 
 ---
 
