@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { colorCategoria } from "../carta/iconos";
 import { FilaPlato } from "./FilaPlato";
 import { FormularioPlato } from "./FormularioPlato";
+import { OrganizarCategorias } from "./OrganizarCategorias";
 import { CATEGORIA_ESPECIALES, platoVacio, type Categoria, type Plato } from "./types";
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
   onActualizar: (anterior: Plato, nuevo: Plato) => void;
   onQuitar: (objetivo: Plato) => void;
   onCreado: (plato: Plato) => void;
+  onCambioCategorias: (categorias: Categoria[]) => void;
 }
 
 // Sin acentos ni mayusculas: "salmon" tiene que encontrar "Salmón".
@@ -22,12 +24,20 @@ function normalizar(texto: string): string {
     .toLowerCase();
 }
 
-export function SeccionPlatos({ platos, error, categorias, onActualizar, onQuitar, onCreado }: Props) {
+export function SeccionPlatos({
+  platos,
+  error,
+  categorias,
+  onActualizar, onQuitar,
+  onCreado,
+  onCambioCategorias,
+}: Props) {
   const [busqueda, setBusqueda] = useState("");
   // Categorias que el gerente ha desplegado a mano. Vacio = todo cerrado por
   // defecto (mas comodo con 28 platos que empezar con todo abierto).
   const [abiertas, setAbiertas] = useState<Set<string>>(new Set());
   const [anadiendo, setAnadiendo] = useState(false);
+  const [organizando, setOrganizando] = useState(false);
   const buscando = busqueda.trim() !== "";
   const categoriasElegibles = categorias.filter((c) => c.id !== CATEGORIA_ESPECIALES);
 
@@ -70,11 +80,32 @@ export function SeccionPlatos({ platos, error, categorias, onActualizar, onQuita
   return (
     <section className="seccion">
       <div className="tarjeta">
-        <h2>Platos</h2>
-        {!error && platos !== null && categoriasElegibles.length === 0 && (
+        <div className="cabecera-seccion">
+          <h2>Platos</h2>
+          {!error && platos !== null && (
+            <button
+              type="button"
+              className="secundario"
+              onClick={() => {
+                setOrganizando((o) => !o);
+                setAnadiendo(false);
+              }}
+            >
+              {organizando ? "Hecho" : "Organizar categorías"}
+            </button>
+          )}
+        </div>
+        {organizando && (
+          <OrganizarCategorias
+            categorias={categorias}
+            platos={platos}
+            onCambio={onCambioCategorias}
+          />
+        )}
+        {!error && platos !== null && categoriasElegibles.length === 0 && !organizando && (
           <p className="cargando">Crea primero una categoría para poder añadir platos.</p>
         )}
-        {!error && platos !== null && categoriasElegibles.length > 0 && !anadiendo && (
+        {!error && platos !== null && categoriasElegibles.length > 0 && !anadiendo && !organizando && (
           <button type="button" className="primario" onClick={() => setAnadiendo(true)}>
             + Añadir plato
           </button>
@@ -93,7 +124,7 @@ export function SeccionPlatos({ platos, error, categorias, onActualizar, onQuita
             }}
           />
         )}
-        {!error && platos !== null && platos.length > 0 && (
+        {!error && !organizando && platos !== null && platos.length > 0 && (
           <input
             type="search"
             placeholder="Buscar un plato…"
@@ -112,7 +143,8 @@ export function SeccionPlatos({ platos, error, categorias, onActualizar, onQuita
           <p className="cargando">Ningún plato coincide con "{busqueda.trim()}".</p>
         )}
 
-        {grupos?.map((grupo) => (
+        {!organizando &&
+          grupos?.map((grupo) => (
           <details
             key={grupo.id}
             className="grupo-categoria"

@@ -103,8 +103,8 @@ export async function crearEspecial(cuerpo: CuerpoPlato): Promise<Response> {
   });
 }
 
-export async function eliminarEspecial(platoId: string): Promise<Response> {
-  return apiFetch(`/admin/api/platos/especiales/${encodeURIComponent(platoId)}`, {
+export async function eliminarPlato(platoId: string): Promise<Response> {
+  return apiFetch(`/admin/api/platos/${encodeURIComponent(platoId)}`, {
     method: "DELETE",
   });
 }

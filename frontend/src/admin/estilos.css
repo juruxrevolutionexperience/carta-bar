@@ -505,3 +505,37 @@ button.secundario {
   margin-top: 0;
   white-space: nowrap;
 }
+
+.cabecera-seccion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cabecera-seccion h2 {
+  margin: 0;
+}
+
+.cabecera-seccion button.secundario {
+  margin-top: 0;
+}
+
+.organizar .ayuda {
+  font-size: 13px;
+  color: var(--tinta-media);
+  margin: 10px 0 4px;
+}
+
+.fila-categoria.arrastrando {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  background: var(--fondo);
+}
+
+.fila-categoria button.asa {
+  touch-action: none;
+  cursor: grab;
+  font-size: 20px;
+  order: -1;
+}

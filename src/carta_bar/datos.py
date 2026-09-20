@@ -134,6 +134,8 @@ class RepositorioCarta(Protocol):
 
     def eliminar_plato_especial(self, restaurante_id: str, plato_id: str) -> bool: ...
 
+    def eliminar_plato(self, restaurante_id: str, plato_id: str) -> bool: ...
+
     def crear_categoria(self, restaurante_id: str, nombre: str) -> Categoria: ...
 
     def renombrar_categoria(
@@ -297,6 +299,9 @@ class RepositorioCartaFicheros:
 
     def eliminar_plato_especial(self, restaurante_id: str, plato_id: str) -> bool:
         raise NotImplementedError("Los especiales requieren CARTA_BD_ACTIVA=true")
+
+    def eliminar_plato(self, restaurante_id: str, plato_id: str) -> bool:
+        raise NotImplementedError("Eliminar platos requiere CARTA_BD_ACTIVA=true")
 
     def crear_categoria(self, restaurante_id: str, nombre: str) -> Categoria:
         raise NotImplementedError("Editar categorias requiere CARTA_BD_ACTIVA=true")
@@ -650,6 +655,15 @@ class RepositorioCartaPostgres:
             )
             return cur.rowcount > 0
 
+    def eliminar_plato(self, restaurante_id: str, plato_id: str) -> bool:
+        # Las traducciones caen en cascada (ON DELETE CASCADE en el esquema).
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM platos WHERE restaurante_id = %s AND id = %s",
+                (restaurante_id, plato_id),
+            )
+            return cur.rowcount > 0
+
     def crear_categoria(self, restaurante_id: str, nombre: str) -> Categoria:
         base = slug_categoria(nombre)
         if not base:
@@ -956,6 +970,10 @@ def crear_plato_especial(
 
 def eliminar_plato_especial(restaurante_id: str, plato_id: str) -> bool:
     return obtener_repositorio_carta().eliminar_plato_especial(restaurante_id, plato_id)
+
+
+def eliminar_plato(restaurante_id: str, plato_id: str) -> bool:
+    return obtener_repositorio_carta().eliminar_plato(restaurante_id, plato_id)
 
 
 def crear_categoria(restaurante_id: str, nombre: str) -> Categoria:

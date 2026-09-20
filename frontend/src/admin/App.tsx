@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import "./estilos.css";
 import { cargarCarta, cargarCategorias } from "./api";
 import { NavInferior, type Seccion } from "./NavInferior";
-import { SeccionCategorias } from "./SeccionCategorias";
 import { SeccionCuenta } from "./SeccionCuenta";
 import { SeccionEspeciales } from "./SeccionEspeciales";
 import { SeccionPlatos } from "./SeccionPlatos";
@@ -59,13 +58,9 @@ export function App() {
           onActualizar={actualizarPlato}
           onQuitar={quitarPlato}
           onCreado={anadirPlato}
-        />
-      )}
-      {seccion === "categorias" && (
-        <SeccionCategorias
-          categorias={categorias}
-          platos={platos}
-          onCambio={(nuevas) => setCategorias([...nuevas].sort((a, b) => a.orden - b.orden))}
+          onCambioCategorias={(nuevas) =>
+            setCategorias([...nuevas].sort((a, b) => a.orden - b.orden))
+          }
         />
       )}
       {seccion === "especiales" && (

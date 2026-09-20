@@ -31,6 +31,7 @@ from carta_bar.datos import (
     crear_plato_especial,
     crear_restaurante,
     eliminar_categoria,
+    eliminar_plato,
     eliminar_plato_especial,
     guardar_clave_hash,
     listar_restaurantes,
@@ -451,6 +452,19 @@ def admin_eliminar_especial(
         return Response(status_code=401, content="Sesión no válida")
     encontrado = eliminar_plato_especial(restaurante_id, plato_id)
     if not encontrado:
+        return Response(status_code=404, content="Plato no encontrado")
+    _ruta_foto(restaurante_id, plato_id).unlink(missing_ok=True)
+    _indices.pop(restaurante_id, None)
+    return Response(status_code=204)
+
+
+@app.delete("/admin/api/platos/{plato_id}")
+def admin_eliminar_plato(
+    plato_id: str, request: Request, restaurante_id: RestauranteActual
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    if not eliminar_plato(restaurante_id, plato_id):
         return Response(status_code=404, content="Plato no encontrado")
     _ruta_foto(restaurante_id, plato_id).unlink(missing_ok=True)
     _indices.pop(restaurante_id, None)

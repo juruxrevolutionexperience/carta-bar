@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   crearEspecial,
   crearPlato,
-  eliminarEspecial,
+  eliminarPlato,
   guardarPlatoExistente,
   subirFoto,
   type CuerpoPlato,
@@ -13,7 +13,6 @@ import { comprimirImagen } from "./comprimirImagen";
 import { SelectorFotoNueva } from "./SelectorFotoNueva";
 import { TEXTO_ALERGENO, TEXTO_DIETA, TEXTO_ETIQUETA, type ClaveDieta } from "./textos";
 import {
-  CATEGORIA_ESPECIALES,
   type Alergeno,
   type Categoria,
   type Etiqueta,
@@ -148,9 +147,9 @@ export function FormularioPlato({
   }
 
   async function eliminar() {
-    if (!plato.id || !window.confirm("¿Eliminar este especial? No se puede deshacer.")) return;
+    if (!plato.id || !window.confirm(`¿Eliminar "${plato.nombre}"? No se puede deshacer.`)) return;
     try {
-      const resp = await eliminarEspecial(plato.id);
+      const resp = await eliminarPlato(plato.id);
       if (resp.status === 204) {
         onEliminado();
         return;
@@ -161,7 +160,7 @@ export function FormularioPlato({
     }
   }
 
-  const puedeEliminar = plato.categoria === CATEGORIA_ESPECIALES && plato.id;
+  const puedeEliminar = Boolean(plato.id);
 
   return (
     <div className="tarjeta" style={{ padding: "16px", margin: "12px 0" }}>
@@ -280,7 +279,7 @@ export function FormularioPlato({
       </button>
       {puedeEliminar && (
         <button type="button" className="secundario" onClick={eliminar}>
-          Eliminar especial
+          Eliminar plato
         </button>
       )}
       {aviso && <div className="aviso visible error">{aviso}</div>}

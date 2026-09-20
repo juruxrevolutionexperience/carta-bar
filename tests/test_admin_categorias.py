@@ -72,6 +72,12 @@ def cliente(
     monkeypatch.setattr("carta_bar.api.ordenar_categorias", _ordenar)
     monkeypatch.setattr("carta_bar.api.eliminar_categoria", _eliminar)
     monkeypatch.setattr("carta_bar.api.crear_plato", _crear_plato)
+
+    def _eliminar_plato(rid: str, pid: str) -> bool:
+        anotar("eliminar_plato", rid, pid)
+        return pid != "no-existe"
+
+    monkeypatch.setattr("carta_bar.api.eliminar_plato", _eliminar_plato)
     c = TestClient(app)
     c.cookies.set(COOKIE_SESION, auth.crear_token_sesion(RESTAURANTE_ID))
     return c
@@ -88,6 +94,7 @@ def cliente(
         ("put", "/admin/api/orden-categorias", {"ids": ["a"]}),
         ("delete", "/admin/api/categorias/postres", None),
         ("post", "/admin/api/platos", PLATO_VALIDO),
+        ("delete", "/admin/api/platos/plato-1", None),
     ],
 )
 def test_sin_sesion_se_rechaza_todo(metodo: str, ruta: str, cuerpo: object) -> None:
@@ -203,6 +210,21 @@ def test_crear_un_plato_invalida_el_indice_del_chat(
 )
 def test_crear_plato_invalido_da_422(cliente: TestClient, cambio: dict[str, object]) -> None:
     assert cliente.post("/admin/api/platos", json={**PLATO_VALIDO, **cambio}).status_code == 422
+
+
+def test_elimina_un_plato_e_invalida_el_indice_del_chat(
+    cliente: TestClient,
+    llamadas: dict[str, list[tuple[object, ...]]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setitem(_indices, RESTAURANTE_ID, ([], None))
+    assert cliente.delete("/admin/api/platos/plato-1").status_code == 204
+    assert llamadas["eliminar_plato"] == [(RESTAURANTE_ID, "plato-1")]
+    assert RESTAURANTE_ID not in _indices
+
+
+def test_eliminar_un_plato_que_no_existe_da_404(cliente: TestClient) -> None:
+    assert cliente.delete("/admin/api/platos/no-existe").status_code == 404
 
 
 def test_crear_plato_sin_categoria_da_422(cliente: TestClient) -> None:
