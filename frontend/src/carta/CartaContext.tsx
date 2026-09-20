@@ -6,7 +6,7 @@ import type { Categoria, Config, Idiomas, Plato, TextosIdioma } from "./types";
 const CATEGORIA_ESPECIALES = "especial-de-hoy";
 const CLAVE_IDIOMA_LOCALSTORAGE = "carta_idioma";
 
-interface CartaContextValue {
+export interface CartaContextValue {
   carta: Plato[];
   categorias: Categoria[];
   categoriasVisibles: Categoria[];
@@ -22,7 +22,7 @@ interface CartaContextValue {
   cargando: boolean;
 }
 
-const CartaContext = createContext<CartaContextValue | null>(null);
+export const CartaContext = createContext<CartaContextValue | null>(null);
 
 export function useCartaContext(): CartaContextValue {
   const ctx = useContext(CartaContext);

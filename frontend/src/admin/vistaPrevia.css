@@ -1,0 +1,26 @@
+/* Las variables que usa la tarjeta publica y que el panel no define. */
+.vista-previa-carta {
+  --tinta-suave: #9c938c;
+  --ambar: #8a6000;
+  --ambar-suave: #fbf1da;
+  margin: 16px 0 4px;
+  padding: 12px 14px;
+  border: 1px dashed var(--borde);
+  border-radius: 12px;
+  background: var(--fondo);
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.vista-previa-titulo {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tinta-media);
+  margin-bottom: 8px;
+}
+
+.vista-previa-carta .plato {
+  padding: 8px 0 2px;
+  border-bottom: 0;
+}

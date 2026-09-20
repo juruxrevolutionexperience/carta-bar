@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   crearEspecial,
@@ -11,6 +11,7 @@ import {
 import { BloqueFoto } from "./BloqueFoto";
 import { comprimirImagen } from "./comprimirImagen";
 import { SelectorFotoNueva } from "./SelectorFotoNueva";
+import { VistaPreviaPlato } from "./VistaPreviaPlato";
 import { TEXTO_ALERGENO, TEXTO_DIETA, TEXTO_ETIQUETA, type ClaveDieta } from "./textos";
 import {
   type Alergeno,
@@ -63,6 +64,38 @@ export function FormularioPlato({
       actual.includes(valor) ? actual.filter((d) => d !== valor) : [...actual, valor]
     );
   }
+
+  // Foto recien elegida y aun sin subir: se ve en la vista previa por una URL local.
+  const [urlFotoNueva, setUrlFotoNueva] = useState<string | null>(null);
+  useEffect(() => {
+    if (!fotoNueva) {
+      setUrlFotoNueva(null);
+      return;
+    }
+    const url = URL.createObjectURL(fotoNueva);
+    setUrlFotoNueva(url);
+    return () => URL.revokeObjectURL(url);
+  }, [fotoNueva]);
+
+  const platoPrevio = {
+    id: plato.id ?? "nuevo",
+    nombre: nombre.trim() || "Nombre del plato",
+    descripcion,
+    precio: precioTxt.trim() === "" ? null : parseFloat(precioTxt),
+    categoria: plato.id || categoriasElegibles === undefined ? plato.categoria : categoria,
+    ingredientes: ingredientesTxt
+      .split("\n")
+      .map((i) => i.trim())
+      .filter((i) => i.length > 0),
+    alergenos,
+    etiqueta: etiqueta === "" ? null : etiqueta,
+    vegano: dieta.includes("vegano"),
+    vegetariano: dieta.includes("vegetariano"),
+    sin_gluten: dieta.includes("sin_gluten"),
+    sin_lactosa: dieta.includes("sin_lactosa"),
+    disponible: true,
+    foto: urlFotoNueva ?? fotoActual,
+  };
 
   const esPlatoNormalNuevo = !plato.id && categoriasElegibles !== undefined;
 
@@ -259,6 +292,8 @@ export function FormularioPlato({
           ))}
         </div>
       </div>
+
+      <VistaPreviaPlato plato={platoPrevio} />
 
       {esPlatoNormalNuevo && (
         <label className="opcion">

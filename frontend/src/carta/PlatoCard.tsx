@@ -1,3 +1,4 @@
+import "./tarjetaPlato.css";
 import { useCartaContext } from "./CartaContext";
 import { degradado, iconoPlato, ICONO_ETQ } from "./iconos";
 import { urlSegura } from "./seguridad";
