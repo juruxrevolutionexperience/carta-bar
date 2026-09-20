@@ -108,9 +108,10 @@ restaurante.
   `scripts/establecer_clave_admin.py`; cambiarla luego desde el propio
   panel. Desplegado y confirmado en producción, incluida la escala fija
   en móvil (mismo arreglo que ya tenía la carta pública)
-- ✅ CRUD de platos (solo editar, por ahora — crear/borrar esperan a
-  poder confirmar categoría en el alta): nombre, descripción, precio,
-  ingredientes. Desplegado y confirmado en producción
+- ✅ CRUD de platos completo: crear (con categoría y casilla obligatoria
+  "he revisado los alérgenos"), editar y eliminar (borra también foto y
+  traducciones): nombre, descripción, precio, ingredientes. Desplegado y
+  confirmado en producción
 - ✅ Checkboxes de alérgenos y de etiquetas (recomendación del chef, más
   vendido, etc.) y de dieta (vegano/vegetariano/sin gluten/sin
   lactosa) en el mismo formulario de editar plato — nunca texto libre,
@@ -125,14 +126,17 @@ restaurante.
   CatedRal ya están subidas (Tabla mixta, boquerones, bravas, las dos
   croquetas, tataki, bao de langostino, tartar de salchichón, Japo
   Burger, solomillo)
-- ⬜ Gestión de categorías: crear, renombrar, reordenar (arrastrar y soltar)
+- ✅ Gestión de categorías: crear, renombrar, reordenar arrastrando y borrar
+  (solo vacías), dentro de Platos → "Organizar categorías". Backend
+  verificado contra un Postgres real; falta confirmar el arrastre en el móvil
 - 🔍 "Fuera de carta": crear/eliminar especiales del día desde una sección
   propia del panel (categoría centinela `especial-de-hoy`, sin tocar los 28
   platos existentes), visibles en una tarjeta "⭐ Especial de hoy" al
   principio de la carta pública solo si hay alguno activo. Probado en local
   contra Supabase (crear, ver en `/carta`, eliminar). Falta desplegar
-- ⬜ Vista previa de cómo queda la carta para el cliente, antes de publicar
-  un cambio
+- ✅ Vista previa en vivo de la tarjeta del plato al editar o crear (la
+  misma tarjeta de la carta pública). Un borrador con "Publicar" queda
+  descartado por ahora: los cambios se publican al guardar
 - ⬜ Guardar y traducir (dispara `traducir_carta()` en segundo plano, el
   hash ya hace que solo traduzca lo que cambió)
 - ⬜ Configuración de marca: nombre del negocio, logo, foto de portada/banner
