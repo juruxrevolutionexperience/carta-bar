@@ -12,8 +12,10 @@ import json
 import os
 import re
 import secrets
+import time
+import unicodedata
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Literal, Protocol
 
 import psycopg
 import structlog
@@ -34,6 +36,36 @@ def _validar_slug(valor: str, campo: str) -> str:
     if not _SLUG.match(valor):
         raise ValueError(f"{campo} no válido: {valor!r}")
     return valor
+
+
+ResultadoEliminarCategoria = Literal["ok", "no_existe", "con_platos"]
+
+
+def slug_categoria(nombre: str) -> str:
+    """Id estable a partir del nombre: 'Postres y Café' -> 'postres_y_cafe'.
+
+    Vacio si el nombre no tiene ni una letra o cifra ('???'): quien llama
+    debe rechazarlo, no inventarse un id.
+    """
+    sin_acentos = unicodedata.normalize("NFD", nombre).encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"[^a-z0-9]+", "_", sin_acentos.lower()).strip("_")
+
+
+def id_categoria_libre(base: str, existentes: set[str]) -> str:
+    """base, o base_2, base_3... si ya esta cogido por otra categoria."""
+    if base not in existentes:
+        return base
+    n = 2
+    while f"{base}_{n}" in existentes:
+        n += 1
+    return f"{base}_{n}"
+
+
+def id_plato_nuevo() -> str:
+    """Empieza por la hora de creacion: los platos se leen ORDER BY id, asi
+    los nuevos salen al final de su categoria, en el orden en que se crearon
+    (con hex aleatorio solo, saldrian en orden arbitrario)."""
+    return f"plato-{int(time.time()):010d}-{secrets.token_hex(2)}"
 
 
 class RepositorioCarta(Protocol):
@@ -101,6 +133,34 @@ class RepositorioCarta(Protocol):
     ) -> Plato: ...
 
     def eliminar_plato_especial(self, restaurante_id: str, plato_id: str) -> bool: ...
+
+    def crear_categoria(self, restaurante_id: str, nombre: str) -> Categoria: ...
+
+    def renombrar_categoria(
+        self, restaurante_id: str, categoria_id: str, nombre: str
+    ) -> Categoria | None: ...
+
+    def ordenar_categorias(self, restaurante_id: str, ids: list[str]) -> bool: ...
+
+    def eliminar_categoria(
+        self, restaurante_id: str, categoria_id: str
+    ) -> ResultadoEliminarCategoria: ...
+
+    def crear_plato(
+        self,
+        restaurante_id: str,
+        categoria_id: str,
+        nombre: str,
+        descripcion: str,
+        precio: float | None,
+        ingredientes: list[str],
+        alergenos: list[Alergeno],
+        etiqueta: Etiqueta | None,
+        vegano: bool,
+        vegetariano: bool,
+        sin_gluten: bool,
+        sin_lactosa: bool,
+    ) -> Plato | None: ...
 
     def listar_restaurantes(self) -> list[ResumenRestaurante]: ...
 
@@ -237,6 +297,39 @@ class RepositorioCartaFicheros:
 
     def eliminar_plato_especial(self, restaurante_id: str, plato_id: str) -> bool:
         raise NotImplementedError("Los especiales requieren CARTA_BD_ACTIVA=true")
+
+    def crear_categoria(self, restaurante_id: str, nombre: str) -> Categoria:
+        raise NotImplementedError("Editar categorias requiere CARTA_BD_ACTIVA=true")
+
+    def renombrar_categoria(
+        self, restaurante_id: str, categoria_id: str, nombre: str
+    ) -> Categoria | None:
+        raise NotImplementedError("Editar categorias requiere CARTA_BD_ACTIVA=true")
+
+    def ordenar_categorias(self, restaurante_id: str, ids: list[str]) -> bool:
+        raise NotImplementedError("Editar categorias requiere CARTA_BD_ACTIVA=true")
+
+    def eliminar_categoria(
+        self, restaurante_id: str, categoria_id: str
+    ) -> ResultadoEliminarCategoria:
+        raise NotImplementedError("Editar categorias requiere CARTA_BD_ACTIVA=true")
+
+    def crear_plato(
+        self,
+        restaurante_id: str,
+        categoria_id: str,
+        nombre: str,
+        descripcion: str,
+        precio: float | None,
+        ingredientes: list[str],
+        alergenos: list[Alergeno],
+        etiqueta: Etiqueta | None,
+        vegano: bool,
+        vegetariano: bool,
+        sin_gluten: bool,
+        sin_lactosa: bool,
+    ) -> Plato | None:
+        raise NotImplementedError("Crear platos requiere CARTA_BD_ACTIVA=true")
 
     def listar_restaurantes(self) -> list[ResumenRestaurante]:
         raise NotImplementedError("El panel superadmin requiere CARTA_BD_ACTIVA=true")
@@ -454,6 +547,61 @@ class RepositorioCartaPostgres:
             )
             return cur.rowcount > 0
 
+    def _insertar_plato(
+        self,
+        cur: psycopg.Cursor[Any],
+        restaurante_id: str,
+        plato_id: str,
+        categoria_id: str,
+        nombre: str,
+        descripcion: str,
+        precio: float | None,
+        ingredientes: list[str],
+        alergenos: list[Alergeno],
+        etiqueta: Etiqueta | None,
+        vegano: bool,
+        vegetariano: bool,
+        sin_gluten: bool,
+        sin_lactosa: bool,
+    ) -> Plato:
+        cur.execute(
+            "INSERT INTO platos (restaurante_id, id, categoria_id, nombre, descripcion, "
+            "precio, ingredientes, alergenos, vegano, vegetariano, sin_gluten, "
+            "sin_lactosa, disponible, etiqueta) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, true, %s)",
+            (
+                restaurante_id,
+                plato_id,
+                categoria_id,
+                nombre,
+                descripcion,
+                precio,
+                Jsonb(ingredientes),
+                Jsonb([a.value for a in alergenos]),
+                vegano,
+                vegetariano,
+                sin_gluten,
+                sin_lactosa,
+                etiqueta.value if etiqueta else None,
+            ),
+        )
+        return Plato(
+            id=plato_id,
+            categoria=categoria_id,
+            nombre=nombre,
+            descripcion=descripcion,
+            precio=precio,
+            ingredientes=ingredientes,
+            alergenos=alergenos,
+            vegano=vegano,
+            vegetariano=vegetariano,
+            sin_gluten=sin_gluten,
+            sin_lactosa=sin_lactosa,
+            disponible=True,
+            etiqueta=etiqueta,
+            foto=None,
+        )
+
     def crear_plato_especial(
         self,
         restaurante_id: str,
@@ -476,43 +624,22 @@ class RepositorioCartaPostgres:
                 "ON CONFLICT (restaurante_id, id) DO NOTHING",
                 (restaurante_id, CATEGORIA_ESPECIALES, "Especial de hoy", Jsonb({}), -1),
             )
-            cur.execute(
-                "INSERT INTO platos (restaurante_id, id, categoria_id, nombre, descripcion, "
-                "precio, ingredientes, alergenos, vegano, vegetariano, sin_gluten, "
-                "sin_lactosa, disponible, etiqueta) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, true, %s)",
-                (
-                    restaurante_id,
-                    plato_id,
-                    CATEGORIA_ESPECIALES,
-                    nombre,
-                    descripcion,
-                    precio,
-                    Jsonb(ingredientes),
-                    Jsonb([a.value for a in alergenos]),
-                    vegano,
-                    vegetariano,
-                    sin_gluten,
-                    sin_lactosa,
-                    etiqueta.value if etiqueta else None,
-                ),
+            return self._insertar_plato(
+                cur,
+                restaurante_id,
+                plato_id,
+                CATEGORIA_ESPECIALES,
+                nombre,
+                descripcion,
+                precio,
+                ingredientes,
+                alergenos,
+                etiqueta,
+                vegano,
+                vegetariano,
+                sin_gluten,
+                sin_lactosa,
             )
-        return Plato(
-            id=plato_id,
-            categoria=CATEGORIA_ESPECIALES,
-            nombre=nombre,
-            descripcion=descripcion,
-            precio=precio,
-            ingredientes=ingredientes,
-            alergenos=alergenos,
-            vegano=vegano,
-            vegetariano=vegetariano,
-            sin_gluten=sin_gluten,
-            sin_lactosa=sin_lactosa,
-            disponible=True,
-            etiqueta=etiqueta,
-            foto=None,
-        )
 
     def eliminar_plato_especial(self, restaurante_id: str, plato_id: str) -> bool:
         with self.pool.connection() as conn, conn.cursor() as cur:
@@ -522,6 +649,126 @@ class RepositorioCartaPostgres:
                 (restaurante_id, plato_id, CATEGORIA_ESPECIALES),
             )
             return cur.rowcount > 0
+
+    def crear_categoria(self, restaurante_id: str, nombre: str) -> Categoria:
+        base = slug_categoria(nombre)
+        if not base:
+            raise ValueError("El nombre de la categoria necesita al menos una letra o cifra")
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            cur.execute("SELECT id FROM categorias WHERE restaurante_id = %s", (restaurante_id,))
+            categoria_id = id_categoria_libre(base, {f[0] for f in cur.fetchall()})
+            # Al final de las demas. El especial de hoy vive en orden -1 y no
+            # cuenta: si es la unica, MAX = -1 y la nueva sale con orden 0.
+            cur.execute(
+                "INSERT INTO categorias (restaurante_id, id, nombre, nombre_i18n, orden) "
+                "VALUES (%s, %s, %s, %s, "
+                "(SELECT COALESCE(MAX(orden), 0) + 1 FROM categorias WHERE restaurante_id = %s)) "
+                "RETURNING orden",
+                (restaurante_id, categoria_id, nombre, Jsonb({}), restaurante_id),
+            )
+            fila = cur.fetchone()
+            assert fila is not None
+        return Categoria(id=categoria_id, nombre=nombre, nombre_i18n={}, orden=fila[0])
+
+    def renombrar_categoria(
+        self, restaurante_id: str, categoria_id: str, nombre: str
+    ) -> Categoria | None:
+        if categoria_id == CATEGORIA_ESPECIALES:
+            return None
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            # nombre_i18n se vacia: una traduccion del nombre viejo mostraria en
+            # otros idiomas un nombre que ya no es el de la categoria.
+            cur.execute(
+                "UPDATE categorias SET nombre = %s, nombre_i18n = %s "
+                "WHERE restaurante_id = %s AND id = %s RETURNING orden",
+                (nombre, Jsonb({}), restaurante_id, categoria_id),
+            )
+            fila = cur.fetchone()
+        if fila is None:
+            return None
+        return Categoria(id=categoria_id, nombre=nombre, nombre_i18n={}, orden=fila[0])
+
+    def ordenar_categorias(self, restaurante_id: str, ids: list[str]) -> bool:
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT id FROM categorias WHERE restaurante_id = %s AND id <> %s",
+                (restaurante_id, CATEGORIA_ESPECIALES),
+            )
+            actuales = {f[0] for f in cur.fetchall()}
+            # Tiene que ser exactamente el conjunto actual: una lista a medias
+            # o con ids ajenos dejaria ordenes duplicados o categorias sin mover.
+            if len(ids) != len(set(ids)) or set(ids) != actuales:
+                return False
+            for posicion, categoria_id in enumerate(ids, start=1):
+                cur.execute(
+                    "UPDATE categorias SET orden = %s WHERE restaurante_id = %s AND id = %s",
+                    (posicion, restaurante_id, categoria_id),
+                )
+        return True
+
+    def eliminar_categoria(
+        self, restaurante_id: str, categoria_id: str
+    ) -> ResultadoEliminarCategoria:
+        if categoria_id == CATEGORIA_ESPECIALES:
+            return "no_existe"
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            # Un solo DELETE condicionado a que no tenga platos: comprobar antes
+            # y borrar despues dejaria una ventana en la que entra un plato.
+            cur.execute(
+                "DELETE FROM categorias c WHERE c.restaurante_id = %s AND c.id = %s "
+                "AND NOT EXISTS (SELECT 1 FROM platos p "
+                "WHERE p.restaurante_id = c.restaurante_id AND p.categoria_id = c.id)",
+                (restaurante_id, categoria_id),
+            )
+            if cur.rowcount > 0:
+                return "ok"
+            cur.execute(
+                "SELECT 1 FROM categorias WHERE restaurante_id = %s AND id = %s",
+                (restaurante_id, categoria_id),
+            )
+            return "con_platos" if cur.fetchone() else "no_existe"
+
+    def crear_plato(
+        self,
+        restaurante_id: str,
+        categoria_id: str,
+        nombre: str,
+        descripcion: str,
+        precio: float | None,
+        ingredientes: list[str],
+        alergenos: list[Alergeno],
+        etiqueta: Etiqueta | None,
+        vegano: bool,
+        vegetariano: bool,
+        sin_gluten: bool,
+        sin_lactosa: bool,
+    ) -> Plato | None:
+        # El especial de hoy tiene su propio flujo (crear_plato_especial).
+        if categoria_id == CATEGORIA_ESPECIALES:
+            return None
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT 1 FROM categorias WHERE restaurante_id = %s AND id = %s",
+                (restaurante_id, categoria_id),
+            )
+            if cur.fetchone() is None:
+                return None
+            return self._insertar_plato(
+                cur,
+                restaurante_id,
+                id_plato_nuevo(),
+                categoria_id,
+                nombre,
+                descripcion,
+                precio,
+                ingredientes,
+                alergenos,
+                etiqueta,
+                vegano,
+                vegetariano,
+                sin_gluten,
+                sin_lactosa,
+            )
 
     def listar_restaurantes(self) -> list[ResumenRestaurante]:
         with self.pool.connection() as conn, conn.cursor() as cur:
@@ -709,6 +956,52 @@ def crear_plato_especial(
 
 def eliminar_plato_especial(restaurante_id: str, plato_id: str) -> bool:
     return obtener_repositorio_carta().eliminar_plato_especial(restaurante_id, plato_id)
+
+
+def crear_categoria(restaurante_id: str, nombre: str) -> Categoria:
+    return obtener_repositorio_carta().crear_categoria(restaurante_id, nombre)
+
+
+def renombrar_categoria(restaurante_id: str, categoria_id: str, nombre: str) -> Categoria | None:
+    return obtener_repositorio_carta().renombrar_categoria(restaurante_id, categoria_id, nombre)
+
+
+def ordenar_categorias(restaurante_id: str, ids: list[str]) -> bool:
+    return obtener_repositorio_carta().ordenar_categorias(restaurante_id, ids)
+
+
+def eliminar_categoria(restaurante_id: str, categoria_id: str) -> ResultadoEliminarCategoria:
+    return obtener_repositorio_carta().eliminar_categoria(restaurante_id, categoria_id)
+
+
+def crear_plato(
+    restaurante_id: str,
+    categoria_id: str,
+    nombre: str,
+    descripcion: str,
+    precio: float | None,
+    ingredientes: list[str],
+    alergenos: list[Alergeno],
+    etiqueta: Etiqueta | None,
+    vegano: bool,
+    vegetariano: bool,
+    sin_gluten: bool,
+    sin_lactosa: bool,
+) -> Plato | None:
+    return obtener_repositorio_carta().crear_plato(
+        restaurante_id,
+        categoria_id,
+        nombre,
+        descripcion,
+        precio,
+        ingredientes,
+        alergenos,
+        etiqueta,
+        vegano,
+        vegetariano,
+        sin_gluten,
+        sin_lactosa,
+    )
 
 
 def listar_restaurantes() -> list[ResumenRestaurante]:

@@ -26,12 +26,18 @@ from carta_bar.datos import (
     cargar_carta_traducida,
     cargar_categorias,
     cargar_config,
+    crear_categoria,
+    crear_plato,
     crear_plato_especial,
     crear_restaurante,
+    eliminar_categoria,
     eliminar_plato_especial,
     guardar_clave_hash,
     listar_restaurantes,
     obtener_clave_hash,
+    ordenar_categorias,
+    renombrar_categoria,
+    slug_categoria,
 )
 from carta_bar.embeddings import cargar_modelo
 from carta_bar.limites import LIMITE_LOGIN, LIMITE_PREGUNTAR, limite_superado, limiter
@@ -448,6 +454,107 @@ def admin_eliminar_especial(
         return Response(status_code=404, content="Plato no encontrado")
     _ruta_foto(restaurante_id, plato_id).unlink(missing_ok=True)
     _indices.pop(restaurante_id, None)
+    return Response(status_code=204)
+
+
+class CrearPlatoPeticion(CrearPlatoEspecialPeticion):
+    categoria: str = Field(min_length=1, max_length=100)
+
+
+@app.post("/admin/api/platos", status_code=201, response_model=None)
+def admin_crear_plato(
+    peticion: CrearPlatoPeticion, request: Request, restaurante_id: RestauranteActual
+) -> Plato | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    creado = crear_plato(
+        restaurante_id,
+        peticion.categoria,
+        peticion.nombre,
+        peticion.descripcion,
+        peticion.precio,
+        peticion.ingredientes,
+        peticion.alergenos,
+        peticion.etiqueta,
+        peticion.vegano,
+        peticion.vegetariano,
+        peticion.sin_gluten,
+        peticion.sin_lactosa,
+    )
+    if creado is None:
+        return Response(status_code=404, content="Categoría no encontrada")
+    _indices.pop(restaurante_id, None)
+    return creado
+
+
+class NombreCategoriaPeticion(BaseModel):
+    nombre: str = Field(min_length=1, max_length=60)
+
+    @field_validator("nombre")
+    @classmethod
+    def limpiar_nombre(cls, nombre: str) -> str:
+        # Espacios de sobra fuera, y al menos una letra o cifra: el id de la
+        # categoria se deriva del nombre y no puede salir vacio.
+        limpio = " ".join(nombre.split())
+        if not slug_categoria(limpio):
+            raise ValueError("El nombre necesita al menos una letra o una cifra")
+        return limpio
+
+
+class OrdenCategoriasPeticion(BaseModel):
+    ids: list[str] = Field(max_length=200)
+
+
+@app.post("/admin/api/categorias", status_code=201, response_model=None)
+def admin_crear_categoria(
+    peticion: NombreCategoriaPeticion, request: Request, restaurante_id: RestauranteActual
+) -> Categoria | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    return crear_categoria(restaurante_id, peticion.nombre)
+
+
+@app.put("/admin/api/categorias/{categoria_id}", response_model=None)
+def admin_renombrar_categoria(
+    categoria_id: str,
+    peticion: NombreCategoriaPeticion,
+    request: Request,
+    restaurante_id: RestauranteActual,
+) -> Categoria | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    renombrada = renombrar_categoria(restaurante_id, categoria_id, peticion.nombre)
+    if renombrada is None:
+        return Response(status_code=404, content="Categoría no encontrada")
+    return renombrada
+
+
+# Ruta propia y no /categorias/orden: chocaria con /categorias/{categoria_id}.
+@app.put("/admin/api/orden-categorias", response_model=None)
+def admin_ordenar_categorias(
+    peticion: OrdenCategoriasPeticion, request: Request, restaurante_id: RestauranteActual
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    if not ordenar_categorias(restaurante_id, peticion.ids):
+        return Response(status_code=400, content="La lista no coincide con las categorías actuales")
+    return Response(status_code=204)
+
+
+@app.delete("/admin/api/categorias/{categoria_id}")
+def admin_eliminar_categoria(
+    categoria_id: str, request: Request, restaurante_id: RestauranteActual
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    resultado = eliminar_categoria(restaurante_id, categoria_id)
+    if resultado == "no_existe":
+        return Response(status_code=404, content="Categoría no encontrada")
+    if resultado == "con_platos":
+        return Response(
+            status_code=409,
+            content="La categoría tiene platos: muévelos o elimínalos antes de borrarla",
+        )
     return Response(status_code=204)
 
 
