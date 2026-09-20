@@ -144,6 +144,10 @@ restaurante.
   → el gerente los confirma con checkboxes, nunca se dan por buenos solos)
   → detalle completo en
   [docs/APARCADO-CARTAS-MULTINEGOCIO.md](APARCADO-CARTAS-MULTINEGOCIO.md)
+- ⬜ Código QR del restaurante en el panel del gerente: verlo en pantalla
+  y descargarlo (PNG para imprimir y SVG), apuntando a su propia dirección
+- ⬜ Código QR de cada restaurante en el panel superadmin (para entregarlo
+  al dar de alta un bar)
 - ⬜ Métricas básicas
 - ✅ Migrar el frontend a React + TypeScript, pantalla a pantalla, sin
   romper nada entre medias (infraestructura con Vite, compilada en una
