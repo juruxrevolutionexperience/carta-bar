@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import {
   crearEspecial,
+  crearPlato,
   eliminarEspecial,
   guardarPlatoExistente,
   subirFoto,
@@ -11,16 +12,33 @@ import { BloqueFoto } from "./BloqueFoto";
 import { comprimirImagen } from "./comprimirImagen";
 import { SelectorFotoNueva } from "./SelectorFotoNueva";
 import { TEXTO_ALERGENO, TEXTO_DIETA, TEXTO_ETIQUETA, type ClaveDieta } from "./textos";
-import { CATEGORIA_ESPECIALES, type Alergeno, type Etiqueta, type Plato } from "./types";
+import {
+  CATEGORIA_ESPECIALES,
+  type Alergeno,
+  type Categoria,
+  type Etiqueta,
+  type Plato,
+} from "./types";
 
 interface Props {
   plato: Plato;
   onGuardado: (plato: Plato) => void;
   onCancelar: () => void;
   onEliminado: () => void;
+  // Solo al dar de alta un plato normal: las categorias entre las que elegir.
+  // Sin esto, un plato nuevo es un especial del dia (comportamiento de siempre).
+  categoriasElegibles?: Categoria[];
 }
 
-export function FormularioPlato({ plato, onGuardado, onCancelar, onEliminado }: Props) {
+export function FormularioPlato({
+  plato,
+  onGuardado,
+  onCancelar,
+  onEliminado,
+  categoriasElegibles,
+}: Props) {
+  const [categoria, setCategoria] = useState(categoriasElegibles?.[0]?.id ?? "");
+  const [alergenosRevisados, setAlergenosRevisados] = useState(false);
   const [nombre, setNombre] = useState(plato.nombre);
   const [descripcion, setDescripcion] = useState(plato.descripcion);
   const [precioTxt, setPrecioTxt] = useState(plato.precio === null ? "" : String(plato.precio));
@@ -47,8 +65,18 @@ export function FormularioPlato({ plato, onGuardado, onCancelar, onEliminado }: 
     );
   }
 
+  const esPlatoNormalNuevo = !plato.id && categoriasElegibles !== undefined;
+
   async function guardar() {
     setAviso(null);
+    if (esPlatoNormalNuevo && !categoria) {
+      setAviso("Elige una categoría.");
+      return;
+    }
+    if (esPlatoNormalNuevo && !alergenosRevisados) {
+      setAviso("Confirma que has revisado los alérgenos del plato.");
+      return;
+    }
     setGuardando(true);
 
     const cuerpo: CuerpoPlato = {
@@ -70,7 +98,9 @@ export function FormularioPlato({ plato, onGuardado, onCancelar, onEliminado }: 
     try {
       const esNuevo = !plato.id;
       const resp = esNuevo
-        ? await crearEspecial(cuerpo)
+        ? esPlatoNormalNuevo
+          ? await crearPlato({ ...cuerpo, categoria })
+          : await crearEspecial(cuerpo)
         : await guardarPlatoExistente(plato.id as string, cuerpo);
 
       if (resp.status === 204) {
@@ -91,12 +121,12 @@ export function FormularioPlato({ plato, onGuardado, onCancelar, onEliminado }: 
               // en pantalla no llegaria a verse, por eso aqui si hace falta
               // interrumpir con un alert en vez del <div class="aviso"> normal.
               window.alert(
-                "El especial se creó, pero no se pudo subir la foto. Edítalo para reintentarlo."
+                "El plato se creó, pero no se pudo subir la foto. Edítalo para reintentarlo."
               );
             }
           } catch {
             window.alert(
-              "El especial se creó, pero no se pudo subir la foto. Edítalo para reintentarlo."
+              "El plato se creó, pero no se pudo subir la foto. Edítalo para reintentarlo."
             );
           }
         }
@@ -105,7 +135,9 @@ export function FormularioPlato({ plato, onGuardado, onCancelar, onEliminado }: 
       }
       setAviso(
         resp.status === 404
-          ? "Este plato ya no existe."
+          ? esPlatoNormalNuevo
+            ? "Esa categoría ya no existe."
+            : "Este plato ya no existe."
           : "Revisa los datos: el precio debe ser mayor que cero."
       );
     } catch {
@@ -133,6 +165,19 @@ export function FormularioPlato({ plato, onGuardado, onCancelar, onEliminado }: 
 
   return (
     <div className="tarjeta" style={{ padding: "16px", margin: "12px 0" }}>
+      {esPlatoNormalNuevo && (
+        <>
+          <label>Categoría</label>
+          <select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+            {categoriasElegibles.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nombre}
+              </option>
+            ))}
+          </select>
+        </>
+      )}
+
       <label>Nombre</label>
       <input value={nombre} onChange={(e) => setNombre(e.target.value)} />
 
@@ -215,6 +260,17 @@ export function FormularioPlato({ plato, onGuardado, onCancelar, onEliminado }: 
           ))}
         </div>
       </div>
+
+      {esPlatoNormalNuevo && (
+        <label className="opcion">
+          <input
+            type="checkbox"
+            checked={alergenosRevisados}
+            onChange={(e) => setAlergenosRevisados(e.target.checked)}
+          />
+          He revisado los alérgenos de este plato
+        </label>
+      )}
 
       <button type="button" className="primario" disabled={guardando} onClick={guardar}>
         Guardar

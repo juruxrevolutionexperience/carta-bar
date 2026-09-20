@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 
 import { colorCategoria } from "../carta/iconos";
 import { FilaPlato } from "./FilaPlato";
-import type { Categoria, Plato } from "./types";
+import { FormularioPlato } from "./FormularioPlato";
+import { CATEGORIA_ESPECIALES, platoVacio, type Categoria, type Plato } from "./types";
 
 interface Props {
   platos: Plato[] | null;
@@ -10,6 +11,7 @@ interface Props {
   categorias: Categoria[];
   onActualizar: (anterior: Plato, nuevo: Plato) => void;
   onQuitar: (objetivo: Plato) => void;
+  onCreado: (plato: Plato) => void;
 }
 
 // Sin acentos ni mayusculas: "salmon" tiene que encontrar "Salmón".
@@ -20,12 +22,14 @@ function normalizar(texto: string): string {
     .toLowerCase();
 }
 
-export function SeccionPlatos({ platos, error, categorias, onActualizar, onQuitar }: Props) {
+export function SeccionPlatos({ platos, error, categorias, onActualizar, onQuitar, onCreado }: Props) {
   const [busqueda, setBusqueda] = useState("");
   // Categorias que el gerente ha desplegado a mano. Vacio = todo cerrado por
   // defecto (mas comodo con 28 platos que empezar con todo abierto).
   const [abiertas, setAbiertas] = useState<Set<string>>(new Set());
+  const [anadiendo, setAnadiendo] = useState(false);
   const buscando = busqueda.trim() !== "";
+  const categoriasElegibles = categorias.filter((c) => c.id !== CATEGORIA_ESPECIALES);
 
   function alternar(id: string, abierta: boolean) {
     setAbiertas((actual) => {
@@ -67,6 +71,28 @@ export function SeccionPlatos({ platos, error, categorias, onActualizar, onQuita
     <section className="seccion">
       <div className="tarjeta">
         <h2>Platos</h2>
+        {!error && platos !== null && categoriasElegibles.length === 0 && (
+          <p className="cargando">Crea primero una categoría para poder añadir platos.</p>
+        )}
+        {!error && platos !== null && categoriasElegibles.length > 0 && !anadiendo && (
+          <button type="button" className="primario" onClick={() => setAnadiendo(true)}>
+            + Añadir plato
+          </button>
+        )}
+        {anadiendo && (
+          <FormularioPlato
+            plato={platoVacio()}
+            categoriasElegibles={categoriasElegibles}
+            onCancelar={() => setAnadiendo(false)}
+            onEliminado={() => setAnadiendo(false)}
+            onGuardado={(creado) => {
+              setAnadiendo(false);
+              onCreado(creado);
+              // Que el gerente vea donde ha quedado el plato nuevo.
+              alternar(creado.categoria, true);
+            }}
+          />
+        )}
         {!error && platos !== null && platos.length > 0 && (
           <input
             type="search"

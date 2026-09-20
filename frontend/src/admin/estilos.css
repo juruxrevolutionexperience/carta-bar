@@ -78,6 +78,7 @@ label {
 }
 
 input,
+select,
 textarea {
   width: 100%;
   padding: 11px 13px;
@@ -94,6 +95,7 @@ textarea {
 }
 
 input:focus,
+select:focus,
 textarea:focus {
   outline: 2px solid var(--marca);
   outline-offset: 1px;
@@ -450,4 +452,56 @@ button.secundario {
 
 .nav-item.activo {
   color: var(--marca);
+}
+
+/* Gestion de categorias */
+.fila-categoria {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-top: 6px;
+  background: var(--fondo-alt);
+  border-left: 4px solid transparent;
+  border-radius: 6px;
+}
+
+.fila-categoria .nombre-categoria {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.fila-categoria input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+}
+
+.fila-categoria button {
+  border: 1px solid var(--borde);
+  background: var(--fondo);
+  color: var(--tinta);
+  border-radius: 8px;
+  min-width: 38px;
+  min-height: 38px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.fila-categoria button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.form-categoria-nueva {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.form-categoria-nueva button.primario {
+  margin-top: 0;
+  white-space: nowrap;
 }

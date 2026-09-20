@@ -59,6 +59,42 @@ export async function guardarPlatoExistente(
   });
 }
 
+export async function crearPlato(cuerpo: CuerpoPlato & { categoria: string }): Promise<Response> {
+  return apiFetch("/admin/api/platos", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(cuerpo),
+  });
+}
+
+export async function crearCategoria(nombre: string): Promise<Response> {
+  return apiFetch("/admin/api/categorias", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nombre }),
+  });
+}
+
+export async function renombrarCategoria(id: string, nombre: string): Promise<Response> {
+  return apiFetch(`/admin/api/categorias/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nombre }),
+  });
+}
+
+export async function ordenarCategorias(ids: string[]): Promise<Response> {
+  return apiFetch("/admin/api/orden-categorias", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids }),
+  });
+}
+
+export async function eliminarCategoria(id: string): Promise<Response> {
+  return apiFetch(`/admin/api/categorias/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
 export async function crearEspecial(cuerpo: CuerpoPlato): Promise<Response> {
   return apiFetch("/admin/api/platos/especiales", {
     method: "POST",
