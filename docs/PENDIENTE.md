@@ -97,7 +97,9 @@ restaurante.
   se cae a los ficheros JSON solos
 - ✅ Quitar `la-catedral` escrito en el código: ahora `RESTAURANTE_ID` en
   `.env`
-- ⬜ Almacenamiento para las fotos
+- ✅ Almacenamiento para las fotos: se suben desde el panel a
+  `datos/fotos/<restaurante>/`, montado como volumen en
+  `docker-compose.prod.yml` para que sobrevivan a cada despliegue
 - ⬜ Desplegar sin caída (hoy ~10 s mientras arranca el contenedor)
 
 ### Pantallas
