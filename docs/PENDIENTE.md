@@ -63,7 +63,16 @@ Probado en el iPhone, confirmado bueno.
   `rsync` arrastraba sin querer pero un clon limpio no tiene) —
   detalle en [docs/ARQUITECTURA.md](ARQUITECTURA.md)
 - ✅ Dockerfile con dependencias y modelo antes que el código: build de 470 s a 4 s
-- ⬜ Copia de seguridad diaria de datos/
+- 🔍 Copia de seguridad diaria: `scripts/copia_seguridad.sh` guarda cada día
+  la base de datos (Supabase, plan gratuito sin copias propias) y `datos/fotos/`,
+  14 días de rotación, y falla en voz alta si la copia sale vacía o rota. Probado
+  con un `docker` simulado (éxito, `pg_dump` caído, volcado sin tabla, rotación,
+  sin credenciales); **no probado contra la base real ni restaurado**. Falta
+  instalarlo en el servidor, programar el cron y hacer una restauración de
+  prueba. Detalle en [docs/COPIAS-DE-SEGURIDAD.md](COPIAS-DE-SEGURIDAD.md)
+- ⬜ Sacar las copias del servidor (Backups de Hetzner, `scp` a tu PC o
+  almacenamiento externo): sin esto, perder el servidor es perder también las
+  copias
 - ⬜ Probado en móvil, con datos móviles, en los 4 idiomas
 - ✅ QR generado (PNG y SVG) y verificado leyéndolo: apunta a https://cartia.jurux.app
 - ✅ Parar gym-app: borrado del todo (contenedor, red, volumen de datos,
