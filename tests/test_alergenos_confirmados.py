@@ -139,12 +139,39 @@ def test_sin_platos_confirmados_ni_sin_confirmar_sigue_diciendo_que_no_hay(
     assert preguntar(carta).texto == agente.SIN_RESULTADOS["es"]
 
 
-def test_al_modelo_le_llega_la_nota_de_platos_sin_confirmar(modelo_falso: SimpleNamespace) -> None:
+def test_el_aviso_de_platos_pendientes_va_tras_la_respuesta_y_no_dentro_del_prompt(
+    modelo_falso: SimpleNamespace,
+) -> None:
+    # Metido en el prompt, el modelo se ponia tan cauto que se negaba a
+    # recomendar ningun plato (comprobado con la carta real).
     modelo_falso.restricciones = RestriccionesCliente(sin_gluten=True)
     carta = [plato("a", sin_gluten=True), plato("b", confirmado=False, sin_gluten=True)]
-    preguntar(carta)
-    assert "aún no ha confirmado" in modelo_falso.prompt
+    r = preguntar(carta)
+    assert "Nota:" not in modelo_falso.prompt
     assert "Plato b" not in modelo_falso.prompt  # ni se lista como opcion
+    assert r.texto.startswith("respuesta del modelo")
+    assert r.texto.endswith(agente.AVISO_PLATOS_PENDIENTES["es"])
+
+
+@pytest.mark.parametrize("idioma", ["es", "en", "de", "fr"])
+def test_el_aviso_sale_en_el_idioma_del_cliente(
+    modelo_falso: SimpleNamespace, idioma: str
+) -> None:
+    modelo_falso.restricciones = RestriccionesCliente(sin_gluten=True)
+    carta = [plato("a", sin_gluten=True), plato("b", confirmado=False, sin_gluten=True)]
+    assert preguntar(carta, idioma).texto.endswith(agente.AVISO_PLATOS_PENDIENTES[idioma])
+
+
+def test_sin_platos_pendientes_no_hay_aviso(modelo_falso: SimpleNamespace) -> None:
+    modelo_falso.restricciones = RestriccionesCliente(sin_gluten=True)
+    r = preguntar([plato("a", sin_gluten=True)])
+    assert r.texto == "respuesta del modelo"
+
+
+def test_sin_restriccion_de_seguridad_tampoco_hay_aviso(modelo_falso: SimpleNamespace) -> None:
+    # Pedir "algo rico" no es preguntar por alergias: el aviso solo molestaria.
+    r = preguntar([plato("a"), plato("b", confirmado=False)])
+    assert r.texto == "respuesta del modelo"
 
 
 def test_un_plato_sin_confirmar_no_se_describe_como_sin_alergenos(

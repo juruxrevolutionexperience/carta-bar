@@ -67,11 +67,20 @@ CONSULTAR_PERSONAL = {
     "Demande au personnel, il t'aidera volontiers.",
 }
 
-_NOTA_SIN_CONFIRMAR = (
-    "Nota: hay otros platos de la carta cuyos alérgenos el restaurante aún no ha "
-    "confirmado, y por eso no aparecen en esta lista. Si el cliente tiene una alergia "
-    "o intolerancia, recuérdale brevemente que puede consultarlo con el personal."
-)
+# Se añade DESPUES de la respuesta del modelo, no dentro de su prompt: metida en
+# el prompt, el modelo se ponia tan cauto que se negaba a recomendar ningun plato
+# (comprobado con la carta real). Asi el aviso sale siempre, en el idioma del
+# cliente y sin gastar tokens.
+AVISO_PLATOS_PENDIENTES = {
+    "es": "Ojo: los alérgenos de algunos platos están pendientes de confirmar. "
+    "Si tienes una alergia, consúltalo con el personal.",
+    "en": "Note: the allergens of some dishes are still to be confirmed. "
+    "If you have an allergy, please check with our staff.",
+    "de": "Hinweis: Die Allergene einiger Gerichte sind noch nicht bestätigt. "
+    "Bei einer Allergie frag bitte unser Personal.",
+    "fr": "Attention : les allergènes de certains plats ne sont pas encore confirmés. "
+    "Si tu as une allergie, demande au personnel.",
+}
 
 _ALERGENOS_SIN_CONFIRMAR = (
     "SIN CONFIRMAR (el restaurante aún no los ha revisado): no afirmes que es apto "
@@ -142,8 +151,6 @@ def responder_cliente(
         f"Alérgenos: {_alergenos_txt(p)}."
         for _, p in resultados
     )
-    if hay_sin_confirmar:
-        contexto += f"\n\n{_NOTA_SIN_CONFIRMAR}"
 
     lengua = NOMBRES_IDIOMA.get(idioma, "español")
     modo = _INSTRUCCION_CERRAR if restricciones.pedido_cerrado else _INSTRUCCION_OFRECER
@@ -169,4 +176,8 @@ def responder_cliente(
     c = cliente()
     respuesta = c.messages.create(model=MODELO, max_tokens=400, messages=mensajes)
     consumo.consumos.append(medir("respuesta", respuesta.usage))
-    return RespuestaAgente(texto=texto_de_respuesta(respuesta), consumo=consumo)
+    texto = texto_de_respuesta(respuesta)
+    if hay_sin_confirmar:
+        aviso = AVISO_PLATOS_PENDIENTES.get(idioma, AVISO_PLATOS_PENDIENTES["es"])
+        texto = f"{texto}\n\n{aviso}"
+    return RespuestaAgente(texto=texto, consumo=consumo)

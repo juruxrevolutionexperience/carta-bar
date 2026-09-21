@@ -36,7 +36,11 @@ con fotos reales, y el QR está listo para las mesas.
   plato nuevo entra sin confirmar. Los platos que ya existían se dan por
   revisados, salvo los 4 estimados (Tataki y las 3 tartas), que hay que marcar
   como sin confirmar a mano. Con tests, y comprobado que fallan con la lógica
-  anterior; falta desplegarlo y verlo en producción. Es la base del importador
+  anterior. Probado con el modelo real: una primera versión metía el aviso de
+  "hay platos sin confirmar" en el prompt y el chat se negaba a recomendar
+  ningún plato sin gluten; ahora el aviso se añade como frase fija tras la
+  respuesta, en el idioma del cliente. Falta desplegar esa corrección y verlo en
+  producción. Es la base del importador
 - ✅ Límite de peticiones por cliente detrás de nginx: `CONFIAR_PROXY=true` y la IP que
   añade nginx, no la que manda el cliente. Probado en producción con 130 peticiones
   con IP inventada: antes pasaban las 130, ahora se cortan al agotar el cupo. Que cada
