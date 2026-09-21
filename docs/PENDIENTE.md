@@ -137,9 +137,23 @@ restaurante.
 - ✅ Vista previa en vivo de la tarjeta del plato al editar o crear (la
   misma tarjeta de la carta pública). Un borrador con "Publicar" queda
   descartado por ahora: los cambios se publican al guardar
-- ⬜ Guardar y traducir (dispara `traducir_carta()` en segundo plano, el
-  hash ya hace que solo traduzca lo que cambió)
-- ⬜ Configuración de marca: nombre del negocio, logo, foto de portada/banner
+- 🔍 Guardar y traducir: crear o editar un plato (o un especial) lanza
+  `traducir_restaurante()` en segundo plano (`BackgroundTasks`); el hash hace
+  que solo se pague lo que cambió, respeta el tope diario y anota el coste.
+  Un candado por restaurante evita traducir dos veces lo mismo. Agotar un plato
+  no traduce. Lógica comprobada con la API simulada; los tests de los endpoints
+  (`tests/test_traduccion_panel.py`) no se han podido correr en este PC (Windows
+  bloquea la DLL de torch). Falta correr la suite y probar en producción.
+  De paso: una traducción cuyo hash ya no coincide con el texto del plato
+  no se enseña (sale en español), para que un plato editado nunca muestre
+  ingredientes de la versión anterior. Comprobado con los ficheros JSON; falta
+  comprobar en producción que las 28 × 3 traducciones de Supabase siguen vigentes
+- 🔍 Configuración de marca: sección "Marca" del panel con nombre del negocio,
+  logo y foto de portada (se comprimen en el navegador y se guardan en el mismo
+  volumen que las fotos de platos, con nombre fijo por tipo). Backend con tests
+  (`tests/test_admin_marca.py`) y frontend con `tsc` limpio. Falta desplegar y
+  probarlo en el móvil con una imagen real. Subtítulo y color de marca quedan
+  fuera: hoy solo se cambian en la base de datos
 - ⬜ Importador de carta (PDF o foto → borrador con alérgenos sin confirmar
   → el gerente los confirma con checkboxes, nunca se dan por buenos solos)
   → detalle completo en

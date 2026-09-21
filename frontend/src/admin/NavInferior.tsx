@@ -1,4 +1,4 @@
-export type Seccion = "platos" | "especiales" | "cuenta";
+export type Seccion = "platos" | "especiales" | "marca" | "cuenta";
 
 interface Props {
   activa: Seccion;
@@ -27,6 +27,18 @@ export function NavInferior({ activa, onCambiar }: Props) {
           <path d="M12 3l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L12 16.9 6.4 20l1.4-6.2L3 9.5l6.4-.6z" />
         </svg>
         Especiales
+      </button>
+      <button
+        type="button"
+        className={"nav-item" + (activa === "marca" ? " activo" : "")}
+        onClick={() => onCambiar("marca")}
+      >
+        <svg viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <circle cx="9" cy="10" r="2" />
+          <path d="M21 16l-5-5-8 9" />
+        </svg>
+        Marca
       </button>
       <button
         type="button"

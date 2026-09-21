@@ -66,3 +66,12 @@ export function platoVacio(): Plato {
     foto: null,
   };
 }
+
+// Lo que el panel edita de /config: el resto (color, moneda...) no se toca aqui.
+export interface ConfigMarca {
+  nombre?: string;
+  logo?: string;
+  foto_portada?: string;
+}
+
+export type TipoImagenMarca = "logo" | "portada";

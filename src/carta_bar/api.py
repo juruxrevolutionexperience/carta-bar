@@ -8,7 +8,7 @@ from typing import Annotated, Literal
 import numpy as np
 import psycopg
 import structlog
-from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -19,9 +19,12 @@ from carta_bar.agente import responder_cliente
 from carta_bar.auth import crear_token_sesion, hash_clave, verificar_clave, verificar_token_sesion
 from carta_bar.busqueda import indexar
 from carta_bar.datos import (
+    CampoImagenMarca,
     _validar_slug,
     actualizar_disponibilidad,
     actualizar_foto_plato,
+    actualizar_imagen_marca,
+    actualizar_nombre_restaurante,
     actualizar_plato_editable,
     cargar_carta_traducida,
     cargar_categorias,
@@ -47,6 +50,7 @@ from carta_bar.logging_config import configurar_logging
 from carta_bar.modelos import Alergeno, Categoria, Etiqueta, MensajeChat, Plato, ResumenRestaurante
 from carta_bar.presupuesto import AVISO_SIN_PRESUPUESTO, ControlGasto
 from carta_bar.seguridad import CabecerasSeguridad
+from carta_bar.traductor import traducir_restaurante
 from carta_bar.uso import crear_repositorio
 
 # En produccion conviene JSON: es lo que sabe agregar cualquier gestor de logs.
@@ -352,6 +356,7 @@ def admin_actualizar_plato(
     peticion: ActualizarPlatoPeticion,
     request: Request,
     restaurante_id: RestauranteActual,
+    tareas: BackgroundTasks,
 ) -> Response:
     if not _sesion_activa(request, restaurante_id):
         return Response(status_code=401, content="Sesión no válida")
@@ -372,6 +377,7 @@ def admin_actualizar_plato(
     if not encontrado:
         return Response(status_code=404, content="Plato no encontrado")
     _indices.pop(restaurante_id, None)
+    tareas.add_task(traducir_restaurante, restaurante_id, control)
     return Response(status_code=204)
 
 
@@ -423,7 +429,10 @@ class CrearPlatoEspecialPeticion(BaseModel):
 
 @app.post("/admin/api/platos/especiales", status_code=201, response_model=None)
 def admin_crear_especial(
-    peticion: CrearPlatoEspecialPeticion, request: Request, restaurante_id: RestauranteActual
+    peticion: CrearPlatoEspecialPeticion,
+    request: Request,
+    restaurante_id: RestauranteActual,
+    tareas: BackgroundTasks,
 ) -> Plato | Response:
     if not _sesion_activa(request, restaurante_id):
         return Response(status_code=401, content="Sesión no válida")
@@ -441,6 +450,7 @@ def admin_crear_especial(
         peticion.sin_lactosa,
     )
     _indices.pop(restaurante_id, None)
+    tareas.add_task(traducir_restaurante, restaurante_id, control)
     return creado
 
 
@@ -477,7 +487,10 @@ class CrearPlatoPeticion(CrearPlatoEspecialPeticion):
 
 @app.post("/admin/api/platos", status_code=201, response_model=None)
 def admin_crear_plato(
-    peticion: CrearPlatoPeticion, request: Request, restaurante_id: RestauranteActual
+    peticion: CrearPlatoPeticion,
+    request: Request,
+    restaurante_id: RestauranteActual,
+    tareas: BackgroundTasks,
 ) -> Plato | Response:
     if not _sesion_activa(request, restaurante_id):
         return Response(status_code=401, content="Sesión no válida")
@@ -498,6 +511,7 @@ def admin_crear_plato(
     if creado is None:
         return Response(status_code=404, content="Categoría no encontrada")
     _indices.pop(restaurante_id, None)
+    tareas.add_task(traducir_restaurante, restaurante_id, control)
     return creado
 
 
@@ -621,6 +635,81 @@ def admin_borrar_foto(
     if not encontrado:
         return Response(status_code=404, content="Plato no encontrado")
     _ruta_foto(restaurante_id, plato_id).unlink(missing_ok=True)
+    return Response(status_code=204)
+
+
+# ------------------------------------------------------------ marca
+#
+# Nombre, logo y portada del restaurante. Las imagenes usan el mismo volumen y
+# la misma ruta publica que las fotos de platos (/fotos/...), con un nombre de
+# archivo fijo por tipo: subir otra reemplaza a la anterior.
+
+_IMAGENES_MARCA: dict[str, tuple[CampoImagenMarca, str]] = {
+    "logo": ("logo", "marca-logo"),
+    "portada": ("foto_portada", "marca-portada"),
+}
+TipoImagenMarca = Literal["logo", "portada"]
+
+
+class NombreRestaurantePeticion(BaseModel):
+    nombre: str = Field(min_length=1, max_length=80)
+
+    @field_validator("nombre")
+    @classmethod
+    def limpiar_nombre(cls, nombre: str) -> str:
+        limpio = " ".join(nombre.split())
+        if not limpio:
+            raise ValueError("El nombre no puede estar vacío")
+        return limpio
+
+
+@app.put("/admin/api/marca")
+def admin_cambiar_nombre(
+    peticion: NombreRestaurantePeticion, request: Request, restaurante_id: RestauranteActual
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    if not actualizar_nombre_restaurante(restaurante_id, peticion.nombre):
+        return Response(status_code=404, content="Restaurante no encontrado")
+    return Response(status_code=204)
+
+
+@app.post("/admin/api/marca/{tipo}")
+async def admin_subir_imagen_marca(
+    tipo: TipoImagenMarca, request: Request, foto: UploadFile, restaurante_id: RestauranteActual
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+
+    contenido = await foto.read(TAMANO_MAX_FOTO + 1)
+    if len(contenido) > TAMANO_MAX_FOTO:
+        return Response(status_code=413, content="La imagen pesa demasiado")
+    if not contenido.startswith(_CABECERA_JPEG):
+        return Response(status_code=400, content="Solo se aceptan imagenes JPEG")
+
+    campo, nombre_archivo = _IMAGENES_MARCA[tipo]
+    ruta = _ruta_foto(restaurante_id, nombre_archivo)
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    ruta.write_bytes(contenido)
+
+    # ?v= evita que el navegador enseñe la imagen anterior al reemplazarla.
+    url = f"/fotos/{restaurante_id}/{nombre_archivo}.jpg?v={int(time.time())}"
+    if not actualizar_imagen_marca(restaurante_id, campo, url):
+        ruta.unlink(missing_ok=True)
+        return Response(status_code=404, content="Restaurante no encontrado")
+    return Response(content=json.dumps({"url": url}), media_type="application/json")
+
+
+@app.delete("/admin/api/marca/{tipo}")
+def admin_quitar_imagen_marca(
+    tipo: TipoImagenMarca, request: Request, restaurante_id: RestauranteActual
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    campo, nombre_archivo = _IMAGENES_MARCA[tipo]
+    if not actualizar_imagen_marca(restaurante_id, campo, ""):
+        return Response(status_code=404, content="Restaurante no encontrado")
+    _ruta_foto(restaurante_id, nombre_archivo).unlink(missing_ok=True)
     return Response(status_code=204)
 
 

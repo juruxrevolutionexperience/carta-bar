@@ -384,6 +384,15 @@ button.secundario {
   text-align: center;
 }
 
+/* El logo se ve en un circulo en la carta; la portada es apaisada. */
+.miniatura-foto.redonda {
+  border-radius: 50%;
+}
+
+.miniatura-foto.ancha {
+  width: 128px;
+}
+
 .acciones-foto {
   display: flex;
   flex-direction: column;

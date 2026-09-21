@@ -1,14 +1,17 @@
-import hashlib
 import os
+import threading
 
+import structlog
 from pydantic import BaseModel
 
 from carta_bar.costes import Consumo, ConsumoTotal, medir
 from carta_bar.datos import cargar_carta, cargar_traducciones, guardar_traducciones
 from carta_bar.llm import MODELO, cliente
-from carta_bar.modelos import Plato
+from carta_bar.modelos import Plato, huella_texto
 from carta_bar.presupuesto import ControlGasto
 from carta_bar.uso import crear_repositorio
+
+log = structlog.get_logger()
 
 IDIOMAS = ["en", "de", "fr"]
 
@@ -17,11 +20,6 @@ class PlatoTraducido(BaseModel):
     nombre: str
     descripcion: str
     ingredientes: list[str]
-
-
-def huella(plato: Plato) -> str:
-    base = plato.nombre + "|" + plato.descripcion + "|" + "|".join(plato.ingredientes)
-    return hashlib.sha256(base.encode("utf-8")).hexdigest()[:16]
 
 
 def traducir_plato(plato: Plato, idioma: str) -> tuple[PlatoTraducido, Consumo]:
@@ -63,7 +61,7 @@ def traducir_carta(restaurante_id: str, idioma: str) -> ConsumoTotal:
     consumo = ConsumoTotal()
 
     for plato in carta:
-        h = huella(plato)
+        h = huella_texto(plato)
         previo = existentes.get(plato.id)
 
         if previo and previo.get("hash") == h:
@@ -90,6 +88,45 @@ def traducir_carta(restaurante_id: str, idioma: str) -> ConsumoTotal:
         f"- ${consumo.coste_usd:.4f}"
     )
     return consumo
+
+
+_candados: dict[str, threading.Lock] = {}
+
+
+def traducir_restaurante(restaurante_id: str, control: ControlGasto) -> None:
+    """Traduce a los 3 idiomas lo que haya cambiado, tras guardar desde el panel.
+
+    Se lanza en segundo plano: el gerente no espera al LLM. El hash de cada
+    plato hace que solo se pague lo que cambio, asi que llamarla de mas sale
+    gratis. Nunca lanza: una traduccion fallida no debe convertirse en un error
+    ya despues de haber guardado el plato.
+    """
+    # Un candado por restaurante: dos guardados seguidos traducirian a la vez
+    # el mismo plato y lo pagarian dos veces.
+    with _candados.setdefault(restaurante_id, threading.Lock()):
+        if not control.hay_presupuesto(restaurante_id):
+            log.warning("traduccion_omitida_sin_presupuesto", restaurante_id=restaurante_id)
+            return
+
+        total = ConsumoTotal()
+        for idioma in IDIOMAS:
+            try:
+                total.consumos.extend(traducir_carta(restaurante_id, idioma).consumos)
+            except Exception as e:
+                log.error(
+                    "traduccion_fallida",
+                    restaurante_id=restaurante_id,
+                    idioma=idioma,
+                    motivo=str(e),
+                )
+        if total.consumos:
+            control.registrar(restaurante_id, MODELO, total)
+            log.info(
+                "traduccion_hecha",
+                restaurante_id=restaurante_id,
+                llamadas=len(total.consumos),
+                coste_usd=round(total.coste_usd, 6),
+            )
 
 
 def main() -> None:

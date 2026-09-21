@@ -1,4 +1,4 @@
-import type { Alergeno, Categoria, Etiqueta, Plato } from "./types";
+import type { Alergeno, Categoria, ConfigMarca, Etiqueta, Plato, TipoImagenMarca } from "./types";
 
 // Centraliza lo que en la version anterior se repetia en cada fetch: si la
 // sesion caduco a mitad de uso, el servidor devuelve 401 y aqui se manda a
@@ -22,6 +22,29 @@ export async function cargarCarta(): Promise<Plato[]> {
 export async function cargarCategorias(): Promise<Categoria[]> {
   const resp = await fetch("/categorias");
   return resp.json();
+}
+
+export async function cargarMarca(): Promise<ConfigMarca> {
+  const resp = await fetch("/config");
+  return resp.json();
+}
+
+export async function cambiarNombre(nombre: string): Promise<Response> {
+  return apiFetch("/admin/api/marca", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nombre }),
+  });
+}
+
+export async function subirImagenMarca(tipo: TipoImagenMarca, imagen: Blob): Promise<Response> {
+  const formData = new FormData();
+  formData.append("foto", imagen, `${tipo}.jpg`);
+  return apiFetch(`/admin/api/marca/${tipo}`, { method: "POST", body: formData });
+}
+
+export async function quitarImagenMarca(tipo: TipoImagenMarca): Promise<Response> {
+  return apiFetch(`/admin/api/marca/${tipo}`, { method: "DELETE" });
 }
 
 export async function actualizarDisponibilidad(

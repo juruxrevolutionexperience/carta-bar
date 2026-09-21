@@ -22,13 +22,49 @@ import structlog
 from psycopg.types.json import Jsonb
 from psycopg_pool import ConnectionPool
 
-from carta_bar.modelos import Alergeno, Categoria, Etiqueta, Plato, ResumenRestaurante
+from carta_bar.modelos import (
+    Alergeno,
+    Categoria,
+    Etiqueta,
+    Plato,
+    ResumenRestaurante,
+    huella_texto,
+)
 
 log = structlog.get_logger()
 
 _SLUG = re.compile(r"^[a-z0-9-]+$")
 
 CATEGORIA_ESPECIALES = "especial-de-hoy"
+
+
+CampoImagenMarca = Literal["logo", "foto_portada"]
+
+_SQL_IMAGEN_MARCA: dict[str, str] = {
+    "logo": "UPDATE restaurantes SET logo = %s WHERE id = %s",
+    "foto_portada": "UPDATE restaurantes SET foto_portada = %s WHERE id = %s",
+}
+
+
+def _con_traducciones(
+    carta: list[Plato], traducciones: dict[str, dict[str, object]]
+) -> list[dict[str, object]]:
+    """La carta con cada plato en su idioma.
+
+    Una traduccion solo vale si su hash coincide con el texto actual del plato.
+    Si el plato se edito y la traduccion aun no se ha rehecho (o fallo), es
+    mejor enseñarlo en español que con ingredientes de la version anterior:
+    en una carta con alergenos, un texto viejo puede ser un texto falso."""
+    resultado = []
+    for plato in carta:
+        fila = plato.model_dump()
+        t = traducciones.get(plato.id)
+        if t and t.get("hash") == huella_texto(plato):
+            fila["nombre"] = t["nombre"]
+            fila["descripcion"] = t["descripcion"]
+            fila["ingredientes"] = t["ingredientes"]
+        resultado.append(fila)
+    return resultado
 
 
 def _validar_slug(valor: str, campo: str) -> str:
@@ -115,6 +151,12 @@ class RepositorioCarta(Protocol):
 
     def actualizar_foto_plato(
         self, restaurante_id: str, plato_id: str, foto: str | None
+    ) -> bool: ...
+
+    def actualizar_nombre_restaurante(self, restaurante_id: str, nombre: str) -> bool: ...
+
+    def actualizar_imagen_marca(
+        self, restaurante_id: str, campo: CampoImagenMarca, url: str
     ) -> bool: ...
 
     def crear_plato_especial(
@@ -214,19 +256,9 @@ class RepositorioCartaFicheros:
         self, restaurante_id: str, idioma: str
     ) -> list[dict[str, object]]:
         carta = self.cargar_carta(restaurante_id)
-        base = [p.model_dump() for p in carta]
-
         if idioma == "es":
-            return base
-
-        trad = self.cargar_traducciones(restaurante_id, idioma)
-        for plato in base:
-            t = trad.get(plato["id"])
-            if t:
-                plato["nombre"] = t["nombre"]
-                plato["descripcion"] = t["descripcion"]
-                plato["ingredientes"] = t["ingredientes"]
-        return base
+            return [p.model_dump() for p in carta]
+        return _con_traducciones(carta, self.cargar_traducciones(restaurante_id, idioma))
 
     def cargar_config(self, restaurante_id: str) -> dict[str, object]:
         ruta = self._ruta_config(restaurante_id)
@@ -280,6 +312,14 @@ class RepositorioCartaFicheros:
         self, restaurante_id: str, plato_id: str, foto: str | None
     ) -> bool:
         raise NotImplementedError("Editar platos requiere CARTA_BD_ACTIVA=true")
+
+    def actualizar_nombre_restaurante(self, restaurante_id: str, nombre: str) -> bool:
+        raise NotImplementedError("Editar la marca requiere CARTA_BD_ACTIVA=true")
+
+    def actualizar_imagen_marca(
+        self, restaurante_id: str, campo: CampoImagenMarca, url: str
+    ) -> bool:
+        raise NotImplementedError("Editar la marca requiere CARTA_BD_ACTIVA=true")
 
     def crear_plato_especial(
         self,
@@ -395,19 +435,9 @@ class RepositorioCartaPostgres:
         self, restaurante_id: str, idioma: str
     ) -> list[dict[str, object]]:
         carta = self.cargar_carta(restaurante_id)
-        base = [p.model_dump() for p in carta]
-
         if idioma == "es":
-            return base
-
-        trad = self.cargar_traducciones(restaurante_id, idioma)
-        for plato in base:
-            t = trad.get(plato["id"])
-            if t:
-                plato["nombre"] = t["nombre"]
-                plato["descripcion"] = t["descripcion"]
-                plato["ingredientes"] = t["ingredientes"]
-        return base
+            return [p.model_dump() for p in carta]
+        return _con_traducciones(carta, self.cargar_traducciones(restaurante_id, idioma))
 
     def cargar_config(self, restaurante_id: str) -> dict[str, object]:
         with self.pool.connection() as conn, conn.cursor() as cur:
@@ -550,6 +580,23 @@ class RepositorioCartaPostgres:
                 "UPDATE platos SET foto = %s WHERE restaurante_id = %s AND id = %s",
                 (foto, restaurante_id, plato_id),
             )
+            return cur.rowcount > 0
+
+    def actualizar_nombre_restaurante(self, restaurante_id: str, nombre: str) -> bool:
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE restaurantes SET nombre = %s WHERE id = %s", (nombre, restaurante_id)
+            )
+            return cur.rowcount > 0
+
+    def actualizar_imagen_marca(
+        self, restaurante_id: str, campo: CampoImagenMarca, url: str
+    ) -> bool:
+        # El nombre de la columna no se puede pasar como parametro: por eso
+        # se elige entre dos consultas fijas, nunca se interpola el valor.
+        consulta = _SQL_IMAGEN_MARCA[campo]
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(consulta, (url, restaurante_id))
             return cur.rowcount > 0
 
     def _insertar_plato(
@@ -938,6 +985,14 @@ def actualizar_disponibilidad(restaurante_id: str, plato_id: str, disponible: bo
 
 def actualizar_foto_plato(restaurante_id: str, plato_id: str, foto: str | None) -> bool:
     return obtener_repositorio_carta().actualizar_foto_plato(restaurante_id, plato_id, foto)
+
+
+def actualizar_nombre_restaurante(restaurante_id: str, nombre: str) -> bool:
+    return obtener_repositorio_carta().actualizar_nombre_restaurante(restaurante_id, nombre)
+
+
+def actualizar_imagen_marca(restaurante_id: str, campo: CampoImagenMarca, url: str) -> bool:
+    return obtener_repositorio_carta().actualizar_imagen_marca(restaurante_id, campo, url)
 
 
 def crear_plato_especial(

@@ -1,3 +1,4 @@
+import hashlib
 from enum import Enum
 from typing import Literal
 
@@ -62,6 +63,13 @@ class Plato(BaseModel):
         if self.sin_gluten and Alergeno.GLUTEN in self.alergenos:
             raise ValueError("Un plato sin_gluten no puede listar GLUTEN entre sus alergenos")
         return self
+
+
+def huella_texto(plato: Plato) -> str:
+    """Identifica el texto traducible de un plato: si cambia, su traduccion
+    guardada deja de valer."""
+    base = plato.nombre + "|" + plato.descripcion + "|" + "|".join(plato.ingredientes)
+    return hashlib.sha256(base.encode("utf-8")).hexdigest()[:16]
 
 
 class RestriccionesCliente(BaseModel):

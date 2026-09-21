@@ -13,3 +13,15 @@ def _restaurante_fijo():
     app.dependency_overrides[_resolver_restaurante] = lambda: RESTAURANTE_ID
     yield
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def traducciones_pedidas(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Guardar un plato lanza la traduccion en segundo plano, y TestClient la
+    ejecuta de verdad al terminar la peticion: sin esto, cada test del panel
+    llamaria al LLM. Devuelve los restaurantes cuya traduccion se pidio."""
+    pedidas: list[str] = []
+    monkeypatch.setattr(
+        "carta_bar.api.traducir_restaurante", lambda rid, control: pedidas.append(rid)
+    )
+    return pedidas
