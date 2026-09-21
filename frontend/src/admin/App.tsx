@@ -7,6 +7,7 @@ import { SeccionCuenta } from "./SeccionCuenta";
 import { SeccionMarca } from "./SeccionMarca";
 import { SeccionEspeciales } from "./SeccionEspeciales";
 import { SeccionPlatos } from "./SeccionPlatos";
+import { SeccionQr } from "./SeccionQr";
 import { CATEGORIA_ESPECIALES, platoVacio, type Categoria, type Plato } from "./types";
 
 export function App() {
@@ -75,6 +76,7 @@ export function App() {
         />
       )}
       {seccion === "marca" && <SeccionMarca />}
+      {seccion === "qr" && <SeccionQr />}
       {seccion === "cuenta" && <SeccionCuenta />}
 
       <NavInferior activa={seccion} onCambiar={setSeccion} />

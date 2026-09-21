@@ -1,3 +1,4 @@
+import type { DatosQr } from "../shared/HojaQR";
 import type { Alergeno, Categoria, ConfigMarca, Etiqueta, Plato, TipoImagenMarca } from "./types";
 
 // Centraliza lo que en la version anterior se repetia en cada fetch: si la
@@ -45,6 +46,19 @@ export async function subirImagenMarca(tipo: TipoImagenMarca, imagen: Blob): Pro
 
 export async function quitarImagenMarca(tipo: TipoImagenMarca): Promise<Response> {
   return apiFetch(`/admin/api/marca/${tipo}`, { method: "DELETE" });
+}
+
+export async function cargarQr(): Promise<DatosQr> {
+  const resp = await apiFetch("/admin/api/qr");
+  return resp.json();
+}
+
+export async function guardarTextoQr(texto: string): Promise<Response> {
+  return apiFetch("/admin/api/qr-texto", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ texto }),
+  });
 }
 
 export async function actualizarDisponibilidad(

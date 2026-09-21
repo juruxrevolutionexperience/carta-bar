@@ -155,6 +155,10 @@ class RepositorioCarta(Protocol):
 
     def actualizar_nombre_restaurante(self, restaurante_id: str, nombre: str) -> bool: ...
 
+    def obtener_texto_qr(self, restaurante_id: str) -> str: ...
+
+    def guardar_texto_qr(self, restaurante_id: str, texto: str) -> bool: ...
+
     def actualizar_imagen_marca(
         self, restaurante_id: str, campo: CampoImagenMarca, url: str
     ) -> bool: ...
@@ -315,6 +319,12 @@ class RepositorioCartaFicheros:
 
     def actualizar_nombre_restaurante(self, restaurante_id: str, nombre: str) -> bool:
         raise NotImplementedError("Editar la marca requiere CARTA_BD_ACTIVA=true")
+
+    def obtener_texto_qr(self, restaurante_id: str) -> str:
+        return ""
+
+    def guardar_texto_qr(self, restaurante_id: str, texto: str) -> bool:
+        raise NotImplementedError("Editar el texto del QR requiere CARTA_BD_ACTIVA=true")
 
     def actualizar_imagen_marca(
         self, restaurante_id: str, campo: CampoImagenMarca, url: str
@@ -586,6 +596,26 @@ class RepositorioCartaPostgres:
         with self.pool.connection() as conn, conn.cursor() as cur:
             cur.execute(
                 "UPDATE restaurantes SET nombre = %s WHERE id = %s", (nombre, restaurante_id)
+            )
+            return cur.rowcount > 0
+
+    def obtener_texto_qr(self, restaurante_id: str) -> str:
+        # Consulta aparte y no dentro de cargar_config: si la columna aun no
+        # existe en la base de datos (ver sql/esquema.sql), solo el QR se queda
+        # con el texto por defecto; la carta publica sigue funcionando.
+        try:
+            with self.pool.connection() as conn, conn.cursor() as cur:
+                cur.execute("SELECT texto_qr FROM restaurantes WHERE id = %s", (restaurante_id,))
+                fila = cur.fetchone()
+        except psycopg.errors.UndefinedColumn:
+            log.warning("columna_texto_qr_ausente", restaurante_id=restaurante_id)
+            return ""
+        return fila[0] if fila else ""
+
+    def guardar_texto_qr(self, restaurante_id: str, texto: str) -> bool:
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE restaurantes SET texto_qr = %s WHERE id = %s", (texto, restaurante_id)
             )
             return cur.rowcount > 0
 
@@ -993,6 +1023,14 @@ def actualizar_nombre_restaurante(restaurante_id: str, nombre: str) -> bool:
 
 def actualizar_imagen_marca(restaurante_id: str, campo: CampoImagenMarca, url: str) -> bool:
     return obtener_repositorio_carta().actualizar_imagen_marca(restaurante_id, campo, url)
+
+
+def obtener_texto_qr(restaurante_id: str) -> str:
+    return obtener_repositorio_carta().obtener_texto_qr(restaurante_id)
+
+
+def guardar_texto_qr(restaurante_id: str, texto: str) -> bool:
+    return obtener_repositorio_carta().guardar_texto_qr(restaurante_id, texto)
 
 
 def crear_plato_especial(

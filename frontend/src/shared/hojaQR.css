@@ -1,0 +1,126 @@
+.hoja-qr-contenedor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* La hoja es siempre blanca con tinta negra, aunque el panel tenga otro
+   tema: es lo que se imprime, y un QR necesita contraste. */
+.hoja-qr {
+  background: #fff;
+  color: #111;
+  border: 1px solid #d9d5cf;
+  border-radius: 12px;
+  padding: 28px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.hoja-qr-nombre {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.hoja-qr-codigo {
+  width: min(100%, 280px);
+  aspect-ratio: 1;
+  image-rendering: pixelated;
+}
+
+.hoja-qr-espera {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #666;
+}
+
+.hoja-qr-texto {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.hoja-qr-url {
+  margin: 0;
+  font-size: 13px;
+  color: #555;
+}
+
+.hoja-qr-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hoja-qr-boton {
+  flex: 1 1 130px;
+  padding: 10px 14px;
+  border: 1px solid #c9c4bc;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.hoja-qr-boton.principal {
+  background: #1d1d1b;
+  border-color: #1d1d1b;
+  color: #fff;
+}
+
+.hoja-qr-boton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* En papel solo sale la hoja: el panel, la navegacion y los botones se
+   ocultan sin importar donde este puesta. */
+@media print {
+  @page {
+    margin: 15mm;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .hoja-qr,
+  .hoja-qr * {
+    visibility: visible;
+  }
+
+  .hoja-qr {
+    position: fixed;
+    inset: 0;
+    border: none;
+    border-radius: 0;
+    justify-content: center;
+    gap: 8mm;
+  }
+
+  .hoja-qr-nombre {
+    font-size: 40pt;
+  }
+
+  .hoja-qr-codigo {
+    width: 120mm;
+  }
+
+  .hoja-qr-texto {
+    font-size: 26pt;
+  }
+
+  .hoja-qr-url {
+    font-size: 14pt;
+  }
+}

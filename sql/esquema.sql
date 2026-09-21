@@ -45,6 +45,10 @@ CREATE TABLE IF NOT EXISTS restaurantes (
 -- Nunca guarda la contrasena en claro: pbkdf2_sha256$<iteraciones>$<sal>$<hash>.
 ALTER TABLE restaurantes ADD COLUMN IF NOT EXISTS clave_hash TEXT;
 
+-- Texto de la hoja imprimible del QR ("Escanea para ver la carta"). Vacio =
+-- se usa el texto por defecto.
+ALTER TABLE restaurantes ADD COLUMN IF NOT EXISTS texto_qr TEXT NOT NULL DEFAULT '';
+
 CREATE TABLE IF NOT EXISTS categorias (
     restaurante_id TEXT NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
     id             TEXT NOT NULL,

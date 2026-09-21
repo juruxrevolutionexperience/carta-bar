@@ -4,10 +4,12 @@ import "./estilos.css";
 import { cerrarSesion, listarRestaurantes, type ResumenRestaurante } from "./api";
 import { FormularioNuevoRestaurante } from "./FormularioNuevoRestaurante";
 import { ListaRestaurantes } from "./ListaRestaurantes";
+import { PanelQr } from "./PanelQr";
 
 export function App() {
   const [restaurantes, setRestaurantes] = useState<ResumenRestaurante[] | null>(null);
   const [error, setError] = useState(false);
+  const [qrDe, setQrDe] = useState<string | null>(null);
 
   useEffect(() => {
     listarRestaurantes()
@@ -29,7 +31,13 @@ export function App() {
       </header>
       <div className="franja"></div>
 
-      <ListaRestaurantes restaurantes={restaurantes} error={error} />
+      <ListaRestaurantes
+        restaurantes={restaurantes}
+        error={error}
+        seleccionado={qrDe}
+        onVerQr={setQrDe}
+      />
+      {qrDe && <PanelQr key={qrDe} restauranteId={qrDe} onCerrar={() => setQrDe(null)} />}
       <FormularioNuevoRestaurante onCreado={alCrear} />
     </div>
   );

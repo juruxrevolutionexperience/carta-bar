@@ -1,3 +1,5 @@
+import type { DatosQr } from "../shared/HojaQR";
+
 export interface ResumenRestaurante {
   id: string;
   nombre: string;
@@ -15,6 +17,12 @@ async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
 
 export async function listarRestaurantes(): Promise<ResumenRestaurante[]> {
   const resp = await apiFetch("/superadmin/api/restaurantes");
+  return resp.json();
+}
+
+export async function cargarQrRestaurante(id: string): Promise<DatosQr> {
+  const resp = await apiFetch(`/superadmin/api/restaurantes/${encodeURIComponent(id)}/qr`);
+  if (!resp.ok) throw new Error("qr no disponible");
   return resp.json();
 }
 

@@ -37,8 +37,10 @@ from carta_bar.datos import (
     eliminar_plato,
     eliminar_plato_especial,
     guardar_clave_hash,
+    guardar_texto_qr,
     listar_restaurantes,
     obtener_clave_hash,
+    obtener_texto_qr,
     ordenar_categorias,
     renombrar_categoria,
     slug_categoria,
@@ -713,6 +715,59 @@ def admin_quitar_imagen_marca(
     return Response(status_code=204)
 
 
+# ------------------------------------------------------------ codigo QR
+#
+# El QR se dibuja en el navegador (libreria de npm, sin tocar las dependencias
+# de Python); aqui solo se decide a que direccion apunta y que texto lleva la
+# hoja imprimible.
+
+DOMINIO_BASE = os.getenv("DOMINIO_BASE", "jurux.app")
+TEXTO_QR_POR_DEFECTO = "Escanea para ver la carta"
+_SUBDOMINIO_DE = {restaurante: sub for sub, restaurante in ALIAS_SUBDOMINIO.items()}
+
+
+def _url_publica(restaurante_id: str) -> str:
+    """La direccion de la carta. La de La CatedRal sigue siendo la historica
+    (cartia), para que su QR coincida con el que ya se imprimio."""
+    return f"https://{_SUBDOMINIO_DE.get(restaurante_id, restaurante_id)}.{DOMINIO_BASE}"
+
+
+def _datos_qr(restaurante_id: str) -> dict[str, str]:
+    nombre = str(cargar_config(restaurante_id).get("nombre", restaurante_id))
+    texto = obtener_texto_qr(restaurante_id).strip() or TEXTO_QR_POR_DEFECTO
+    return {"url": _url_publica(restaurante_id), "nombre": nombre, "texto": texto}
+
+
+class TextoQrPeticion(BaseModel):
+    # Vacio = volver al texto por defecto.
+    texto: str = Field(max_length=120)
+
+    @field_validator("texto")
+    @classmethod
+    def limpiar_texto(cls, texto: str) -> str:
+        return " ".join(texto.split())
+
+
+@app.get("/admin/api/qr", response_model=None)
+def admin_obtener_qr(
+    request: Request, restaurante_id: RestauranteActual
+) -> dict[str, str] | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    return _datos_qr(restaurante_id)
+
+
+@app.put("/admin/api/qr-texto")
+def admin_guardar_texto_qr(
+    peticion: TextoQrPeticion, request: Request, restaurante_id: RestauranteActual
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    if not guardar_texto_qr(restaurante_id, peticion.texto):
+        return Response(status_code=404, content="Restaurante no encontrado")
+    return Response(status_code=204)
+
+
 @app.get("/fotos/{restaurante_id}/{archivo}")
 def obtener_foto(restaurante_id: str, archivo: str) -> Response:
     _validar_slug(restaurante_id, "restaurante_id")
@@ -783,6 +838,19 @@ def superadmin_listar_restaurantes(request: Request) -> list[ResumenRestaurante]
     if not _sesion_superadmin_activa(request):
         return Response(status_code=401, content="Sesión no válida")
     return listar_restaurantes()
+
+
+@app.get("/superadmin/api/restaurantes/{restaurante_id}/qr", response_model=None)
+def superadmin_obtener_qr(restaurante_id: str, request: Request) -> dict[str, str] | Response:
+    if not _sesion_superadmin_activa(request):
+        return Response(status_code=401, content="Sesión no válida")
+    try:
+        _validar_slug(restaurante_id, "restaurante_id")
+    except ValueError:
+        return Response(status_code=404, content="Restaurante no encontrado")
+    if not _restaurante_existe(restaurante_id):
+        return Response(status_code=404, content="Restaurante no encontrado")
+    return _datos_qr(restaurante_id)
 
 
 class CrearRestaurantePeticion(BaseModel):

@@ -158,10 +158,20 @@ restaurante.
   → el gerente los confirma con checkboxes, nunca se dan por buenos solos)
   → detalle completo en
   [docs/APARCADO-CARTAS-MULTINEGOCIO.md](APARCADO-CARTAS-MULTINEGOCIO.md)
-- ⬜ Código QR del restaurante en el panel del gerente: verlo en pantalla
-  y descargarlo (PNG para imprimir y SVG), apuntando a su propia dirección
-- ⬜ Código QR de cada restaurante en el panel superadmin (para entregarlo
-  al dar de alta un bar)
+- 🔍 Código QR del restaurante en el panel del gerente (pestaña "QR"): verlo
+  en pantalla, hoja imprimible con nombre + QR + texto editable por el gerente
+  ("Escanea para ver la carta" por defecto), descargar PNG y SVG, copiar y
+  abrir el enlace. El QR se dibuja en el navegador (paquete `qrcode` de npm,
+  solo afecta a la etapa del frontend del `Dockerfile`). Apunta a
+  `<restaurante>.jurux.app`; La CatedRal conserva `cartia.jurux.app` para
+  coincidir con el QR ya generado. Backend con tests (`tests/test_qr.py`),
+  `tsc` y build limpios. **Antes de desplegar hay que ejecutar en Supabase
+  el `ALTER TABLE` de `sql/esquema.sql` (columna `texto_qr`)**; sin él todo
+  funciona, pero el texto no se puede guardar. Falta probar la impresión y
+  escanearlo desde un móvil
+- 🔍 Código QR de cada restaurante en el panel superadmin: botón "Ver QR" en
+  cada fila de la lista, con la misma hoja (usa el texto que haya guardado
+  el gerente), para entregarlo al dar de alta un bar
 - ⬜ Métricas básicas
 - ✅ Migrar el frontend a React + TypeScript, pantalla a pantalla, sin
   romper nada entre medias (infraestructura con Vite, compilada en una

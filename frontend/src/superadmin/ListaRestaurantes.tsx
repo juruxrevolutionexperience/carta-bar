@@ -3,9 +3,11 @@ import type { ResumenRestaurante } from "./api";
 interface Props {
   restaurantes: ResumenRestaurante[] | null;
   error: boolean;
+  seleccionado: string | null;
+  onVerQr: (id: string) => void;
 }
 
-export function ListaRestaurantes({ restaurantes, error }: Props) {
+export function ListaRestaurantes({ restaurantes, error, seleccionado, onVerQr }: Props) {
   return (
     <div className="panel-tarjeta">
       <h2>Restaurantes</h2>
@@ -21,6 +23,7 @@ export function ListaRestaurantes({ restaurantes, error }: Props) {
               <th>Subdominio</th>
               <th>Nombre</th>
               <th>Platos</th>
+              <th>QR</th>
             </tr>
           </thead>
           <tbody>
@@ -29,6 +32,16 @@ export function ListaRestaurantes({ restaurantes, error }: Props) {
                 <td>{r.id}</td>
                 <td>{r.nombre}</td>
                 <td>{r.num_platos}</td>
+                <td>
+                  <button
+                    type="button"
+                    className="secundario"
+                    aria-pressed={seleccionado === r.id}
+                    onClick={() => onVerQr(r.id)}
+                  >
+                    Ver QR
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
