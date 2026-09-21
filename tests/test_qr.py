@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from carta_bar import auth
 from carta_bar.api import (
+    ALIAS_SUBDOMINIO,
     COOKIE_SESION,
     COOKIE_SESION_SUPERADMIN,
     RESTAURANTE_ID,
@@ -53,12 +54,15 @@ def superadmin(_datos: None) -> TestClient:
 # ------------------------------------------------------------ direccion
 
 
-def test_la_catedral_conserva_su_direccion_historica() -> None:
-    assert _url_publica("la-catedral") == "https://cartia.jurux.app"
-
-
-def test_los_demas_bares_usan_su_id_como_subdominio() -> None:
+def test_todos_los_bares_usan_su_id_como_subdominio() -> None:
     assert _url_publica("bar-pepe") == "https://bar-pepe.jurux.app"
+    # La CatedRal ya no es un caso aparte: su QR no apunta al alias antiguo.
+    assert _url_publica("la-catedral") == "https://la-catedral.jurux.app"
+
+
+def test_el_alias_antiguo_sigue_resolviendo_al_restaurante() -> None:
+    # Los QR ya impresos con cartia.jurux.app no pueden dejar de funcionar.
+    assert ALIAS_SUBDOMINIO["cartia"] == "la-catedral"
 
 
 # ------------------------------------------------------------ gerente

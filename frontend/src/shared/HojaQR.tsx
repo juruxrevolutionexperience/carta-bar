@@ -31,7 +31,7 @@ export function HojaQR({ url, nombre, texto }: DatosQr) {
       .catch(() => setError(true));
   }, [url]);
 
-  // Nombre de archivo a partir del subdominio: "cartia.jurux.app" -> "cartia".
+  // Nombre de archivo a partir del subdominio: "la-catedral.jurux.app" -> "la-catedral".
   const base = "qr-" + new URL(url).hostname.split(".")[0];
 
   async function bajarPng() {

@@ -723,13 +723,13 @@ def admin_quitar_imagen_marca(
 
 DOMINIO_BASE = os.getenv("DOMINIO_BASE", "jurux.app")
 TEXTO_QR_POR_DEFECTO = "Escanea para ver la carta"
-_SUBDOMINIO_DE = {restaurante: sub for sub, restaurante in ALIAS_SUBDOMINIO.items()}
 
 
 def _url_publica(restaurante_id: str) -> str:
-    """La direccion de la carta. La de La CatedRal sigue siendo la historica
-    (cartia), para que su QR coincida con el que ya se imprimio."""
-    return f"https://{_SUBDOMINIO_DE.get(restaurante_id, restaurante_id)}.{DOMINIO_BASE}"
+    """La direccion de la carta: el id del restaurante es su subdominio, para
+    todos por igual. El alias historico (cartia) solo sigue resolviendo, para
+    que los QR ya impresos con esa direccion no dejen de funcionar."""
+    return f"https://{restaurante_id}.{DOMINIO_BASE}"
 
 
 def _datos_qr(restaurante_id: str) -> dict[str, str]:

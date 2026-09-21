@@ -163,8 +163,9 @@ restaurante.
   ("Escanea para ver la carta" por defecto), descargar PNG y SVG, copiar y
   abrir el enlace. El QR se dibuja en el navegador (paquete `qrcode` de npm,
   solo afecta a la etapa del frontend del `Dockerfile`). Apunta a
-  `<restaurante>.jurux.app`; La CatedRal conserva `cartia.jurux.app` para
-  coincidir con el QR ya generado. Backend con tests (`tests/test_qr.py`),
+  `<restaurante>.jurux.app` para todos por igual, La CatedRal incluida
+  (`la-catedral.jurux.app`); `cartia.jurux.app` sigue resolviendo, así que
+  los QR ya impresos siguen funcionando. Backend con tests (`tests/test_qr.py`),
   `tsc` y build limpios. **Antes de desplegar hay que ejecutar en Supabase
   el `ALTER TABLE` de `sql/esquema.sql` (columna `texto_qr`)**; sin él todo
   funciona, pero el texto no se puede guardar. Falta probar la impresión y
