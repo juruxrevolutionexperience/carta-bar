@@ -47,6 +47,10 @@ class Plato(BaseModel):
     sin_lactosa: bool = False
     disponible: bool = True
     etiqueta: Etiqueta | None = None
+    # El restaurante ha revisado los alergenos y la dieta de este plato. Sin
+    # eso (p. ej. un plato importado de una foto, con alergenos adivinados por
+    # el LLM) nunca se presenta como apto ni se recomienda ante una restriccion.
+    alergenos_confirmados: bool = True
     # Sin foto, la tarjeta pinta un degradado con un icono. El frontend solo
     # acepta http(s), rutas propias y data: de imagen, y descarta el resto.
     foto: str | None = None

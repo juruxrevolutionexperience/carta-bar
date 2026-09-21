@@ -53,7 +53,9 @@ def cliente(
         anotar("eliminar", rid, cid)
         return {"no-existe": "no_existe", "con-platos": "con_platos"}.get(cid, "ok")
 
-    def _crear_plato(rid: str, categoria: str, nombre: str, *resto: object) -> Plato | None:
+    def _crear_plato(
+        rid: str, categoria: str, nombre: str, *resto: object, **claves: object
+    ) -> Plato | None:
         anotar("crear_plato", rid, categoria, nombre)
         if categoria == "no-existe":
             return None

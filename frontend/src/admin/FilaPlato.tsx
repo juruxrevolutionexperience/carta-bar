@@ -71,6 +71,9 @@ export function FilaPlato({ plato, nombreCategoria, onCambiado, onQuitarDeLista 
         <div className="nombre">
           {plato.nombre}
           {agotado && <span className="etiqueta-agotado">Agotado hoy</span>}
+          {plato.alergenos_confirmados === false && (
+            <span className="etiqueta-sin-confirmar">Alérgenos sin confirmar</span>
+          )}
         </div>
         <div className="detalle">
           {nombreCategoria || plato.categoria} · {formatoPrecio(plato.precio)}

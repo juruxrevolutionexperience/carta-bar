@@ -14,6 +14,8 @@ export interface Plato {
   sin_lactosa: boolean;
   disponible: boolean;
   foto: string | null;
+  // false = el restaurante aun no ha revisado sus alergenos y su dieta.
+  alergenos_confirmados?: boolean;
 }
 
 export interface Categoria {

@@ -38,7 +38,7 @@ export function FormularioPlato({
   categoriasElegibles,
 }: Props) {
   const [categoria, setCategoria] = useState(categoriasElegibles?.[0]?.id ?? "");
-  const [alergenosRevisados, setAlergenosRevisados] = useState(false);
+  const [alergenosRevisados, setAlergenosRevisados] = useState(plato.alergenos_confirmados);
   const [nombre, setNombre] = useState(plato.nombre);
   const [descripcion, setDescripcion] = useState(plato.descripcion);
   const [precioTxt, setPrecioTxt] = useState(plato.precio === null ? "" : String(plato.precio));
@@ -95,6 +95,7 @@ export function FormularioPlato({
     sin_lactosa: dieta.includes("sin_lactosa"),
     disponible: true,
     foto: urlFotoNueva ?? fotoActual,
+    alergenos_confirmados: alergenosRevisados,
   };
 
   const esPlatoNormalNuevo = !plato.id && categoriasElegibles !== undefined;
@@ -125,6 +126,7 @@ export function FormularioPlato({
       vegetariano: dieta.includes("vegetariano"),
       sin_gluten: dieta.includes("sin_gluten"),
       sin_lactosa: dieta.includes("sin_lactosa"),
+      alergenos_confirmados: alergenosRevisados,
     };
 
     try {
@@ -295,15 +297,19 @@ export function FormularioPlato({
 
       <VistaPreviaPlato plato={platoPrevio} />
 
-      {esPlatoNormalNuevo && (
-        <label className="opcion">
-          <input
-            type="checkbox"
-            checked={alergenosRevisados}
-            onChange={(e) => setAlergenosRevisados(e.target.checked)}
-          />
-          He revisado los alérgenos de este plato
-        </label>
+      <label className="opcion">
+        <input
+          type="checkbox"
+          checked={alergenosRevisados}
+          onChange={(e) => setAlergenosRevisados(e.target.checked)}
+        />
+        He revisado los alérgenos y la dieta de este plato
+      </label>
+      {!alergenosRevisados && (
+        <p className="ayuda-alergenos">
+          Mientras no lo marques, la carta mostrará «consultar alérgenos» en este plato y el
+          chat no se lo recomendará a quien tenga alergias o siga una dieta.
+        </p>
       )}
 
       <button type="button" className="primario" disabled={guardando} onClick={guardar}>

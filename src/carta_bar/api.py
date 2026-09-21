@@ -383,6 +383,9 @@ class ActualizarPlatoPeticion(BaseModel):
     vegetariano: bool = False
     sin_gluten: bool = False
     sin_lactosa: bool = False
+    # None = no tocar lo que ya hay: un cliente que no lo mande no puede
+    # desconfirmar por descuido los alergenos de un plato ya revisado.
+    alergenos_confirmados: bool | None = None
 
     @field_validator("precio")
     @classmethod
@@ -421,6 +424,7 @@ def admin_actualizar_plato(
         peticion.vegetariano,
         peticion.sin_gluten,
         peticion.sin_lactosa,
+        alergenos_confirmados=peticion.alergenos_confirmados,
     )
     if not encontrado:
         return Response(status_code=404, content="Plato no encontrado")
@@ -460,6 +464,9 @@ class CrearPlatoEspecialPeticion(BaseModel):
     vegetariano: bool = False
     sin_gluten: bool = False
     sin_lactosa: bool = False
+    # Un plato nuevo entra sin confirmar salvo que el gerente diga que ha
+    # revisado los alergenos: no se da por bueno lo que nadie ha mirado.
+    alergenos_confirmados: bool = False
 
     @field_validator("precio")
     @classmethod
@@ -496,6 +503,7 @@ def admin_crear_especial(
         peticion.vegetariano,
         peticion.sin_gluten,
         peticion.sin_lactosa,
+        alergenos_confirmados=peticion.alergenos_confirmados,
     )
     _indices.pop(restaurante_id, None)
     tareas.add_task(traducir_restaurante, restaurante_id, control)
@@ -555,6 +563,7 @@ def admin_crear_plato(
         peticion.vegetariano,
         peticion.sin_gluten,
         peticion.sin_lactosa,
+        alergenos_confirmados=peticion.alergenos_confirmados,
     )
     if creado is None:
         return Response(status_code=404, content="Categoría no encontrada")

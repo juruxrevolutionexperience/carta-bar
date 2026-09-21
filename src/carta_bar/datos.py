@@ -143,6 +143,7 @@ class RepositorioCarta(Protocol):
         vegetariano: bool,
         sin_gluten: bool,
         sin_lactosa: bool,
+        alergenos_confirmados: bool | None = None,
     ) -> bool: ...
 
     def actualizar_disponibilidad(
@@ -176,6 +177,7 @@ class RepositorioCarta(Protocol):
         vegetariano: bool,
         sin_gluten: bool,
         sin_lactosa: bool,
+        alergenos_confirmados: bool = False,
     ) -> Plato: ...
 
     def eliminar_plato_especial(self, restaurante_id: str, plato_id: str) -> bool: ...
@@ -208,6 +210,7 @@ class RepositorioCarta(Protocol):
         vegetariano: bool,
         sin_gluten: bool,
         sin_lactosa: bool,
+        alergenos_confirmados: bool = False,
     ) -> Plato | None: ...
 
     def listar_restaurantes(self) -> list[ResumenRestaurante]: ...
@@ -304,6 +307,7 @@ class RepositorioCartaFicheros:
         vegetariano: bool,
         sin_gluten: bool,
         sin_lactosa: bool,
+        alergenos_confirmados: bool | None = None,
     ) -> bool:
         raise NotImplementedError("Editar platos requiere CARTA_BD_ACTIVA=true")
 
@@ -344,6 +348,7 @@ class RepositorioCartaFicheros:
         vegetariano: bool,
         sin_gluten: bool,
         sin_lactosa: bool,
+        alergenos_confirmados: bool = False,
     ) -> Plato:
         raise NotImplementedError("Los especiales requieren CARTA_BD_ACTIVA=true")
 
@@ -383,6 +388,7 @@ class RepositorioCartaFicheros:
         vegetariano: bool,
         sin_gluten: bool,
         sin_lactosa: bool,
+        alergenos_confirmados: bool = False,
     ) -> Plato | None:
         raise NotImplementedError("Crear platos requiere CARTA_BD_ACTIVA=true")
 
@@ -417,7 +423,8 @@ class RepositorioCartaPostgres:
             cur.execute(
                 "SELECT id, categoria_id, nombre, descripcion, precio, ingredientes, "
                 "alergenos, vegano, vegetariano, sin_gluten, sin_lactosa, disponible, "
-                "etiqueta, foto FROM platos WHERE restaurante_id = %s ORDER BY id",
+                "etiqueta, foto, alergenos_confirmados "
+                "FROM platos WHERE restaurante_id = %s ORDER BY id",
                 (restaurante_id,),
             )
             filas = cur.fetchall()
@@ -437,6 +444,7 @@ class RepositorioCartaPostgres:
                 disponible=f[11],
                 etiqueta=f[12],
                 foto=f[13],
+                alergenos_confirmados=f[14],
             )
             for f in filas
         ]
@@ -548,12 +556,14 @@ class RepositorioCartaPostgres:
         vegetariano: bool,
         sin_gluten: bool,
         sin_lactosa: bool,
+        alergenos_confirmados: bool | None = None,
     ) -> bool:
         with self.pool.connection() as conn, conn.cursor() as cur:
             cur.execute(
                 "UPDATE platos SET nombre = %s, descripcion = %s, precio = %s, "
                 "ingredientes = %s, alergenos = %s, etiqueta = %s, vegano = %s, "
-                "vegetariano = %s, sin_gluten = %s, sin_lactosa = %s "
+                "vegetariano = %s, sin_gluten = %s, sin_lactosa = %s, "
+                "alergenos_confirmados = COALESCE(%s, alergenos_confirmados) "
                 "WHERE restaurante_id = %s AND id = %s",
                 (
                     nombre,
@@ -566,6 +576,7 @@ class RepositorioCartaPostgres:
                     vegetariano,
                     sin_gluten,
                     sin_lactosa,
+                    alergenos_confirmados,
                     restaurante_id,
                     plato_id,
                 ),
@@ -645,12 +656,13 @@ class RepositorioCartaPostgres:
         vegetariano: bool,
         sin_gluten: bool,
         sin_lactosa: bool,
+        alergenos_confirmados: bool = False,
     ) -> Plato:
         cur.execute(
             "INSERT INTO platos (restaurante_id, id, categoria_id, nombre, descripcion, "
             "precio, ingredientes, alergenos, vegano, vegetariano, sin_gluten, "
-            "sin_lactosa, disponible, etiqueta) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, true, %s)",
+            "sin_lactosa, disponible, etiqueta, alergenos_confirmados) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, true, %s, %s)",
             (
                 restaurante_id,
                 plato_id,
@@ -665,6 +677,7 @@ class RepositorioCartaPostgres:
                 sin_gluten,
                 sin_lactosa,
                 etiqueta.value if etiqueta else None,
+                alergenos_confirmados,
             ),
         )
         return Plato(
@@ -682,6 +695,7 @@ class RepositorioCartaPostgres:
             disponible=True,
             etiqueta=etiqueta,
             foto=None,
+            alergenos_confirmados=alergenos_confirmados,
         )
 
     def crear_plato_especial(
@@ -697,6 +711,7 @@ class RepositorioCartaPostgres:
         vegetariano: bool,
         sin_gluten: bool,
         sin_lactosa: bool,
+        alergenos_confirmados: bool = False,
     ) -> Plato:
         plato_id = f"especial-{secrets.token_hex(4)}"
         with self.pool.connection() as conn, conn.cursor() as cur:
@@ -721,6 +736,7 @@ class RepositorioCartaPostgres:
                 vegetariano,
                 sin_gluten,
                 sin_lactosa,
+                alergenos_confirmados=alergenos_confirmados,
             )
 
     def eliminar_plato_especial(self, restaurante_id: str, plato_id: str) -> bool:
@@ -833,6 +849,7 @@ class RepositorioCartaPostgres:
         vegetariano: bool,
         sin_gluten: bool,
         sin_lactosa: bool,
+        alergenos_confirmados: bool = False,
     ) -> Plato | None:
         # El especial de hoy tiene su propio flujo (crear_plato_especial).
         if categoria_id == CATEGORIA_ESPECIALES:
@@ -859,6 +876,7 @@ class RepositorioCartaPostgres:
                 vegetariano,
                 sin_gluten,
                 sin_lactosa,
+                alergenos_confirmados=alergenos_confirmados,
             )
 
     def listar_restaurantes(self) -> list[ResumenRestaurante]:
@@ -990,6 +1008,7 @@ def actualizar_plato_editable(
     vegetariano: bool,
     sin_gluten: bool,
     sin_lactosa: bool,
+    alergenos_confirmados: bool | None = None,
 ) -> bool:
     return obtener_repositorio_carta().actualizar_plato_editable(
         restaurante_id,
@@ -1004,6 +1023,7 @@ def actualizar_plato_editable(
         vegetariano,
         sin_gluten,
         sin_lactosa,
+        alergenos_confirmados=alergenos_confirmados,
     )
 
 
@@ -1045,6 +1065,7 @@ def crear_plato_especial(
     vegetariano: bool,
     sin_gluten: bool,
     sin_lactosa: bool,
+    alergenos_confirmados: bool = False,
 ) -> Plato:
     return obtener_repositorio_carta().crear_plato_especial(
         restaurante_id,
@@ -1058,6 +1079,7 @@ def crear_plato_especial(
         vegetariano,
         sin_gluten,
         sin_lactosa,
+        alergenos_confirmados=alergenos_confirmados,
     )
 
 
@@ -1098,6 +1120,7 @@ def crear_plato(
     vegetariano: bool,
     sin_gluten: bool,
     sin_lactosa: bool,
+    alergenos_confirmados: bool = False,
 ) -> Plato | None:
     return obtener_repositorio_carta().crear_plato(
         restaurante_id,
@@ -1112,6 +1135,7 @@ def crear_plato(
         vegetariano,
         sin_gluten,
         sin_lactosa,
+        alergenos_confirmados=alergenos_confirmados,
     )
 
 

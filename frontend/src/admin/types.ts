@@ -37,6 +37,9 @@ export interface Plato {
   sin_lactosa: boolean;
   disponible: boolean;
   foto: string | null;
+  // El restaurante ha revisado los alergenos y la dieta. Sin esto la carta
+  // muestra "consultar alergenos" y el chat no lo recomienda ante una alergia.
+  alergenos_confirmados: boolean;
 }
 
 export interface Categoria {
@@ -64,6 +67,7 @@ export function platoVacio(): Plato {
     sin_lactosa: false,
     disponible: true,
     foto: null,
+    alergenos_confirmados: false,
   };
 }
 

@@ -4,7 +4,11 @@ import numpy as np
 from anthropic.types import MessageParam
 from sentence_transformers import SentenceTransformer
 
-from carta_bar.busqueda import buscar_platos, filtrar_por_restricciones_cliente
+from carta_bar.busqueda import (
+    buscar_platos,
+    exige_confirmacion,
+    filtrar_por_restricciones_cliente,
+)
 from carta_bar.costes import ConsumoTotal, medir
 from carta_bar.datos import cargar_categorias
 from carta_bar.interprete import extraer_restricciones
@@ -50,6 +54,31 @@ SIN_RESULTADOS = {
 }
 
 
+# Cuando el cliente busca algo de seguridad (alergia, dieta) y solo quedan
+# platos sin revisar, decir "no hay nada" seria falso: hay que mandarle al personal.
+CONSULTAR_PERSONAL = {
+    "es": "No tengo ningún plato con los alérgenos confirmados que cumpla eso. "
+    "Consulta con el personal, que te ayudará encantado.",
+    "en": "I don't have a dish with confirmed allergen information that matches that. "
+    "Please ask our staff, they'll be glad to help.",
+    "de": "Ich habe kein Gericht mit bestätigten Allergeninformationen dafür. "
+    "Frag bitte unser Personal, es hilft dir gern.",
+    "fr": "Je n'ai aucun plat aux allergènes confirmés qui corresponde. "
+    "Demande au personnel, il t'aidera volontiers.",
+}
+
+_NOTA_SIN_CONFIRMAR = (
+    "Nota: hay otros platos de la carta cuyos alérgenos el restaurante aún no ha "
+    "confirmado, y por eso no aparecen en esta lista. Si el cliente tiene una alergia "
+    "o intolerancia, recuérdale brevemente que puede consultarlo con el personal."
+)
+
+_ALERGENOS_SIN_CONFIRMAR = (
+    "SIN CONFIRMAR (el restaurante aún no los ha revisado): no afirmes que es apto "
+    "para nadie con alergias o dietas; si preguntan, que consulten con el personal"
+)
+
+
 def turnos_para_el_modelo(historial: list[MensajeChat]) -> list[MessageParam]:
     """Traduce el historial al formato de la API.
 
@@ -83,10 +112,14 @@ def responder_cliente(
     consumo = ConsumoTotal(consumos=[consumo_interprete])
     candidatos = filtrar_por_restricciones_cliente(carta, restricciones)
 
+    hay_sin_confirmar = exige_confirmacion(restricciones) and any(
+        not p.alergenos_confirmados for p in carta
+    )
+
     # Aunque no haya platos que ofrecer, el intérprete ya se ha pagado.
     if not candidatos:
-        texto = SIN_RESULTADOS.get(idioma, SIN_RESULTADOS["es"])
-        return RespuestaAgente(texto=texto, consumo=consumo)
+        avisos = CONSULTAR_PERSONAL if hay_sin_confirmar else SIN_RESULTADOS
+        return RespuestaAgente(texto=avisos.get(idioma, avisos["es"]), consumo=consumo)
 
     indices = [carta.index(p) for p in candidatos]
     vectores_filtrados = vectores[indices]
@@ -98,12 +131,19 @@ def responder_cliente(
     def _precio_txt(p: Plato) -> str:
         return f"{p.precio}€" if p.precio is not None else "precio a consultar"
 
+    def _alergenos_txt(p: Plato) -> str:
+        if not p.alergenos_confirmados:
+            return _ALERGENOS_SIN_CONFIRMAR
+        return ", ".join(a.value for a in p.alergenos) or "ninguno"
+
     contexto = "\n\n".join(
         f"{p.nombre} ({_precio_txt(p)}): {p.descripcion}. "
         f"Ingredientes: {', '.join(p.ingredientes)}. "
-        f"Alérgenos: {', '.join(a.value for a in p.alergenos) or 'ninguno'}."
+        f"Alérgenos: {_alergenos_txt(p)}."
         for _, p in resultados
     )
+    if hay_sin_confirmar:
+        contexto += f"\n\n{_NOTA_SIN_CONFIRMAR}"
 
     lengua = NOMBRES_IDIOMA.get(idioma, "español")
     modo = _INSTRUCCION_CERRAR if restricciones.pedido_cerrado else _INSTRUCCION_OFRECER

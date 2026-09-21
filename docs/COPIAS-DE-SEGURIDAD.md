@@ -108,12 +108,18 @@ Luego se actualizan las variables `POSTGRES_*` del `.env` y se reinicia el conte
 
 ## Sacar las copias del servidor
 
-Sin esto, perder el servidor es perder también las copias. Opciones, de más
-simple a menos:
+Sin esto, perder el servidor es perder también las copias. Esto vale para todo
+el servidor, no solo para carta-bar: la app `cuentas` ya tiene su propia copia
+diaria (`/opt/backups/backup.sh`, 7 días), pero también en el mismo disco.
+Opciones, de más simple a menos:
 
 1. **Copias del propio Hetzner** (Cloud Console → el servidor → *Backups*):
-   una imagen diaria del disco entero, que incluye fotos, `.env` y el resto. Se
-   activa con un clic y cuesta el 20 % de lo que cuesta el servidor.
+   una imagen diaria del disco entero, que incluye fotos, `.env`, las copias de
+   `/opt/backups` y `/home/xele/copias-carta`, y el resto de apps. Se activa con
+   un clic y cuesta el 20 % de lo que cuesta el servidor. Encaja con lo que ya
+   hay: los scripts dejan ficheros consistentes en disco y Hetzner los saca de
+   ahí (una imagen de un disco con una base de datos en marcha, por sí sola, no
+   garantiza una copia limpia).
 2. **Bajarlas a tu PC** de vez en cuando, con `scp` (gratis, pero manual):
    `scp -r xele@178.104.233.131:/home/xele/copias-carta .`
 3. **Subirlas cada noche a un almacenamiento externo** (Backblaze B2,

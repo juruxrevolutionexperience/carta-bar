@@ -35,7 +35,9 @@ def cliente(monkeypatch: pytest.MonkeyPatch, guardado: dict[str, object]) -> Tes
         vegetariano: bool,
         sin_gluten: bool,
         sin_lactosa: bool,
+        alergenos_confirmados: bool | None = None,
     ) -> bool:
+        guardado["alergenos_confirmados"] = alergenos_confirmados
         guardado["restaurante_id"] = restaurante_id
         guardado["plato_id"] = plato_id
         guardado["nombre"] = nombre

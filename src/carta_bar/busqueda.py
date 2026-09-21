@@ -20,19 +20,40 @@ def indexar(modelo: SentenceTransformer, restaurante_id: str) -> tuple[list[Plat
     return carta, vectores
 
 
+def exige_confirmacion(r: RestriccionesCliente) -> bool:
+    """Si el cliente pide algo de seguridad (alergia, intolerancia o dieta),
+    solo valen los platos cuyos alergenos ha revisado el restaurante: uno sin
+    revisar puede tener los alergenos vacios o adivinados, y no se puede
+    presentar como apto."""
+    return (
+        r.vegano
+        or r.vegetariano
+        or r.sin_gluten
+        or r.sin_lactosa
+        or bool(r.alergenos_excluir)
+    )
+
+
 def filtrar_por_restricciones(carta: list[Plato], pregunta: str) -> list[Plato]:
     texto = pregunta.lower()
     resultado = carta
+    restringe = False
 
     if "vegano" in texto:
         resultado = [p for p in resultado if p.vegano]
+        restringe = True
     if "vegetarian" in texto:
         resultado = [p for p in resultado if p.vegetariano]
+        restringe = True
     if "sin gluten" in texto or "celiac" in texto or "celíac" in texto:
         resultado = [p for p in resultado if p.sin_gluten]
+        restringe = True
     if "sin lactosa" in texto or "intoleran" in texto:
         resultado = [p for p in resultado if p.sin_lactosa]
+        restringe = True
 
+    if restringe:
+        resultado = [p for p in resultado if p.alergenos_confirmados]
     return resultado
 
 
@@ -60,6 +81,8 @@ def buscar_platos(
 
 def filtrar_por_restricciones_cliente(carta: list[Plato], r: RestriccionesCliente) -> list[Plato]:
     resultado = carta
+    if exige_confirmacion(r):
+        resultado = [p for p in resultado if p.alergenos_confirmados]
     if r.vegano:
         resultado = [p for p in resultado if p.vegano]
     if r.vegetariano:

@@ -24,6 +24,9 @@ export function PlatoCard({ plato: p, onAbrirFoto }: Props) {
   }
 
   const pendiente = !p.ingredientes || p.ingredientes.length === 0;
+  // Alergenos y dieta sin revisar por el restaurante: pueden ser una
+  // estimacion, asi que no se ensenan como si fueran un dato. Solo el aviso.
+  const sinConfirmar = p.alergenos_confirmados === false;
   const dietas = [
     p.vegano && txtDieta("vegano"),
     !p.vegano && p.vegetariano && txtDieta("vegetariano"),
@@ -60,17 +63,19 @@ export function PlatoCard({ plato: p, onAbrirFoto }: Props) {
         </div>
         <p className={"desc" + (pendiente ? " pendiente" : "")}>{descripcion}</p>
         <div className="chips">
-          {dietas.map((d) => (
+          {!sinConfirmar && dietas.map((d) => (
             <span className="chip dieta" key={d}>
               {d}
             </span>
           ))}
-          {(p.alergenos || []).map((a) => (
+          {!sinConfirmar && (p.alergenos || []).map((a) => (
             <span className="chip alergeno" key={a}>
               {txtAlergeno(a)}
             </span>
           ))}
-          {pendiente && <span className="chip aviso">{t("consultar_alergenos")}</span>}
+          {(pendiente || sinConfirmar) && (
+            <span className="chip aviso">{t("consultar_alergenos")}</span>
+          )}
         </div>
       </div>
     </article>

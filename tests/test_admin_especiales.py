@@ -37,7 +37,9 @@ def cliente(tmp_path, monkeypatch: pytest.MonkeyPatch, guardado: dict[str, objec
         vegetariano: bool,
         sin_gluten: bool,
         sin_lactosa: bool,
+        alergenos_confirmados: bool = False,
     ) -> Plato:
+        guardado["alergenos_confirmados"] = alergenos_confirmados
         guardado["restaurante_id"] = restaurante_id
         guardado["nombre"] = nombre
         guardado["descripcion"] = descripcion
@@ -64,6 +66,7 @@ def cliente(tmp_path, monkeypatch: pytest.MonkeyPatch, guardado: dict[str, objec
             disponible=True,
             etiqueta=etiqueta,  # type: ignore[arg-type]
             foto=None,
+            alergenos_confirmados=alergenos_confirmados,
         )
 
     def _eliminar(restaurante_id: str, plato_id: str) -> bool:

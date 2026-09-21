@@ -24,7 +24,19 @@ con fotos reales, y el QR está listo para las mesas.
 - ✅ Carta oficial de 28 platos, en los 4 idiomas
 - ⬜ Confirmar con el restaurante los alérgenos de 4 platos (Tataki de Atún y las
   3 tartas): la carta original no los detalla y hoy son estimados
-- ✅ Un plato sin alérgenos confirmados nunca aparece como apto (filtro determinista)
+- 🔍 Un plato sin alérgenos confirmados nunca aparece como apto: campo
+  `alergenos_confirmados` por plato (2026-09-21). Antes no existía ese concepto
+  en el código y esta línea estaba marcada ✅ sin estarlo: el filtro solo quitaba
+  los platos que *listan* el alérgeno, y uno con los alérgenos vacíos o
+  adivinados pasaba como apto. Ahora, ante una alergia o dieta, el chat solo
+  usa platos confirmados (y manda al personal si no queda ninguno); a un plato
+  sin confirmar no se le presenta como "sin alérgenos"; y la carta pública
+  muestra "consultar alérgenos" en vez de sus alérgenos. El gerente lo marca
+  con la casilla "He revisado los alérgenos y la dieta" al crear o editar; un
+  plato nuevo entra sin confirmar. Los platos que ya existían se dan por
+  revisados, salvo los 4 estimados (Tataki y las 3 tartas), que hay que marcar
+  como sin confirmar a mano. Con tests, y comprobado que fallan con la lógica
+  anterior; falta desplegarlo y verlo en producción. Es la base del importador
 - ✅ Límite de peticiones por cliente detrás de nginx: `CONFIAR_PROXY=true` y la IP que
   añade nginx, no la que manda el cliente. Probado en producción con 130 peticiones
   con IP inventada: antes pasaban las 130, ahora se cortan al agotar el cupo. Que cada
@@ -66,13 +78,14 @@ Probado en el iPhone, confirmado bueno.
 - 🔍 Copia de seguridad diaria: `scripts/copia_seguridad.sh` guarda cada día
   la base de datos (Supabase, plan gratuito sin copias propias) y `datos/fotos/`,
   14 días de rotación, y falla en voz alta si la copia sale vacía o rota. Probado
-  con un `docker` simulado (éxito, `pg_dump` caído, volcado sin tabla, rotación,
-  sin credenciales); **no probado contra la base real ni restaurado**. Falta
-  instalarlo en el servidor, programar el cron y hacer una restauración de
-  prueba. Detalle en [docs/COPIAS-DE-SEGURIDAD.md](COPIAS-DE-SEGURIDAD.md)
-- ⬜ Sacar las copias del servidor (Backups de Hetzner, `scp` a tu PC o
-  almacenamiento externo): sin esto, perder el servidor es perder también las
-  copias
+  con un `docker` simulado y en el servidor real. **Restauración comprobada**
+  (2026-09-21) en una base desechable: 2 restaurantes, 29 platos, 84
+  traducciones. La primera prueba falló por una línea `CREATE SCHEMA public;`
+  del volcado, y se quitó del propio script. Cron diario a las 04:50
+  instalado; falta comprobar que se ejecuta solo (mirar `copia.log` al día
+  siguiente). Detalle en [docs/COPIAS-DE-SEGURIDAD.md](COPIAS-DE-SEGURIDAD.md)
+- ⬜ Sacar las copias del servidor: **aparcado hasta que haya clientes** (ver
+  "Aparcado")
 - ⬜ Probado en móvil, con datos móviles, en los 4 idiomas
 - ✅ QR generado (PNG y SVG) y verificado leyéndolo: apunta a https://cartia.jurux.app
 - ✅ Parar gym-app: borrado del todo (contenedor, red, volumen de datos,
@@ -272,6 +285,13 @@ a tener clientes de pago de verdad.
 
 ## APARCADO (ideas, no tareas)
 
+- Copias de seguridad fuera del servidor → cuando haya clientes. Hoy las copias
+  de carta-bar y de `cuentas` están en el mismo disco: sirven contra un borrado
+  o un despliegue que rompa datos, no contra perder el servidor. Recomendado:
+  Backups de la consola de Hetzner (20 % del precio del servidor, cubre todo).
+  Mientras tanto, `scp -r xele@178.104.233.131:/home/xele/copias-carta .` baja
+  las de carta-bar a tu PC. Detalle en
+  [docs/COPIAS-DE-SEGURIDAD.md](COPIAS-DE-SEGURIDAD.md)
 - Pedido en mesa (comandas: anfitrión/invitados, cocina/barra en tiempo
   real, cuenta) → especificación completa lista, pero no se empieza
   hasta cumplir su propio requisito de entrada — un restaurante

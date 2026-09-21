@@ -23,12 +23,12 @@ def cliente(monkeypatch: pytest.MonkeyPatch) -> TestClient:
         precio=4.5, ingredientes=[], alergenos=[],
     )
     monkeypatch.setattr(
-        "carta_bar.api.actualizar_plato_editable", lambda rid, pid, *r: pid != "no-existe"
+        "carta_bar.api.actualizar_plato_editable", lambda rid, pid, *r, **k: pid != "no-existe"
     )
     monkeypatch.setattr(
-        "carta_bar.api.crear_plato", lambda rid, cat, *r: None if cat == "no-existe" else plato
+        "carta_bar.api.crear_plato", lambda rid, cat, *r, **k: None if cat == "no-existe" else plato
     )
-    monkeypatch.setattr("carta_bar.api.crear_plato_especial", lambda rid, *r: plato)
+    monkeypatch.setattr("carta_bar.api.crear_plato_especial", lambda rid, *r, **k: plato)
     monkeypatch.setattr("carta_bar.api.actualizar_disponibilidad", lambda rid, pid, d: True)
     c = TestClient(app)
     c.cookies.set(COOKIE_SESION, auth.crear_token_sesion(RESTAURANTE_ID))

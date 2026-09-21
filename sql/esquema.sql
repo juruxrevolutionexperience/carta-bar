@@ -82,6 +82,11 @@ CREATE TABLE IF NOT EXISTS platos (
         REFERENCES categorias(restaurante_id, id)
 );
 
+-- El restaurante ha revisado los alergenos y la dieta del plato. Los platos que
+-- ya existian se dan por revisados (default true); los nuevos entran sin
+-- confirmar desde el codigo. Ver carta_bar.modelos.Plato.
+ALTER TABLE platos ADD COLUMN IF NOT EXISTS alergenos_confirmados BOOLEAN NOT NULL DEFAULT true;
+
 CREATE TABLE IF NOT EXISTS traducciones_platos (
     restaurante_id TEXT NOT NULL,
     plato_id       TEXT NOT NULL,

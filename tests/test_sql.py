@@ -72,3 +72,14 @@ def test_el_esquema_usa_numeric_para_el_dinero() -> None:
     # Con dinero, DOUBLE acumula error de redondeo al sumar miles de filas.
     sql = Path("sql/esquema.sql").read_text(encoding="utf-8").lower()
     assert "coste_usd               numeric" in " ".join(sql.split(" "))
+
+
+def test_el_esquema_anade_la_columna_de_alergenos_confirmados_sin_romper_lo_existente() -> None:
+    # Los platos que ya existian se dan por revisados (default true): si el
+    # default fuera false, desplegar esto dejaria toda la carta en "consultar
+    # alergenos" de golpe.
+    sql = " ".join(Path("sql/esquema.sql").read_text(encoding="utf-8").split())
+    assert (
+        "ALTER TABLE platos ADD COLUMN IF NOT EXISTS alergenos_confirmados "
+        "BOOLEAN NOT NULL DEFAULT true"
+    ) in sql

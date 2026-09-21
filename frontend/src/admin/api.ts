@@ -83,6 +83,7 @@ export interface CuerpoPlato {
   vegetariano: boolean;
   sin_gluten: boolean;
   sin_lactosa: boolean;
+  alergenos_confirmados: boolean;
 }
 
 export async function guardarPlatoExistente(

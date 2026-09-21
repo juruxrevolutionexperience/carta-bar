@@ -548,3 +548,21 @@ button.secundario {
   font-size: 20px;
   order: -1;
 }
+
+.etiqueta-sin-confirmar {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 20px;
+  background: #fdf1d6;
+  color: #8a5a00;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ayuda-alergenos {
+  margin: 4px 0 12px;
+  font-size: 12px;
+  color: var(--tinta-media);
+  line-height: 1.5;
+}
