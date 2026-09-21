@@ -55,10 +55,15 @@ BD_TMP="$BD_FINAL.tmp"
 trap 'rm -f "$BD_TMP" "${FOTOS_TMP:-}"' EXIT
 
 # PGPASSWORD se pasa sin valor (-e VARIABLE): asi no aparece en la lista de procesos.
+#
+# El sed quita "CREATE SCHEMA public;": toda base de Postgres nueva (y todo
+# proyecto nuevo de Supabase) ya trae ese esquema, y al restaurar con
+# ON_ERROR_STOP esa linea paraba la restauracion antes de crear ninguna tabla.
 export PGPASSWORD="$PG_PASS"
 docker run --rm -e PGPASSWORD "$IMAGEN_POSTGRES" \
     pg_dump -h "$PG_HOST" -p "${PG_PORT:-5432}" -U "$PG_USER" -d "$PG_DB" \
     --schema=public --no-owner --no-privileges \
+    | sed '/^CREATE SCHEMA public;$/d' \
     | gzip > "$BD_TMP" || fallo "pg_dump fallo"
 unset PGPASSWORD
 
