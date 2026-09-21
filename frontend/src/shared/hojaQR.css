@@ -83,44 +83,50 @@
   cursor: default;
 }
 
-/* En papel solo sale la hoja: el panel, la navegacion y los botones se
-   ocultan sin importar donde este puesta. */
+/* La copia para papel no se ve en pantalla. */
+.hoja-qr-impresion {
+  display: none;
+}
+
+/* En papel solo sale la hoja: todo lo demas se quita de la pagina (no solo
+   se oculta, porque lo oculto sigue ocupando sitio y añade paginas). */
 @media print {
   @page {
     margin: 15mm;
   }
 
-  body * {
-    visibility: hidden;
+  body > *:not(.hoja-qr-impresion) {
+    display: none !important;
   }
 
-  .hoja-qr,
-  .hoja-qr * {
-    visibility: visible;
+  .hoja-qr-impresion {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    break-inside: avoid;
   }
 
-  .hoja-qr {
-    position: fixed;
-    inset: 0;
+  .hoja-qr-impresion .hoja-qr {
     border: none;
     border-radius: 0;
-    justify-content: center;
+    padding: 0;
     gap: 8mm;
   }
 
-  .hoja-qr-nombre {
+  .hoja-qr-impresion .hoja-qr-nombre {
     font-size: 40pt;
   }
 
-  .hoja-qr-codigo {
+  .hoja-qr-impresion .hoja-qr-codigo {
     width: 120mm;
   }
 
-  .hoja-qr-texto {
+  .hoja-qr-impresion .hoja-qr-texto {
     font-size: 26pt;
   }
 
-  .hoja-qr-url {
+  .hoja-qr-impresion .hoja-qr-url {
     font-size: 14pt;
   }
 }

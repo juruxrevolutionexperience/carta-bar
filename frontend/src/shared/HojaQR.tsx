@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 import "./hojaQR.css";
 import { qrPng, qrSvg, svgADataUrl } from "./qr";
@@ -53,18 +54,33 @@ export function HojaQR({ url, nombre, texto }: DatosQr) {
     }
   }
 
+  const contenido: ReactNode = (
+    <>
+      <h3 className="hoja-qr-nombre">{nombre}</h3>
+      {svg && (
+        <img className="hoja-qr-codigo" src={svgADataUrl(svg)} alt={`Código QR de ${url}`} />
+      )}
+      {!svg && !error && <div className="hoja-qr-codigo hoja-qr-espera">Generando…</div>}
+      {error && <div className="hoja-qr-codigo hoja-qr-espera">No se pudo generar el QR.</div>}
+      <p className="hoja-qr-texto">{texto}</p>
+      <p className="hoja-qr-url">{url.replace(/^https?:\/\//, "")}</p>
+    </>
+  );
+
   return (
     <div className="hoja-qr-contenedor">
-      <div className="hoja-qr">
-        <h3 className="hoja-qr-nombre">{nombre}</h3>
-        {svg && (
-          <img className="hoja-qr-codigo" src={svgADataUrl(svg)} alt={`Código QR de ${url}`} />
-        )}
-        {!svg && !error && <div className="hoja-qr-codigo hoja-qr-espera">Generando…</div>}
-        {error && <div className="hoja-qr-codigo hoja-qr-espera">No se pudo generar el QR.</div>}
-        <p className="hoja-qr-texto">{texto}</p>
-        <p className="hoja-qr-url">{url.replace(/^https?:\/\//, "")}</p>
-      </div>
+      <div className="hoja-qr">{contenido}</div>
+
+      {/* Copia solo para papel, colgada directamente del body: al imprimir se
+          quita todo lo demas de la pagina (ver hojaQR.css). Ocultar el panel
+          con "visibility" no vale: seguiria ocupando sitio y saldrian varias
+          hojas. */}
+      {createPortal(
+        <div className="hoja-qr-impresion">
+          <div className="hoja-qr">{contenido}</div>
+        </div>,
+        document.body
+      )}
 
       <div className="hoja-qr-acciones">
         <button type="button" className="hoja-qr-boton principal" onClick={() => window.print()}>
