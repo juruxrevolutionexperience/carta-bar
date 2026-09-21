@@ -6,7 +6,7 @@ Cómo está montado hoy, qué es sólido y qué está cogido con pinzas.
 
 ```
   CLIENTE (móvil)
-       │  escanea QR → https://cartia.jurux.app
+       │  escanea QR → https://la-catedral.jurux.app
        ▼
  ┌──────────────── SERVIDOR HETZNER ────────────────────┐
  │  nginx  (HTTPS, un subdominio por restaurante)       │
@@ -22,14 +22,15 @@ Cómo está montado hoy, qué es sólido y qué está cogido con pinzas.
  └──────────┬───────────────────────────┬───────────────┘
             ▼                           ▼
    Supabase (Postgres)           Anthropic (Claude)
-   hoy solo guarda el gasto      contesta el chat
+   carta, gasto y métricas       contesta el chat y traduce
 ```
 
 ## Producción
 
 | | |
 |---|---|
-| URL | https://cartia.jurux.app |
+| URL | https://la-catedral.jurux.app (`cartia.jurux.app` sigue resolviendo a La CatedRal por los QR ya impresos) |
+| Superadmin | `/superadmin` en cualquier subdominio que exista (p. ej. https://la-catedral.jurux.app/superadmin): alta de restaurantes, QR de cada uno y métricas. Clave en `SUPERADMIN_CLAVE_HASH` del `.env` |
 | Servidor | Hetzner CPX22 `Jurux-Revolution`, 178.104.233.131 |
 | Acceso | `ssh xele@178.104.233.131`. Root no entra por SSH con contraseña (`PermitRootLogin prohibit-password`, valor por defecto) |
 | Código | `/home/xele/cartaBar` |
@@ -37,7 +38,8 @@ Cómo está montado hoy, qué es sólido y qué está cogido con pinzas.
 | nginx | `/etc/nginx/sites-available/carta`; certbot renueva el certificado solo |
 | DNS | Cloudflare, un registro A por restaurante (`cartia`, `demo`...) → 178.104.233.131, **solo DNS** (nube gris). Con la nube naranja, la IP que ve nginx sería la de Cloudflare y el límite de peticiones dejaría de distinguir comensales |
 | Base de datos | Supabase por el *Session pooler*: la conexión directa es solo IPv6 |
-| Variables | `/home/xele/cartaBar/.env` en el servidor, fuera de git |
+| Variables | `/home/xele/cartaBar/.env` en el servidor, fuera de git. Ver `.env.example`; las últimas añadidas: `DOMINIO_BASE` (para el QR) y `MODELO_TRADUCCION` |
+| Copias de seguridad | Cron diario 04:50 → `/home/xele/copias-carta` (base de datos de Supabase + fotos, 14 días). Detalle y restauración en [COPIAS-DE-SEGURIDAD.md](COPIAS-DE-SEGURIDAD.md). Aún dentro del mismo disco |
 | Seguridad del host | ufw (22, 80, 443) y fail2ban. La IP de casa está en `ignoreip` de `/etc/fail2ban/jail.local` |
 
 ## Cómo se despliega (desde el 2026-09-19)
@@ -83,7 +85,7 @@ clone` limpio no tiene ni la carpeta, y el build fallaba a la primera).
 - Seguridad: CSP con nonce por petición, escapado en el frontend, límite de peticiones
   por cliente, tope de gasto diario, cabeceras de seguridad. Los logs ya muestran bots
   probando rutas (`../../etc/passwd`, credenciales de AWS) y reciben 404.
-- 80 tests, `ruff` y `mypy strict`.
+- Más de 300 tests y `ruff` (los 5 de búsqueda/embeddings necesitan el modelo real).
 - Docker + nginx + HTTPS con el mismo patrón que el resto de apps del servidor.
 
 ## Qué está cogido con pinzas
@@ -126,3 +128,37 @@ automática es la pieza que falta). El aislamiento (datos y sesiones
 de un restaurante nunca se cruzan con otro) está cubierto por
 `tests/test_multitenant.py` y probado contra producción con un
 restaurante de prueba (`demo`).
+
+## Cómo responde el chat y cómo se traduce la carta
+
+Decisiones tomadas el 2026-09-21, con sus porqués (el detalle de cada una está
+en `docs/PENDIENTE.md`):
+
+1. **El intérprete (Haiku 4.5)** convierte la pregunta en restricciones
+   estructuradas (alergia, dieta, categoría). **El filtrado lo hace Python, no el
+   modelo**: solo pasan al modelo de respuesta los platos que cumplen.
+2. **Un plato sin alérgenos confirmados nunca es "apto"** (`alergenos_confirmados`).
+   Ante una alergia o dieta solo se usan platos confirmados; si no queda ninguno,
+   respuesta fija "consulta al personal"; a un plato sin confirmar se le presenta
+   como "SIN CONFIRMAR", nunca como "sin alérgenos". La carta pública muestra
+   "consultar alérgenos" en vez de sus alérgenos. El aviso "hay platos pendientes"
+   se añade **después** de la respuesta del modelo: metido en su prompt, el modelo
+   se negaba a recomendar nada.
+3. **Se pasan hasta 15 platos** al modelo (`MAX_PLATOS_EN_CONTEXTO`) y la
+   respuesta tiene techo de 900 tokens; si se corta, se quita la última línea
+   incompleta.
+4. **Traducciones:** se hacen una vez por plato, al crearlo o editarlo, en segundo
+   plano (`traducir_restaurante`), con **Sonnet 5** (`MODELO_TRADUCCION`) porque
+   Haiku cometía errores serios (cava → champagne, ternera → vacuno, palabras
+   inventadas). El hash solo mira el texto en español, así que cambiar de modelo o
+   de instrucciones exige `python -m carta_bar.traductor --forzar`.
+5. **El nombre del plato no se traduce nunca**: lo decide el restaurante (el
+   cliente lo pide al camarero por su nombre). Solo se traducen descripción e
+   ingredientes. Está forzado al leer (`datos._con_traducciones`,
+   `agente._en_el_idioma`) y al traducir, no solo en el prompt.
+6. **El chat usa las traducciones guardadas** (las mismas que ve el cliente en la
+   carta) y no traduce por su cuenta; si una está desfasada (hash distinto) o no se
+   puede leer, usa el español.
+7. **Coste:** cada llamada se anota con la tarifa de su modelo
+   (`PRECIOS_POR_MODELO`); un modelo desconocido se cobra a la más cara. El tope
+   diario de 5 USD cubre chat y traducciones.

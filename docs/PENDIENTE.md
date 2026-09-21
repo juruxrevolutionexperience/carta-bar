@@ -2,7 +2,7 @@
 
 Leyenda: ✅ hecho y probado · 🔍 hecho, falta verificar · ⬜ pendiente
 
-Producción: https://cartia.jurux.app · cómo está montado, en
+Producción: https://la-catedral.jurux.app (`cartia.jurux.app` sigue funcionando) · cómo está montado, en
 [docs/ARQUITECTURA.md](ARQUITECTURA.md)
 
 ## Reglas
@@ -10,6 +10,86 @@ Producción: https://cartia.jurux.app · cómo está montado, en
 2. Una fase se cierra cuando se cumple su "Terminada cuando".
 3. Idea nueva → a "Aparcado". Sin discutirla, sin empezarla.
 4. Cada tarea se responde con sí o no. Nada de "mejorar X".
+
+---
+
+## DÓNDE LO DEJAMOS (2026-09-21)
+
+Todo el trabajo de hoy está commiteado y subido a GitHub (último commit:
+"Los nombres de los platos no se traducen nunca; traducciones con Sonnet 5").
+
+### Hecho hoy
+Guardar y traducir en segundo plano · marca (nombre, logo, portada) · QR del
+gerente y del superadmin (con hoja imprimible y texto editable) · métricas en el
+superadmin · copia de seguridad diaria (restauración comprobada) · alérgenos
+confirmados por plato · chat con respuestas completas, 15 platos y avisos en los
+4 idiomas · traducciones con Sonnet 5 y el chat usando las guardadas · el nombre
+de los platos no se traduce nunca.
+
+### Para comprobar en producción (en este orden)
+1. **Desplegar el último commit y rehacer las traducciones** (ver comandos abajo).
+   El `--forzar` tarda ~5 min y **no se puede interrumpir**: solo guarda al
+   terminar cada idioma (un Ctrl+C a mitad pierde esa pasada).
+2. **Carta en alemán:** los nombres salen en español y las descripciones en
+   alemán; la Lubina lleva "Wolfsbarschfilet".
+3. **Chat, "algo sin gluten"** en ES/EN/DE/FR: lista hasta 13 platos con nombre
+   español y acaba con el aviso de alérgenos pendientes. "Postre sin lactosa"
+   manda al personal.
+4. **Panel:** la Tarta de Queso muestra la casilla "He revisado los alérgenos"
+   sin marcar, y la vista previa el aviso "consultar alérgenos".
+5. **Guardar y traducir:** editar un plato y ver la carta en inglés al cabo de
+   unos segundos (nunca con el texto viejo). Es lo que cuesta dinero.
+6. **Superadmin → Métricas:** aparecen las preguntas de hoy, con su coste.
+7. **Copia diaria:** mañana, `tail -3 /home/xele/copias-carta/copia.log`.
+8. ~~Hoja del QR~~ (comprobado el 2026-09-21).
+9. Móvil con datos móviles y en los 4 idiomas.
+
+### Siguiente paso: importador de carta (diseño acordado, sin empezar)
+Lo hace el dueño desde el superadmin al dar de alta un bar; después el gerente
+lo administra con el panel que ya tiene (no se añade nada a su panel).
+1. **Leer:** foto(s) o PDF → modelo con visión → secciones y platos (nombre tal
+   cual, descripción, precio, ingredientes). Los alérgenos que proponga entran
+   **sin confirmar** (`alergenos_confirmados = false`).
+2. **Revisar antes de crear nada:** tabla editable en el superadmin, sobre todo
+   los precios. Hasta pulsar "Crear" no se guarda nada.
+3. **Crear y traducir:** alta de todos los platos de una vez, traducción
+   automática, y el gerente confirma los alérgenos con su casilla.
+Las secciones se crean tal cual las escribió el restaurante (no se reorganizan).
+**Antes de empezar hace falta:** una carta real de ejemplo (foto o PDF) para
+medir cuántos platos y precios lee bien; decidir si solo se importa a bares con
+la carta vacía (recomendado) y si basta con foto o también PDF.
+
+### Decisiones tomadas hoy que no se pueden olvidar
+- **El nombre de un plato no se traduce nunca** (decisión del restaurante:
+  el cliente lo pide al camarero por su nombre). Descripción e ingredientes, en
+  el idioma del cliente y sin poner la palabra española entre paréntesis ("en
+  principio así, más adelante vemos"). Forzado en código.
+- **Un plato sin alérgenos confirmados nunca se presenta como apto.**
+- **Las traducciones se hacen con Sonnet 5** (una vez por plato, ~0,007 $); el
+  chat usa las traducciones guardadas y no traduce por su cuenta.
+- **Los QR apuntan a `<restaurante>.jurux.app`** para todos, La CatedRal
+  incluida (`la-catedral.jurux.app`). `cartia.jurux.app` sigue resolviendo por
+  los QR ya impresos.
+- **El gerente no ve costes ni métricas**; solo el superadmin.
+
+### Para retomar
+- **Desplegar** (lo ejecutas tú en el servidor, yo solo doy los comandos):
+  `cd /home/xele/cartaBar && git pull && docker compose -f docker-compose.prod.yml up -d --build`
+- **Rehacer las traducciones de La CatedRal en producción:**
+  `docker exec carta-bar uv run --no-sync python -m carta_bar.traductor --forzar`
+- **Superadmin:** `/superadmin` en cualquier subdominio que exista, por ejemplo
+  https://la-catedral.jurux.app/superadmin
+- **SQL ya ejecutado en Supabase:** columnas `platos.alergenos_confirmados` y
+  `restaurantes.texto_qr`; los platos p010 (Tataki de Atún) y p025, p026, p027
+  (las 3 tartas) puestos en `alergenos_confirmados = false`. Las tablas de
+  métricas se crean solas al arrancar.
+- **Tests:** 304 pasan. Los 5 de búsqueda y embeddings necesitan el modelo real
+  y no corren en el PC de casa (Windows bloquea la DLL de torch); el resto se
+  corre con un sustituto temporal de `sentence_transformers`.
+- **Modelos:** chat e intérprete, Haiku 4.5; traducciones, Sonnet 5
+  (`MODELO_TRADUCCION`). El gasto se anota con la tarifa de cada modelo
+  (`PRECIOS_POR_MODELO` en `costes.py`); un modelo desconocido se cobra a la más
+  cara para no pasarse del tope de 5 USD.
 
 ---
 
@@ -23,7 +103,13 @@ con fotos reales, y el QR está listo para las mesas.
 - ✅ El agente responde en el idioma del cliente
 - ✅ Carta oficial de 28 platos, en los 4 idiomas
 - ⬜ Confirmar con el restaurante los alérgenos de 4 platos (Tataki de Atún y las
-  3 tartas): la carta original no los detalla y hoy son estimados
+  3 tartas): la carta original no los detalla y hoy son estimados. Ya están
+  marcados como sin confirmar en producción (la carta muestra "consultar
+  alérgenos" y el chat no los recomienda ante una alergia); cuando el
+  restaurante los confirme, el gerente marca la casilla en su panel
+- ⬜ Preguntar al restaurante si la "Solomillo de Ternera" es ternera (*veal*) o
+  vacuno (*beef*): en español es ambiguo y hoy sale como *Kalbsfilet* en alemán
+  y *beef*/*bœuf* en inglés y francés
 - 🔍 Un plato sin alérgenos confirmados nunca aparece como apto: campo
   `alergenos_confirmados` por plato (2026-09-21). Antes no existía ese concepto
   en el código y esta línea estaba marcada ✅ sin estarlo: el filtro solo quitaba
@@ -39,8 +125,8 @@ con fotos reales, y el QR está listo para las mesas.
   anterior. Probado con el modelo real: una primera versión metía el aviso de
   "hay platos sin confirmar" en el prompt y el chat se negaba a recomendar
   ningún plato sin gluten; ahora el aviso se añade como frase fija tras la
-  respuesta, en el idioma del cliente. Falta desplegar esa corrección y verlo en
-  producción. Es la base del importador
+  respuesta, en el idioma del cliente. Desplegado y comprobado en los 4 idiomas.
+  Es la base del importador
 - 🔍 Traducciones de calidad y coherentes con el chat: las traducciones
   guardadas tenían errores serios (la Lubina en alemán como "Loup de mer" y
   "Seeluppenfilet", una palabra inventada) y el chat traducía por su cuenta y se
@@ -65,11 +151,14 @@ con fotos reales, y el QR está listo para las mesas.
   con IP inventada: antes pasaban las 130, ahora se cortan al agotar el cupo. Que cada
   comensal tenga su propio cupo lo cubre un test
 - ✅ Tope de gasto diario de 5 USD (el chat pasa a "consulta al personal", la carta sigue)
-- 🔍 Registro por llamada: pregunta, idioma, tokens, fecha. Se comprueba con la primera
-  pregunta real en producción
+- 🔍 Registro por llamada: idioma, tokens, coste, fecha (el texto de la pregunta
+  no se guarda a propósito: puede llevar datos de salud). Ya ha habido preguntas
+  reales; se comprueba en el superadmin → Métricas
 - ✅ Aviso de alérgenos visible en la carta
 - ✅ Ni la página ni la carta se guardan en caché: un cambio llega al desplegar
-- ⬜ Probar el chat en producción con una pregunta real (no se ha hecho: gasta)
+- ✅ Probar el chat en producción con preguntas reales: hecho el 2026-09-21
+  ("algo sin gluten" en los 4 idiomas y "postre sin lactosa"). De ahí salieron
+  los arreglos de alérgenos, respuestas cortadas, 15 platos y traducciones
 
 ### Se ve bien (arreglos, no funciones nuevas)
 Probado en el iPhone, confirmado bueno.
@@ -110,7 +199,9 @@ Probado en el iPhone, confirmado bueno.
 - ⬜ Sacar las copias del servidor: **aparcado hasta que haya clientes** (ver
   "Aparcado")
 - ⬜ Probado en móvil, con datos móviles, en los 4 idiomas
-- ✅ QR generado (PNG y SVG) y verificado leyéndolo: apunta a https://cartia.jurux.app
+- ✅ QR generado (PNG y SVG) y verificado leyéndolo. El de La CatedRal impreso apunta a
+  `cartia.jurux.app`, que sigue funcionando; el que genera ahora el panel apunta a
+  `la-catedral.jurux.app`
 - ✅ Parar gym-app: borrado del todo (contenedor, red, volumen de datos,
   imagen y carpeta) — no solo parado, ya no queda rastro en el servidor
 
@@ -178,7 +269,8 @@ restaurante.
   propia del panel (categoría centinela `especial-de-hoy`, sin tocar los 28
   platos existentes), visibles en una tarjeta "⭐ Especial de hoy" al
   principio de la carta pública solo si hay alguno activo. Probado en local
-  contra Supabase (crear, ver en `/carta`, eliminar). Falta desplegar
+  contra Supabase (crear, ver en `/carta`, eliminar). Desplegado con el resto;
+  falta comprobarlo en producción
 - ✅ Vista previa en vivo de la tarjeta del plato al editar o crear (la
   misma tarjeta de la carta pública). Un borrador con "Publicar" queda
   descartado por ahora: los cambios se publican al guardar
@@ -186,35 +278,37 @@ restaurante.
   `traducir_restaurante()` en segundo plano (`BackgroundTasks`); el hash hace
   que solo se pague lo que cambió, respeta el tope diario y anota el coste.
   Un candado por restaurante evita traducir dos veces lo mismo. Agotar un plato
-  no traduce. Lógica comprobada con la API simulada; los tests de los endpoints
-  (`tests/test_traduccion_panel.py`) no se han podido correr en este PC (Windows
-  bloquea la DLL de torch). Falta correr la suite y probar en producción.
+  no traduce. Con tests (`tests/test_traduccion_panel.py`). Falta probarlo en
+  producción: editar un plato y ver la carta en inglés al cabo de unos segundos.
   De paso: una traducción cuyo hash ya no coincide con el texto del plato
   no se enseña (sale en español), para que un plato editado nunca muestre
-  ingredientes de la versión anterior. Comprobado con los ficheros JSON; falta
-  comprobar en producción que las 28 × 3 traducciones de Supabase siguen vigentes
+  ingredientes de la versión anterior. Vigencia de las 28 × 3 traducciones de
+  Supabase: se rehacen todas con `--forzar` (ver "Dónde lo dejamos")
 - 🔍 Configuración de marca: sección "Marca" del panel con nombre del negocio,
   logo y foto de portada (se comprimen en el navegador y se guardan en el mismo
   volumen que las fotos de platos, con nombre fijo por tipo). Backend con tests
-  (`tests/test_admin_marca.py`) y frontend con `tsc` limpio. Falta desplegar y
-  probarlo en el móvil con una imagen real. Subtítulo y color de marca quedan
-  fuera: hoy solo se cambian en la base de datos
+  (`tests/test_admin_marca.py`) y frontend con `tsc` limpio. Desplegado y dado
+  por bueno; falta probarlo en el móvil con un logo y una portada reales.
+  Subtítulo y color de marca quedan fuera: hoy solo se cambian en la base de
+  datos
 - ⬜ Importador de carta (PDF o foto → borrador con alérgenos sin confirmar
-  → el gerente los confirma con checkboxes, nunca se dan por buenos solos)
-  → detalle completo en
+  → el gerente los confirma con checkboxes, nunca se dan por buenos solos).
+  Lo hace el dueño desde el superadmin; diseño acordado en "Dónde lo dejamos".
+  Ya está hecha su base de seguridad (`alergenos_confirmados`). Detalle
+  general en
   [docs/APARCADO-CARTAS-MULTINEGOCIO.md](APARCADO-CARTAS-MULTINEGOCIO.md)
-- 🔍 Código QR del restaurante en el panel del gerente (pestaña "QR"): verlo
+- ✅ Código QR del restaurante en el panel del gerente (pestaña "QR"): verlo
   en pantalla, hoja imprimible con nombre + QR + texto editable por el gerente
   ("Escanea para ver la carta" por defecto), descargar PNG y SVG, copiar y
   abrir el enlace. El QR se dibuja en el navegador (paquete `qrcode` de npm,
   solo afecta a la etapa del frontend del `Dockerfile`). Apunta a
   `<restaurante>.jurux.app` para todos por igual, La CatedRal incluida
   (`la-catedral.jurux.app`); `cartia.jurux.app` sigue resolviendo, así que
-  los QR ya impresos siguen funcionando. Backend con tests (`tests/test_qr.py`),
-  `tsc` y build limpios. **Antes de desplegar hay que ejecutar en Supabase
-  el `ALTER TABLE` de `sql/esquema.sql` (columna `texto_qr`)**; sin él todo
-  funciona, pero el texto no se puede guardar. Falta probar la impresión y
-  escanearlo desde un móvil
+  los QR ya impresos siguen funcionando. Con tests (`tests/test_qr.py`).
+  Desplegado y comprobado (2026-09-21): se ve, se escanea con el móvil, se
+  descarga y se imprime; la columna `texto_qr` ya está creada en Supabase. La
+  impresión falló al principio en teoría (la hoja salía repetida en varias
+  páginas, 5 con un panel normal) y se corrigió con una copia solo para papel
 - 🔍 Código QR de cada restaurante en el panel superadmin: botón "Ver QR" en
   cada fila de la lista, con la misma hoja (usa el texto que haya guardado
   el gerente), para entregarlo al dar de alta un bar
@@ -227,10 +321,11 @@ restaurante.
   sin IPs ni texto de las preguntas (pueden llevar datos de salud). Las visitas
   excluyen robots y al gerente con sesión abierta; registrar nunca puede romper
   la carta ni el chat. Backend con tests (`tests/test_metricas.py`) y el SQL
-  validado con el parser de Postgres, pero **no probado contra una base de datos
-  real**: se ve al desplegar. Las tablas se crean solas al arrancar. El
-  histórico de visitas y preguntas empieza el día del despliegue; el coste sí
-  tiene historia. Falta mirar los números con uso real
+  validado con el parser de Postgres. Desplegado: la tarjeta carga y cuenta
+  visitas (la del gerente con sesión abierta no cuenta, a propósito). Las
+  tablas se crean solas al arrancar. El histórico de visitas y preguntas empieza
+  el día del despliegue; el coste sí tiene historia. Falta mirar preguntas y
+  costes con uso real
 - ✅ Migrar el frontend a React + TypeScript, pantalla a pantalla, sin
   romper nada entre medias (infraestructura con Vite, compilada en una
   etapa nueva del `Dockerfile`, servida por FastAPI en `/assets`):
@@ -315,6 +410,16 @@ a tener clientes de pago de verdad.
   Mientras tanto, `scp -r xele@178.104.233.131:/home/xele/copias-carta .` baja
   las de carta-bar a tu PC. Detalle en
   [docs/COPIAS-DE-SEGURIDAD.md](COPIAS-DE-SEGURIDAD.md)
+- Editar a mano una traducción desde el panel, por si el modelo se equivoca en
+  un plato → hoy solo se corrige cambiando el texto en español o rehaciendo la
+  traducción
+- Poner la palabra española entre paréntesis en las descripciones traducidas
+  (p. ej. "iberischer Schinken (jamón ibérico)") → propuesto el 2026-09-21; el
+  restaurante prefiere "en principio así" (solo el nombre queda en español)
+- Que `--forzar` guarde plato a plato: hoy solo guarda al terminar cada idioma,
+  y un Ctrl+C a mitad pierde esa pasada (y el gasto de esas llamadas no se anota)
+- "Langostino" sale como *langoustine* en francés (no es exacto: son gambas);
+  mismo alérgeno, así que es solo cosmético → corregirlo si vuelve a molestar
 - Pedido en mesa (comandas: anfitrión/invitados, cocina/barra en tiempo
   real, cuenta) → especificación completa lista, pero no se empieza
   hasta cumplir su propio requisito de entrada — un restaurante
