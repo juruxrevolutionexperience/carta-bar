@@ -41,6 +41,12 @@ con fotos reales, y el QR está listo para las mesas.
   ningún plato sin gluten; ahora el aviso se añade como frase fija tras la
   respuesta, en el idioma del cliente. Falta desplegar esa corrección y verlo en
   producción. Es la base del importador
+- 🔍 Respuestas del chat cortadas a media palabra: una lista de 10 platos pide
+  ~410 tokens y el límite era 400 (medido con el modelo real). Límite subido a
+  700 (solo cuesta lo que el modelo escribe) y, si aun así se corta, se quita
+  la última línea incompleta. De paso, al modelo se le dice para qué dietas es
+  apto cada plato confirmado: sin eso, en inglés no se atrevía a afirmar que un
+  plato era "gluten free" y listaba 4 de 10. Falta verlo en producción
 - ✅ Límite de peticiones por cliente detrás de nginx: `CONFIAR_PROXY=true` y la IP que
   añade nginx, no la que manda el cliente. Probado en producción con 130 peticiones
   con IP inventada: antes pasaban las 130, ahora se cortan al agotar el cupo. Que cada

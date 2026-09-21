@@ -85,7 +85,14 @@ def test_el_filtro_por_palabras_tambien_lo_respeta() -> None:
 @pytest.fixture
 def modelo_falso(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
     """Sin LLM ni embeddings: registra lo que se le enviaria al modelo."""
-    visto = SimpleNamespace(prompt="", llamadas=0, restricciones=RestriccionesCliente())
+    visto = SimpleNamespace(
+        prompt="",
+        llamadas=0,
+        restricciones=RestriccionesCliente(),
+        max_tokens=0,
+        stop_reason="end_turn",
+        texto="respuesta del modelo",
+    )
 
     monkeypatch.setattr(agente, "cargar_categorias", lambda rid: [])
     monkeypatch.setattr(
@@ -102,13 +109,14 @@ def modelo_falso(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
     def crear(**k: object) -> SimpleNamespace:
         visto.llamadas += 1
         visto.prompt = str(k["messages"][-1]["content"])  # type: ignore[index]
-        return SimpleNamespace(usage=None, content=[])
+        visto.max_tokens = k["max_tokens"]  # type: ignore[assignment]
+        return SimpleNamespace(usage=None, content=[], stop_reason=visto.stop_reason)
 
     monkeypatch.setattr(
         agente, "cliente", lambda: SimpleNamespace(messages=SimpleNamespace(create=crear))
     )
     monkeypatch.setattr(agente, "medir", lambda nombre, usage: Consumo(llamada=nombre))
-    monkeypatch.setattr(agente, "texto_de_respuesta", lambda r: "respuesta del modelo")
+    monkeypatch.setattr(agente, "texto_de_respuesta", lambda r: visto.texto)
     return visto
 
 
@@ -182,6 +190,57 @@ def test_un_plato_sin_confirmar_no_se_describe_como_sin_alergenos(
     preguntar(carta)
     assert "SIN CONFIRMAR" in modelo_falso.prompt
     assert "Alérgenos: ninguno" not in modelo_falso.prompt
+
+
+# ------------------------------------------------------------------ respuestas largas
+
+
+def test_el_limite_de_tokens_da_margen_a_una_lista_de_diez_platos(
+    modelo_falso: SimpleNamespace,
+) -> None:
+    # Medido con la carta real: 10 platos en lista piden ~410 tokens. Con 400
+    # salian cortadas a media palabra.
+    preguntar([plato("a")])
+    assert modelo_falso.max_tokens == agente.MAX_TOKENS_RESPUESTA
+    assert agente.MAX_TOKENS_RESPUESTA >= 600
+
+
+LISTA = "Aquí tienes:\n- Plato uno (10€)\n- Plato dos (12€)\n- Plato tr"
+
+
+def test_una_respuesta_cortada_acaba_en_una_linea_completa(
+    modelo_falso: SimpleNamespace,
+) -> None:
+    modelo_falso.stop_reason = "max_tokens"
+    modelo_falso.texto = LISTA
+    assert preguntar([plato("a")]).texto == "Aquí tienes:\n- Plato uno (10€)\n- Plato dos (12€)"
+
+
+def test_una_respuesta_completa_no_se_toca(modelo_falso: SimpleNamespace) -> None:
+    modelo_falso.texto = LISTA  # mismo texto, pero el modelo termino por si mismo
+    assert preguntar([plato("a")]).texto == LISTA
+
+
+def test_cortada_pero_de_una_sola_linea_se_deja_como_esta(
+    modelo_falso: SimpleNamespace,
+) -> None:
+    modelo_falso.stop_reason = "max_tokens"
+    modelo_falso.texto = "Una respuesta larga sin saltos de lin"
+    assert preguntar([plato("a")]).texto == "Una respuesta larga sin saltos de lin"
+
+
+def test_cortada_y_con_platos_pendientes_el_aviso_va_tras_la_ultima_linea_completa(
+    modelo_falso: SimpleNamespace,
+) -> None:
+    modelo_falso.restricciones = RestriccionesCliente(sin_gluten=True)
+    modelo_falso.stop_reason = "max_tokens"
+    modelo_falso.texto = LISTA
+    carta = [plato("a", sin_gluten=True), plato("b", confirmado=False, sin_gluten=True)]
+    esperado = (
+        "Aquí tienes:\n- Plato uno (10€)\n- Plato dos (12€)\n\n"
+        + agente.AVISO_PLATOS_PENDIENTES["es"]
+    )
+    assert preguntar(carta).texto == esperado
 
 
 def test_un_plato_confirmado_sin_alergenos_si_es_ninguno(modelo_falso: SimpleNamespace) -> None:
@@ -258,3 +317,29 @@ def test_editar_puede_confirmar_o_desconfirmar(
 def test_la_carta_publica_expone_el_campo() -> None:
     assert plato("a", confirmado=False).model_dump()["alergenos_confirmados"] is False
     assert plato("a").model_dump()["alergenos_confirmados"] is True
+
+
+# ------------------------------------------------------------------ la dieta en el contexto
+
+
+def test_al_modelo_se_le_dice_para_que_dietas_es_apto_cada_plato(
+    modelo_falso: SimpleNamespace,
+) -> None:
+    # Sin esta etiqueta, en ingles el modelo no se atrevia a afirmar que un plato
+    # era "gluten free" aunque el filtro ya lo hubiera comprobado.
+    modelo_falso.restricciones = RestriccionesCliente(sin_gluten=True)
+    preguntar([plato("a", sin_gluten=True, sin_lactosa=True)])
+    assert "Apto para: sin gluten, sin lactosa." in modelo_falso.prompt
+
+
+def test_un_plato_sin_etiquetas_de_dieta_no_lleva_esa_linea(modelo_falso: SimpleNamespace) -> None:
+    preguntar([plato("a")])
+    assert "Apto para" not in modelo_falso.prompt
+
+
+def test_la_dieta_de_un_plato_sin_confirmar_no_se_le_da_al_modelo(
+    modelo_falso: SimpleNamespace,
+) -> None:
+    preguntar([plato("b", confirmado=False, sin_gluten=True, vegano=True)])
+    assert "Apto para" not in modelo_falso.prompt
+    assert "SIN CONFIRMAR" in modelo_falso.prompt

@@ -1,6 +1,7 @@
 from typing import Literal
 
 import numpy as np
+import structlog
 from anthropic.types import MessageParam
 from sentence_transformers import SentenceTransformer
 
@@ -16,7 +17,14 @@ from carta_bar.llm import MODELO, cliente
 from carta_bar.modelos import MensajeChat, Plato, RespuestaAgente
 from carta_bar.rag import texto_de_respuesta
 
+log = structlog.get_logger()
+
 NOMBRES_IDIOMA = {"es": "español", "en": "inglés", "de": "alemán", "fr": "francés"}
+
+# Techo de la respuesta, no lo que se gasta siempre: solo cuesta lo que el modelo
+# escribe. Medido con la carta real, una lista de 10 platos pide unos 410 tokens y
+# con 400 salia cortada a media palabra; las demas preguntas, entre 220 y 355.
+MAX_TOKENS_RESPUESTA = 700
 
 # Todo lo que escribe el cliente es texto no fiable que entra en el prompt.
 # El daño posible está acotado (el modelo no tiene herramientas ni acceso a la
@@ -88,6 +96,17 @@ _ALERGENOS_SIN_CONFIRMAR = (
 )
 
 
+def _sin_linea_cortada(texto: str, cortada: bool) -> str:
+    """Si el modelo se quedo sin tokens, su ultima linea puede estar a medias:
+    se quita, y la respuesta acaba en un plato completo en vez de en una palabra
+    partida. Una sola linea sin saltos se deja tal cual (no hay nada mejor que
+    ofrecer)."""
+    if not cortada:
+        return texto
+    completo, salto, _ = texto.rpartition("\n")
+    return completo.rstrip() if salto and completo.strip() else texto
+
+
 def turnos_para_el_modelo(historial: list[MensajeChat]) -> list[MessageParam]:
     """Traduce el historial al formato de la API.
 
@@ -145,10 +164,29 @@ def responder_cliente(
             return _ALERGENOS_SIN_CONFIRMAR
         return ", ".join(a.value for a in p.alergenos) or "ninguno"
 
+    def _dieta_txt(p: Plato) -> str:
+        # Sin confirmar, la dieta tampoco es un dato: no se le da al modelo.
+        if not p.alergenos_confirmados:
+            return ""
+        etiquetas = [
+            nombre
+            for nombre, marcado in (
+                ("vegano", p.vegano),
+                ("vegetariano", p.vegetariano),
+                ("sin gluten", p.sin_gluten),
+                ("sin lactosa", p.sin_lactosa),
+            )
+            if marcado
+        ]
+        # Sin esto el modelo solo ve la lista de alergenos y, si el cliente
+        # pregunta por "sin gluten" (sobre todo en otro idioma), no se atreve a
+        # afirmar que el plato lo es aunque el filtro ya lo haya comprobado.
+        return f" Apto para: {', '.join(etiquetas)}." if etiquetas else ""
+
     contexto = "\n\n".join(
         f"{p.nombre} ({_precio_txt(p)}): {p.descripcion}. "
         f"Ingredientes: {', '.join(p.ingredientes)}. "
-        f"Alérgenos: {_alergenos_txt(p)}."
+        f"Alérgenos: {_alergenos_txt(p)}.{_dieta_txt(p)}"
         for _, p in resultados
     )
 
@@ -174,9 +212,16 @@ def responder_cliente(
     )
 
     c = cliente()
-    respuesta = c.messages.create(model=MODELO, max_tokens=400, messages=mensajes)
+    respuesta = c.messages.create(
+        model=MODELO, max_tokens=MAX_TOKENS_RESPUESTA, messages=mensajes
+    )
     consumo.consumos.append(medir("respuesta", respuesta.usage))
-    texto = texto_de_respuesta(respuesta)
+    cortada = respuesta.stop_reason == "max_tokens"
+    if cortada:
+        log.warning(
+            "respuesta_cortada", restaurante_id=restaurante_id, max_tokens=MAX_TOKENS_RESPUESTA
+        )
+    texto = _sin_linea_cortada(texto_de_respuesta(respuesta), cortada)
     if hay_sin_confirmar:
         aviso = AVISO_PLATOS_PENDIENTES.get(idioma, AVISO_PLATOS_PENDIENTES["es"])
         texto = f"{texto}\n\n{aviso}"
