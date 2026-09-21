@@ -38,9 +38,8 @@ def traducir_plato(plato: Plato, idioma: str) -> tuple[PlatoTraducido, Consumo]:
                 "content": (
                     f"Traduce este plato de un restaurante español al {nombres[idioma]}.\n\n"
                     "Reglas:\n"
-                    "- Si el nombre es un plato tradicional español reconocible "
-                    "(rabo de toro, paella, gazpacho, salmorejo), MANTENLO en español.\n"
-                    "- Si el nombre es simplemente una lista de ingredientes, tradúcelo.\n"
+                    "- El NOMBRE del plato NO se traduce nunca: devuélvelo exactamente igual "
+                    "que está. Es el que el cliente le dirá al camarero español.\n"
                     "- La descripción y los ingredientes SIEMPRE se traducen.\n"
                     "- Usa vocabulario gastronómico natural, no traducción literal.\n"
                     "- Usa el término EXACTO y habitual del idioma destino, sobre todo en "
@@ -60,9 +59,11 @@ def traducir_plato(plato: Plato, idioma: str) -> tuple[PlatoTraducido, Consumo]:
     )
     if respuesta.parsed_output is None:
         raise ValueError(f"No se pudo traducir el plato {plato.id}")
-    return respuesta.parsed_output, medir(
-        f"traduccion:{idioma}", respuesta.usage, MODELO_TRADUCCION
-    )
+    traducido = respuesta.parsed_output
+    # El nombre se fuerza en codigo, no se fia del modelo: es el que el cliente le
+    # dira al camarero ("jamón" se pide como "jamón", no como "Schinken").
+    traducido.nombre = plato.nombre
+    return traducido, medir(f"traduccion:{idioma}", respuesta.usage, MODELO_TRADUCCION)
 
 
 def traducir_carta(restaurante_id: str, idioma: str, forzar: bool = False) -> ConsumoTotal:

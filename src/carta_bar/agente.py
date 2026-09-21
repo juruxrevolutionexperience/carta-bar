@@ -128,12 +128,13 @@ def _en_el_idioma(
 ) -> tuple[str, str, list[str]]:
     """Nombre, descripcion e ingredientes del plato en el idioma del cliente. Una
     traduccion cuyo hash ya no coincide es de un texto anterior: se descarta y se
-    usa el original, igual que hace la carta."""
+    usa el original, igual que hace la carta. El nombre del plato no se traduce
+    nunca: es el que el cliente le dira al camarero."""
     t = traducciones.get(plato.id)
     if t and t.get("hash") == huella_texto(plato):
         ingredientes = t["ingredientes"]
         assert isinstance(ingredientes, list)
-        return str(t["nombre"]), str(t["descripcion"]), [str(i) for i in ingredientes]
+        return plato.nombre, str(t["descripcion"]), [str(i) for i in ingredientes]
     return plato.nombre, plato.descripcion, plato.ingredientes
 
 

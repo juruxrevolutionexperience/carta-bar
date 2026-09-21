@@ -32,7 +32,9 @@ def traduccion(p: Plato) -> dict[str, dict[str, object]]:
 def test_traduccion_vigente_se_aplica() -> None:
     p = plato()
     fila = _con_traducciones([p], traduccion(p))[0]
-    assert fila["nombre"] == "Custard"
+    # El nombre no se traduce nunca: es el que el cliente le dira al camarero.
+    assert fila["nombre"] == "Flan"
+    assert fila["descripcion"] == "With caramel"
     assert fila["ingredientes"] == ["egg", "milk"]
 
 

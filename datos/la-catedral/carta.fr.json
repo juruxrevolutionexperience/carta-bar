@@ -2,7 +2,7 @@
   {
     "id": "p001",
     "hash": "0e1aca33ea519024",
-    "nombre": "Planche Mixte de Jambon Ibérique et Fromage Payoyo",
+    "nombre": "Tabla Mixta de Jamón Ibérico y Queso Payoyo",
     "descripcion": "Jambon ibérique et fromage Payoyo, accompagnés de picos et regañás.",
     "ingredientes": [
       "jambon ibérique",
@@ -49,7 +49,7 @@
   {
     "id": "p005",
     "hash": "e1ac1db9768e68d4",
-    "nombre": "Croquettes de Jambon Ibérique",
+    "nombre": "Croquetas de Jamón Ibérico",
     "descripcion": "Accompagnées d'aïoli maison. (Demi-portion : 5,95 €)",
     "ingredientes": [
       "jambon ibérique",
@@ -71,7 +71,7 @@
   {
     "id": "p007",
     "hash": "e6d1792d70899e95",
-    "nombre": "Aiguillettes de Poulet Croustillantes",
+    "nombre": "Tiras de Pollo Crujiente",
     "descripcion": "Accompagnées de sauce maison. (Demi-portion : 5,95 €)",
     "ingredientes": [
       "poulet",
@@ -82,7 +82,7 @@
   {
     "id": "p008",
     "hash": "101800f1e2ae7ddd",
-    "nombre": "Salade César au Poulet Croustillant",
+    "nombre": "Ensalada César de Pollo Crujiente",
     "descripcion": "Laitue, poulet croustillant, parmesan, croûtons et tomates cerises.",
     "ingredientes": [
       "laitue",
@@ -95,7 +95,7 @@
   {
     "id": "p009",
     "hash": "9360d7750e82cfb7",
-    "nombre": "Salade Catedral",
+    "nombre": "Ensalada Catedral",
     "descripcion": "Jeunes pousses, fromage de chèvre, noix, tomates cerises et vinaigre balsamique.",
     "ingredientes": [
       "jeunes pousses",
@@ -117,7 +117,7 @@
   {
     "id": "p011",
     "hash": "c6a41680a96e1f20",
-    "nombre": "Tartare de Saumon et Avocat",
+    "nombre": "Tartar de Salmón y Aguacate",
     "descripcion": "Saumon mariné et avocat, sésame et touche d'agrumes.",
     "ingredientes": [
       "saumon mariné",
@@ -129,7 +129,7 @@
   {
     "id": "p012",
     "hash": "673ce6758adc88bd",
-    "nombre": "Tartare de Thon Rouge",
+    "nombre": "Tartar de Atún Rojo",
     "descripcion": "Thon rouge mariné avec avocat, mangue et sésame.",
     "ingredientes": [
       "thon rouge mariné",
@@ -141,7 +141,7 @@
   {
     "id": "p013",
     "hash": "2a875352d73e9d08",
-    "nombre": "Tartare d'Avocat",
+    "nombre": "Tartar de Aguacate",
     "descripcion": "Avocat, tomate, oignon rouge, sésame et vinaigrette aux agrumes.",
     "ingredientes": [
       "avocat",
@@ -154,7 +154,7 @@
   {
     "id": "p014",
     "hash": "2ffc10e7c6fcd2ae",
-    "nombre": "Tartare de Salchichón de Málaga",
+    "nombre": "Tartar de Salchichón de Málaga",
     "descripcion": "Salchichón de Málaga mariné, noix, miel de canne et œuf.",
     "ingredientes": [
       "salchichón de Málaga",
@@ -166,7 +166,7 @@
   {
     "id": "p015",
     "hash": "2b623a476d1fca2d",
-    "nombre": "Bao de Langoustine Croustillante",
+    "nombre": "Bao de Langostino Crujiente",
     "descripcion": "Pain bao, langoustine, oignon mariné et concombre mariné, légèrement épicé, avec des graines de sésame.",
     "ingredientes": [
       "pain bao",
@@ -193,7 +193,7 @@
   {
     "id": "p017",
     "hash": "794f0bbfa8cfb8b6",
-    "nombre": "Burger Complète",
+    "nombre": "Burger Completa",
     "descripcion": "Pousses, tomate, 180 g de viande de retinto, fromage cheddar, bacon et œuf.",
     "ingredientes": [
       "pousses",
@@ -281,7 +281,7 @@
   {
     "id": "p024",
     "hash": "cd4f121aa44f18c2",
-    "nombre": "Bar au Cava",
+    "nombre": "Lubina al Cava",
     "descripcion": "Filet de bar avec sauce au Cava et garniture.",
     "ingredientes": [
       "filet de bar",
@@ -292,7 +292,7 @@
   {
     "id": "p028",
     "hash": "5033148347df50ab",
-    "nombre": "Filet de bœuf",
+    "nombre": "Solomillo de Ternera",
     "descripcion": "Avec pommes de terre nouvelles.",
     "ingredientes": [
       "filet de bœuf",
@@ -302,21 +302,21 @@
   {
     "id": "p025",
     "hash": "47a9f444b53f4255",
-    "nombre": "Gâteau au fromage",
+    "nombre": "Tarta de Queso",
     "descripcion": "Ingrédients à confirmer avec le restaurant.",
     "ingredientes": []
   },
   {
     "id": "p026",
     "hash": "cd93b2afbc23f621",
-    "nombre": "Gâteau à la Carotte",
+    "nombre": "Tarta de Zanahoria",
     "descripcion": "Ingrédients à confirmer avec le restaurant.",
     "ingredientes": []
   },
   {
     "id": "p027",
     "hash": "f7f93a1bff443248",
-    "nombre": "Tarte au Chocolat",
+    "nombre": "Tarta de Chocolate",
     "descripcion": "En attente de confirmation des ingrédients avec le restaurant.",
     "ingredientes": []
   }

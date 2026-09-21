@@ -98,6 +98,26 @@ def test_traduce_con_el_modelo_de_traduccion_y_sin_pensar(
     assert gasto.coste_usd == pytest.approx(calcular_coste(100, 50, modelo=MODELO_TRADUCCION))
 
 
+def test_el_traductor_devuelve_siempre_el_nombre_original(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # El fake devuelve nombre="n" (como si el modelo lo hubiera traducido): el
+    # codigo lo pisa, no se fia de que el modelo obedezca.
+    monkeypatch.setattr(traductor, "cliente", lambda: ClienteFalso())
+    traducido, _ = traductor.traducir_plato(plato("a"), "de")
+    assert traducido.nombre == "Lubina a"
+
+
+def test_el_prompt_del_traductor_prohibe_traducir_el_nombre(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    falso = ClienteFalso()
+    monkeypatch.setattr(traductor, "cliente", lambda: falso)
+    traductor.traducir_plato(plato("a"), "de")
+    prompt = str(falso.llamadas[0]["messages"][0]["content"])  # type: ignore[index]
+    assert "NO se traduce nunca" in prompt
+
+
 @pytest.fixture
 def carta_traducida(monkeypatch: pytest.MonkeyPatch) -> dict[str, object]:
     p = plato("a")
@@ -187,10 +207,19 @@ def test_el_chat_usa_la_traduccion_guardada_en_el_idioma_del_cliente(
     p = plato("a")
     chat.traducciones = traduccion(p)
     preguntar([p], "de")
-    assert "Wolfsbarsch al Cava" in chat.prompt
     assert "Wolfsbarschfilet mit Cava-Sauce" in chat.prompt
     assert "Lomo de lubina" not in chat.prompt
     assert chat.consultas == [(RESTAURANTE_ID, "de")]
+
+
+def test_el_nombre_del_plato_no_se_traduce_en_el_chat(chat: SimpleNamespace) -> None:
+    # Un cliente aleman que lee "Jamón" lo pide como "jamón": si el chat le dijera
+    # "Schinken", no sabria como pedirselo al camarero.
+    p = plato("a")
+    chat.traducciones = traduccion(p, nombre="Nombre traducido que no debe salir")
+    preguntar([p], "de")
+    assert "Lubina a" in chat.prompt
+    assert "Nombre traducido que no debe salir" not in chat.prompt
 
 
 def test_una_traduccion_de_un_texto_anterior_se_descarta(chat: SimpleNamespace) -> None:
@@ -218,8 +247,9 @@ def test_un_plato_sin_traduccion_sale_en_español(chat: SimpleNamespace) -> None
     a, b = plato("a"), plato("b")
     chat.traducciones = traduccion(a)
     preguntar([a, b], "de")
-    assert "Wolfsbarsch al Cava" in chat.prompt
-    assert "Lubina b" in chat.prompt
+    assert "Wolfsbarschfilet mit Cava-Sauce" in chat.prompt  # a: traducido
+    assert "Lomo de lubina con salsa al cava" in chat.prompt  # b: en español
+    assert "Lubina a" in chat.prompt and "Lubina b" in chat.prompt
 
 
 # ------------------------------------------------------------------ cuantos platos

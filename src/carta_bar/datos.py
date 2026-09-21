@@ -54,13 +54,16 @@ def _con_traducciones(
     Una traduccion solo vale si su hash coincide con el texto actual del plato.
     Si el plato se edito y la traduccion aun no se ha rehecho (o fallo), es
     mejor enseñarlo en español que con ingredientes de la version anterior:
-    en una carta con alergenos, un texto viejo puede ser un texto falso."""
+    en una carta con alergenos, un texto viejo puede ser un texto falso.
+
+    El NOMBRE del plato no se traduce nunca: es el que el cliente le dira al
+    camarero (un aleman que ve "Jamón" lo pide como "jamón"; si ve "Schinken",
+    no sabe como pedirlo). Solo se traduce lo que describe el plato."""
     resultado = []
     for plato in carta:
         fila = plato.model_dump()
         t = traducciones.get(plato.id)
         if t and t.get("hash") == huella_texto(plato):
-            fila["nombre"] = t["nombre"]
             fila["descripcion"] = t["descripcion"]
             fila["ingredientes"] = t["ingredientes"]
         resultado.append(fila)

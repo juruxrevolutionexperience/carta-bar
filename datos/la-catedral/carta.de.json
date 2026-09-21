@@ -2,7 +2,7 @@
   {
     "id": "p001",
     "hash": "0e1aca33ea519024",
-    "nombre": "Gemischte Platte mit Ibérico-Schinken und Payoyo-Käse",
+    "nombre": "Tabla Mixta de Jamón Ibérico y Queso Payoyo",
     "descripcion": "Ibérico-Schinken und Payoyo-Käse, begleitet von Picos (knusprigen Brotstangen) und Regañás (knusprigen Crackern).",
     "ingredientes": [
       "Ibérico-Schinken",
@@ -71,7 +71,7 @@
   {
     "id": "p007",
     "hash": "e6d1792d70899e95",
-    "nombre": "Knusprige Hähnchenstreifen",
+    "nombre": "Tiras de Pollo Crujiente",
     "descripcion": "Begleitet von hausgemachter Sauce. (Halbe Portion: 5,95 €)",
     "ingredientes": [
       "Hähnchen",
@@ -82,7 +82,7 @@
   {
     "id": "p008",
     "hash": "101800f1e2ae7ddd",
-    "nombre": "Caesar Salad mit knusprigem Hähnchen",
+    "nombre": "Ensalada César de Pollo Crujiente",
     "descripcion": "Salat, knuspriges Hähnchen, Parmesan, Croutons und Kirschtomaten.",
     "ingredientes": [
       "Salat",
@@ -117,7 +117,7 @@
   {
     "id": "p011",
     "hash": "c6a41680a96e1f20",
-    "nombre": "Lachs-Avocado-Tatar",
+    "nombre": "Tartar de Salmón y Aguacate",
     "descripcion": "Marinierter Lachs und Avocado, Sesam und ein Hauch von Zitrus.",
     "ingredientes": [
       "marinierter Lachs",
@@ -129,7 +129,7 @@
   {
     "id": "p012",
     "hash": "673ce6758adc88bd",
-    "nombre": "Tartar vom Roten Thun",
+    "nombre": "Tartar de Atún Rojo",
     "descripcion": "Marinierter Roter Thun mit Avocado, Mango und Sesam.",
     "ingredientes": [
       "marinierter Roter Thun",
@@ -141,7 +141,7 @@
   {
     "id": "p013",
     "hash": "2a875352d73e9d08",
-    "nombre": "Avocado-Tartar",
+    "nombre": "Tartar de Aguacate",
     "descripcion": "Avocado, Tomate, rote Zwiebel, Sesam und Zitrus-Vinaigrette.",
     "ingredientes": [
       "Avocado",
@@ -154,7 +154,7 @@
   {
     "id": "p014",
     "hash": "2ffc10e7c6fcd2ae",
-    "nombre": "Tartar von Salchichón de Málaga",
+    "nombre": "Tartar de Salchichón de Málaga",
     "descripcion": "Marinierter Salchichón de Málaga, Walnüsse, Zuckerrohrsirup und Ei.",
     "ingredientes": [
       "Salchichón de Málaga",
@@ -166,7 +166,7 @@
   {
     "id": "p015",
     "hash": "2b623a476d1fca2d",
-    "nombre": "Bao mit knusprigen Garnelen",
+    "nombre": "Bao de Langostino Crujiente",
     "descripcion": "Bao-Brot, Garnele, eingelegte Zwiebel und eingelegte Gurke, leicht scharf, mit Sesam.",
     "ingredientes": [
       "Bao-Brot",
@@ -193,7 +193,7 @@
   {
     "id": "p017",
     "hash": "794f0bbfa8cfb8b6",
-    "nombre": "Burger Komplett",
+    "nombre": "Burger Completa",
     "descripcion": "Sprossen, Tomate, 180 g Retinto-Rindfleisch, Cheddar-Käse, Bacon und Ei.",
     "ingredientes": [
       "Sprossen",
@@ -236,7 +236,7 @@
   {
     "id": "p020",
     "hash": "4682d8e9358ff663",
-    "nombre": "Huevos Rotos mit Ibérico-Schinken",
+    "nombre": "Huevos Rotos con Jamón Ibérico",
     "descripcion": "Bratkartoffeln, Ei, Ibérico-Schinken und Paprika.",
     "ingredientes": [
       "Bratkartoffeln",
@@ -281,7 +281,7 @@
   {
     "id": "p024",
     "hash": "cd4f121aa44f18c2",
-    "nombre": "Wolfsbarsch al Cava",
+    "nombre": "Lubina al Cava",
     "descripcion": "Wolfsbarschfilet mit Cava-Sauce und Beilage.",
     "ingredientes": [
       "Wolfsbarschfilet",
@@ -292,7 +292,7 @@
   {
     "id": "p028",
     "hash": "5033148347df50ab",
-    "nombre": "Kalbsfilet",
+    "nombre": "Solomillo de Ternera",
     "descripcion": "Mit Baby-Kartoffeln.",
     "ingredientes": [
       "Kalbsfilet",
@@ -302,21 +302,21 @@
   {
     "id": "p025",
     "hash": "47a9f444b53f4255",
-    "nombre": "Käsekuchen",
+    "nombre": "Tarta de Queso",
     "descripcion": "Zutaten müssen noch mit dem Restaurant bestätigt werden.",
     "ingredientes": []
   },
   {
     "id": "p026",
     "hash": "cd93b2afbc23f621",
-    "nombre": "Karottenkuchen",
+    "nombre": "Tarta de Zanahoria",
     "descripcion": "Zutaten müssen noch mit dem Restaurant bestätigt werden.",
     "ingredientes": []
   },
   {
     "id": "p027",
     "hash": "f7f93a1bff443248",
-    "nombre": "Schokoladentorte",
+    "nombre": "Tarta de Chocolate",
     "descripcion": "Zutaten müssen noch mit dem Restaurant bestätigt werden.",
     "ingredientes": []
   }

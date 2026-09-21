@@ -50,7 +50,10 @@ con fotos reales, y el QR está listo para las mesas.
   carta entera), y el chat usa esas mismas traducciones en vez de traducir. Se
   pasan hasta 15 platos al chat (eran 10: un celíaco veía 10 de 13). Hay que
   rehacer las traducciones de producción con `--forzar` (el hash solo mira el
-  español). Probado con el modelo real en local
+  español). Probado con el modelo real en local. **El nombre del plato no se
+  traduce nunca** (decisión del restaurante: un cliente que lee "Jamón" se lo
+  dice tal cual al camarero), forzado en código al leer y al traducir, así que
+  vale ya con las traducciones que hay guardadas
 - 🔍 Respuestas del chat cortadas a media palabra: una lista de 10 platos pide
   ~410 tokens y el límite era 400 (medido con el modelo real). Límite subido a
   900, con margen para 15 platos (solo cuesta lo que el modelo escribe) y, si aun así se corta, se quita
