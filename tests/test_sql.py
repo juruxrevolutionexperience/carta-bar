@@ -11,6 +11,13 @@ from pathlib import Path
 import pglast
 import pytest
 
+from carta_bar.metricas import (
+    _LEER_COSTES,
+    _LEER_PREGUNTAS,
+    _LEER_VISITAS,
+    _SUMAR_PREGUNTA,
+    _SUMAR_VISITA,
+)
 from carta_bar.uso import _GASTO_DEL_DIA, _INSERTAR
 
 
@@ -39,7 +46,18 @@ def test_el_esquema_crea_la_tabla_y_su_indice() -> None:
     assert "IndexStmt" in tipos
 
 
-@pytest.mark.parametrize("consulta", [_INSERTAR, _GASTO_DEL_DIA])
+@pytest.mark.parametrize(
+    "consulta",
+    [
+        _INSERTAR,
+        _GASTO_DEL_DIA,
+        _SUMAR_VISITA,
+        _SUMAR_PREGUNTA,
+        _LEER_VISITAS,
+        _LEER_PREGUNTAS,
+        _LEER_COSTES,
+    ],
+)
 def test_las_consultas_son_sql_valido(consulta: str) -> None:
     assert pglast.parse_sql(a_sintaxis_postgres(consulta))
 

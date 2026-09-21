@@ -96,3 +96,25 @@ CREATE TABLE IF NOT EXISTS traducciones_platos (
     FOREIGN KEY (restaurante_id, plato_id)
         REFERENCES platos(restaurante_id, id) ON DELETE CASCADE
 );
+
+-- Metricas de uso: contadores por dia, no una fila por evento. No guardan
+-- IPs ni el texto de las preguntas (pueden contener datos de salud). El dia
+-- es el de España (ver metricas.py).
+CREATE TABLE IF NOT EXISTS visitas_diarias (
+    restaurante_id TEXT    NOT NULL,
+    dia            DATE    NOT NULL,
+    visitas        INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (restaurante_id, dia)
+);
+
+-- preguntas = respondidas; conversaciones = las que empezaron sin historial;
+-- rechazadas = cortadas por el tope diario de gasto.
+CREATE TABLE IF NOT EXISTS preguntas_diarias (
+    restaurante_id TEXT    NOT NULL,
+    dia            DATE    NOT NULL,
+    idioma         TEXT    NOT NULL,
+    preguntas      INTEGER NOT NULL DEFAULT 0,
+    conversaciones INTEGER NOT NULL DEFAULT 0,
+    rechazadas     INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (restaurante_id, dia, idioma)
+);

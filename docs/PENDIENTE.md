@@ -173,7 +173,19 @@ restaurante.
 - 🔍 Código QR de cada restaurante en el panel superadmin: botón "Ver QR" en
   cada fila de la lista, con la misma hoja (usa el texto que haya guardado
   el gerente), para entregarlo al dar de alta un bar
-- ⬜ Métricas básicas
+- 🔍 Métricas básicas, solo en el superadmin (el gerente no ve nada nuevo, y
+  el coste no se le enseña nunca): por bar y con selector de 7 o 30 días,
+  visitas a la carta, preguntas al chat por idioma, conversaciones
+  (aproximadas: pregunta que llega sin historial), preguntas cortadas por el
+  tope de gasto, y coste del chat, de las traducciones y por pregunta.
+  Contadores por día en hora de España (`visitas_diarias`, `preguntas_diarias`),
+  sin IPs ni texto de las preguntas (pueden llevar datos de salud). Las visitas
+  excluyen robots y al gerente con sesión abierta; registrar nunca puede romper
+  la carta ni el chat. Backend con tests (`tests/test_metricas.py`) y el SQL
+  validado con el parser de Postgres, pero **no probado contra una base de datos
+  real**: se ve al desplegar. Las tablas se crean solas al arrancar. El
+  histórico de visitas y preguntas empieza el día del despliegue; el coste sí
+  tiene historia. Falta mirar los números con uso real
 - ✅ Migrar el frontend a React + TypeScript, pantalla a pantalla, sin
   romper nada entre medias (infraestructura con Vite, compilada en una
   etapa nueva del `Dockerfile`, servida por FastAPI en `/assets`):

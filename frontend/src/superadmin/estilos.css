@@ -189,3 +189,77 @@ th {
   color: var(--tinta-media);
   font-size: 13px;
 }
+
+.cabecera-metricas {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.periodos {
+  display: flex;
+  gap: 6px;
+}
+
+.periodos button {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.periodos button[aria-pressed="true"] {
+  background: var(--marca);
+  color: #fff;
+  border-color: var(--marca);
+}
+
+.resumen-metricas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  margin: 12px 0 16px;
+}
+
+.resumen-metricas div {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+}
+
+.resumen-metricas strong {
+  font-size: 20px;
+}
+
+.resumen-metricas span {
+  font-size: 12px;
+  color: var(--tinta-media);
+}
+
+/* Muchas columnas: en el movil se desliza de lado en vez de aplastarse. */
+.tabla-scroll {
+  overflow-x: auto;
+}
+
+.tabla-scroll table {
+  min-width: 620px;
+  white-space: nowrap;
+}
+
+tfoot td {
+  font-weight: 600;
+  border-top: 2px solid var(--borde);
+}
+
+td.alerta {
+  color: #b03a2e;
+  font-weight: 600;
+}
+
+.nota-metricas {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--tinta-media);
+  line-height: 1.5;
+}

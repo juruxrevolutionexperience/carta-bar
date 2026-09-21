@@ -8,7 +8,7 @@ from typing import Annotated, Literal
 import numpy as np
 import psycopg
 import structlog
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -49,6 +49,13 @@ from carta_bar.embeddings import cargar_modelo
 from carta_bar.limites import LIMITE_LOGIN, LIMITE_PREGUNTAR, limite_superado, limiter
 from carta_bar.llm import MODELO
 from carta_bar.logging_config import configurar_logging
+from carta_bar.metricas import (
+    MetricasRestaurante,
+    anotar_pregunta,
+    anotar_visita,
+    crear_repositorio_metricas,
+    es_robot,
+)
 from carta_bar.modelos import Alergeno, Categoria, Etiqueta, MensajeChat, Plato, ResumenRestaurante
 from carta_bar.presupuesto import AVISO_SIN_PRESUPUESTO, ControlGasto
 from carta_bar.seguridad import CabecerasSeguridad
@@ -129,7 +136,9 @@ def _resolver_restaurante(request: Request) -> str:
 RestauranteActual = Annotated[str, Depends(_resolver_restaurante)]
 
 modelo = cargar_modelo()
-control = ControlGasto(crear_repositorio())
+_repositorio_uso = crear_repositorio()
+control = ControlGasto(_repositorio_uso)
+metricas = crear_repositorio_metricas(_repositorio_uso)
 
 # Indice de busqueda del chat: uno por restaurante, calculado la primera vez
 # que se le pregunta algo (no todos de golpe al arrancar). Se vacia para un
@@ -196,10 +205,25 @@ def obtener_config(restaurante_id: RestauranteActual) -> dict[str, object]:
 @app.post("/preguntar")
 @limiter.limit(LIMITE_PREGUNTAR)
 def preguntar(
-    request: Request, pregunta: Pregunta, restaurante_id: RestauranteActual
+    request: Request,
+    pregunta: Pregunta,
+    restaurante_id: RestauranteActual,
+    tareas: BackgroundTasks,
 ) -> dict[str, str]:
+    # Una conversacion empieza cuando la pregunta llega sin historial: es la
+    # unica forma de contarlas sin cambiar como funciona el chat.
+    empieza_conversacion = not pregunta.historial
+
     # El corte va ANTES de llamar al LLM: comprobarlo despues no ahorraria nada.
     if not control.hay_presupuesto(restaurante_id):
+        tareas.add_task(
+            anotar_pregunta,
+            metricas,
+            restaurante_id,
+            pregunta.idioma,
+            conversacion_nueva=empieza_conversacion,
+            rechazada=True,
+        )
         aviso = AVISO_SIN_PRESUPUESTO.get(pregunta.idioma, AVISO_SIN_PRESUPUESTO["es"])
         return {"respuesta": aviso}
 
@@ -214,6 +238,13 @@ def preguntar(
         pregunta.historial,
     )
     control.registrar(restaurante_id, MODELO, resultado.consumo)
+    tareas.add_task(
+        anotar_pregunta,
+        metricas,
+        restaurante_id,
+        pregunta.idioma,
+        conversacion_nueva=empieza_conversacion,
+    )
 
     # Una linea por pregunta atendida: es la materia prima para facturar y para
     # detectar un consumo anomalo antes de que llegue en la factura.
@@ -236,7 +267,22 @@ def obtener_idiomas() -> dict[str, object]:
 
 
 @app.get("/")
-def inicio() -> HTMLResponse:
+def inicio(request: Request, tareas: BackgroundTasks) -> HTMLResponse:
+    # Cada carga de la carta es una visita, salvo robots (vistas previas al
+    # compartir el enlace) y el propio gerente con la sesion abierta. Sin
+    # depender de RestauranteActual: esta pagina se sirve tambien desde una
+    # direccion que no es un bar, y ahi no debe empezar a dar 404.
+    try:
+        restaurante_id: str | None = _resolver_restaurante(request)
+    except HTTPException:
+        restaurante_id = None
+    if (
+        restaurante_id
+        and not es_robot(request.headers.get("user-agent"))
+        and not _sesion_activa(request, restaurante_id)
+    ):
+        tareas.add_task(anotar_visita, metricas, restaurante_id)
+
     # Migrada a React (Vite), igual que /admin/login y /admin: el bundle es
     # un <script> externo del mismo origen, ya permitido por el CSP con 'self'.
     return HTMLResponse((DIR_FRONTEND / "index.html").read_text(encoding="utf-8"))
@@ -838,6 +884,35 @@ def superadmin_listar_restaurantes(request: Request) -> list[ResumenRestaurante]
     if not _sesion_superadmin_activa(request):
         return Response(status_code=401, content="Sesión no válida")
     return listar_restaurantes()
+
+
+class MetricasConNombre(MetricasRestaurante):
+    nombre: str
+
+
+@app.get("/superadmin/api/metricas", response_model=None)
+def superadmin_metricas(
+    request: Request, dias: Annotated[int, Query(ge=1, le=90)] = 7
+) -> list[MetricasConNombre] | Response:
+    if not _sesion_superadmin_activa(request):
+        return Response(status_code=401, content="Sesión no válida")
+    try:
+        por_restaurante = {m.restaurante_id: m for m in metricas.resumen(dias)}
+        restaurantes = listar_restaurantes()
+    except Exception as e:
+        log.error("metricas_no_disponibles", motivo=str(e))
+        return Response(status_code=503, content="Métricas no disponibles")
+    # Todos los restaurantes, tengan o no actividad: un bar a cero tambien es
+    # un dato.
+    return [
+        MetricasConNombre(
+            **por_restaurante.get(r.id, MetricasRestaurante(restaurante_id=r.id)).model_dump(
+                exclude={"coste_por_pregunta_usd"}
+            ),
+            nombre=r.nombre,
+        )
+        for r in restaurantes
+    ]
 
 
 @app.get("/superadmin/api/restaurantes/{restaurante_id}/qr", response_model=None)

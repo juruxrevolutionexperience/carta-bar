@@ -26,6 +26,25 @@ export async function cargarQrRestaurante(id: string): Promise<DatosQr> {
   return resp.json();
 }
 
+export interface MetricasBar {
+  restaurante_id: string;
+  nombre: string;
+  visitas: number;
+  preguntas: number;
+  conversaciones: number;
+  rechazadas: number;
+  preguntas_por_idioma: Record<string, number>;
+  coste_chat_usd: number;
+  coste_traducciones_usd: number;
+  coste_por_pregunta_usd: number | null;
+}
+
+export async function cargarMetricas(dias: number): Promise<MetricasBar[]> {
+  const resp = await apiFetch(`/superadmin/api/metricas?dias=${dias}`);
+  if (!resp.ok) throw new Error("metricas no disponibles");
+  return resp.json();
+}
+
 export interface CuerpoNuevoRestaurante {
   restaurante_id: string;
   nombre: string;

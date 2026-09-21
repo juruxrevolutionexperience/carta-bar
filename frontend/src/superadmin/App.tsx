@@ -4,6 +4,7 @@ import "./estilos.css";
 import { cerrarSesion, listarRestaurantes, type ResumenRestaurante } from "./api";
 import { FormularioNuevoRestaurante } from "./FormularioNuevoRestaurante";
 import { ListaRestaurantes } from "./ListaRestaurantes";
+import { PanelMetricas } from "./PanelMetricas";
 import { PanelQr } from "./PanelQr";
 
 export function App() {
@@ -38,6 +39,7 @@ export function App() {
         onVerQr={setQrDe}
       />
       {qrDe && <PanelQr key={qrDe} restauranteId={qrDe} onCerrar={() => setQrDe(null)} />}
+      <PanelMetricas />
       <FormularioNuevoRestaurante onCreado={alCrear} />
     </div>
   );
