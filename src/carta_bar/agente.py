@@ -11,10 +11,10 @@ from carta_bar.busqueda import (
     filtrar_por_restricciones_cliente,
 )
 from carta_bar.costes import ConsumoTotal, medir
-from carta_bar.datos import cargar_categorias
+from carta_bar.datos import cargar_categorias, cargar_traducciones
 from carta_bar.interprete import extraer_restricciones
 from carta_bar.llm import MODELO, cliente
-from carta_bar.modelos import MensajeChat, Plato, RespuestaAgente
+from carta_bar.modelos import MensajeChat, Plato, RespuestaAgente, huella_texto
 from carta_bar.rag import texto_de_respuesta
 
 log = structlog.get_logger()
@@ -24,7 +24,11 @@ NOMBRES_IDIOMA = {"es": "español", "en": "inglés", "de": "alemán", "fr": "fra
 # Techo de la respuesta, no lo que se gasta siempre: solo cuesta lo que el modelo
 # escribe. Medido con la carta real, una lista de 10 platos pide unos 410 tokens y
 # con 400 salia cortada a media palabra; las demas preguntas, entre 220 y 355.
-MAX_TOKENS_RESPUESTA = 700
+MAX_TOKENS_RESPUESTA = 900
+
+# Cuantos platos se le pasan al modelo como maximo. Con 10, un cliente celiaco veia
+# 10 de 13 platos sin gluten y el chat decia "todas nuestras opciones".
+MAX_PLATOS_EN_CONTEXTO = 15
 
 # Todo lo que escribe el cliente es texto no fiable que entra en el prompt.
 # El daño posible está acotado (el modelo no tiene herramientas ni acceso a la
@@ -107,6 +111,32 @@ def _sin_linea_cortada(texto: str, cortada: bool) -> str:
     return completo.rstrip() if salto and completo.strip() else texto
 
 
+def _traducciones_del_idioma(restaurante_id: str, idioma: str) -> dict[str, dict[str, object]]:
+    """Las traducciones guardadas de la carta, las mismas que ve el cliente en
+    pantalla. Si no se pueden leer, el chat sigue: traducira el modelo, como antes."""
+    if idioma == "es":
+        return {}
+    try:
+        return cargar_traducciones(restaurante_id, idioma)
+    except Exception as e:
+        log.warning("traducciones_no_disponibles", restaurante_id=restaurante_id, motivo=str(e))
+        return {}
+
+
+def _en_el_idioma(
+    plato: Plato, traducciones: dict[str, dict[str, object]]
+) -> tuple[str, str, list[str]]:
+    """Nombre, descripcion e ingredientes del plato en el idioma del cliente. Una
+    traduccion cuyo hash ya no coincide es de un texto anterior: se descarta y se
+    usa el original, igual que hace la carta."""
+    t = traducciones.get(plato.id)
+    if t and t.get("hash") == huella_texto(plato):
+        ingredientes = t["ingredientes"]
+        assert isinstance(ingredientes, list)
+        return str(t["nombre"]), str(t["descripcion"]), [str(i) for i in ingredientes]
+    return plato.nombre, plato.descripcion, plato.ingredientes
+
+
 def turnos_para_el_modelo(historial: list[MensajeChat]) -> list[MessageParam]:
     """Traduce el historial al formato de la API.
 
@@ -153,7 +183,7 @@ def responder_cliente(
     vectores_filtrados = vectores[indices]
 
     texto_busqueda = restricciones.intencion_busqueda or pregunta
-    k = min(len(candidatos), 10)
+    k = min(len(candidatos), MAX_PLATOS_EN_CONTEXTO)
     resultados = buscar_platos(texto_busqueda, modelo, candidatos, vectores_filtrados, k=k)
 
     def _precio_txt(p: Plato) -> str:
@@ -183,11 +213,17 @@ def responder_cliente(
         # afirmar que el plato lo es aunque el filtro ya lo haya comprobado.
         return f" Apto para: {', '.join(etiquetas)}." if etiquetas else ""
 
+    traducciones = _traducciones_del_idioma(restaurante_id, idioma)
+
+    def _texto(p: Plato) -> str:
+        nombre, descripcion, ingredientes = _en_el_idioma(p, traducciones)
+        return (
+            f"{nombre} ({_precio_txt(p)}): {descripcion}. "
+            f"Ingredientes: {', '.join(ingredientes)}. "
+        )
+
     contexto = "\n\n".join(
-        f"{p.nombre} ({_precio_txt(p)}): {p.descripcion}. "
-        f"Ingredientes: {', '.join(p.ingredientes)}. "
-        f"Alérgenos: {_alergenos_txt(p)}.{_dieta_txt(p)}"
-        for _, p in resultados
+        f"{_texto(p)}Alérgenos: {_alergenos_txt(p)}.{_dieta_txt(p)}" for _, p in resultados
     )
 
     lengua = NOMBRES_IDIOMA.get(idioma, "español")

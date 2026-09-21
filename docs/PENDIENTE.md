@@ -41,9 +41,19 @@ con fotos reales, y el QR está listo para las mesas.
   ningún plato sin gluten; ahora el aviso se añade como frase fija tras la
   respuesta, en el idioma del cliente. Falta desplegar esa corrección y verlo en
   producción. Es la base del importador
+- 🔍 Traducciones de calidad y coherentes con el chat: las traducciones
+  guardadas tenían errores serios (la Lubina en alemán como "Loup de mer" y
+  "Seeluppenfilet", una palabra inventada) y el chat traducía por su cuenta y se
+  equivocaba otra vez ("Seezungenfilet" = lenguado). Ahora se traducen con
+  Sonnet 5 (`MODELO_TRADUCCION`; el doble de precio que Haiku, pero solo se paga
+  al crear o editar un plato: ~0,007 $ por plato en los 3 idiomas, 0,20 $ la
+  carta entera), y el chat usa esas mismas traducciones en vez de traducir. Se
+  pasan hasta 15 platos al chat (eran 10: un celíaco veía 10 de 13). Hay que
+  rehacer las traducciones de producción con `--forzar` (el hash solo mira el
+  español). Probado con el modelo real en local
 - 🔍 Respuestas del chat cortadas a media palabra: una lista de 10 platos pide
   ~410 tokens y el límite era 400 (medido con el modelo real). Límite subido a
-  700 (solo cuesta lo que el modelo escribe) y, si aun así se corta, se quita
+  900, con margen para 15 platos (solo cuesta lo que el modelo escribe) y, si aun así se corta, se quita
   la última línea incompleta. De paso, al modelo se le dice para qué dietas es
   apto cada plato confirmado: sin eso, en inglés no se atrevía a afirmar que un
   plato era "gluten free" y listaba 4 de 10. Falta verlo en producción

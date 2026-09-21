@@ -24,3 +24,15 @@
   padding: 8px 0 2px;
   border-bottom: 0;
 }
+
+/* La tarjeta publica llama "aviso" a un chip ("consultar alergenos"), y el panel
+   usa .aviso para sus mensajes de formulario, ocultos salvo con .visible. Sin
+   esto el chip desaparece en la vista previa: el gerente no veria lo que ve el
+   cliente. */
+.vista-previa-carta .chip.aviso {
+  display: inline-block;
+  margin-top: 0;
+  padding: 4px 9px;
+  border-radius: 100px;
+  font-size: 11.5px;
+}
