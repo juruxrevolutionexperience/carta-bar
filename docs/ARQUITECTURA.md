@@ -30,7 +30,7 @@ Cómo está montado hoy, qué es sólido y qué está cogido con pinzas.
 | | |
 |---|---|
 | URL | https://la-catedral.jurux.app (`cartia.jurux.app` sigue resolviendo a La CatedRal por los QR ya impresos) |
-| Superadmin | `/superadmin` en cualquier subdominio que exista (p. ej. https://la-catedral.jurux.app/superadmin): alta de restaurantes, QR de cada uno y métricas. Clave en `SUPERADMIN_CLAVE_HASH` del `.env` |
+| Superadmin | `/superadmin` en cualquier subdominio que exista (p. ej. https://la-catedral.jurux.app/superadmin): alta de restaurantes, QR de cada uno, métricas e importador de carta desde una foto (`importador.py`, visión con Sonnet 5; herramienta de uso propio, el gerente no la ve). Clave en `SUPERADMIN_CLAVE_HASH` del `.env` |
 | Servidor | Hetzner CPX22 `Jurux-Revolution`, 178.104.233.131 |
 | Acceso | `ssh xele@178.104.233.131`. Root no entra por SSH con contraseña (`PermitRootLogin prohibit-password`, valor por defecto) |
 | Código | `/home/xele/cartaBar` |

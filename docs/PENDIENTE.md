@@ -13,83 +13,95 @@ Producción: https://la-catedral.jurux.app (`cartia.jurux.app` sigue funcionando
 
 ---
 
-## DÓNDE LO DEJAMOS (2026-09-21)
+## DÓNDE LO DEJAMOS (2026-09-22)
 
-Todo el trabajo de hoy está commiteado y subido a GitHub (último commit:
-"Los nombres de los platos no se traducen nunca; traducciones con Sonnet 5").
+Todo el trabajo de hoy está commiteado y subido a GitHub y desplegado en
+producción (confirmado por commit y contenido, no solo por fecha; último
+commit: "Importador de carta desde foto: herramienta de superadmin").
 
-### Hecho hoy
-Guardar y traducir en segundo plano · marca (nombre, logo, portada) · QR del
-gerente y del superadmin (con hoja imprimible y texto editable) · métricas en el
-superadmin · copia de seguridad diaria (restauración comprobada) · alérgenos
-confirmados por plato · chat con respuestas completas, 15 platos y avisos en los
-4 idiomas · traducciones con Sonnet 5 y el chat usando las guardadas · el nombre
-de los platos no se traduce nunca.
+### Confirmado en producción (2026-09-21, no volver a probar)
+QR con hoja imprimible (impresión real probada) · chat con respuestas
+completas, 15 platos y avisos en los 4 idiomas · alérgenos confirmados por
+plato · guardar y traducir en segundo plano.
 
-### Para comprobar en producción (en este orden)
-1. **Desplegar el último commit y rehacer las traducciones** (ver comandos abajo).
-   El `--forzar` tarda ~5 min y **no se puede interrumpir**: solo guarda al
-   terminar cada idioma (un Ctrl+C a mitad pierde esa pasada).
-2. **Carta en alemán:** los nombres salen en español y las descripciones en
-   alemán; la Lubina lleva "Wolfsbarschfilet".
-3. **Chat, "algo sin gluten"** en ES/EN/DE/FR: lista hasta 13 platos con nombre
-   español y acaba con el aviso de alérgenos pendientes. "Postre sin lactosa"
-   manda al personal.
-4. **Panel:** la Tarta de Queso muestra la casilla "He revisado los alérgenos"
-   sin marcar, y la vista previa el aviso "consultar alérgenos".
-5. **Guardar y traducir:** editar un plato y ver la carta en inglés al cabo de
-   unos segundos (nunca con el texto viejo). Es lo que cuesta dinero.
-6. **Superadmin → Métricas:** aparecen las preguntas de hoy, con su coste.
-7. **Copia diaria:** mañana, `tail -3 /home/xele/copias-carta/copia.log`.
-8. ~~Hoja del QR~~ (comprobado el 2026-09-21).
-9. Móvil con datos móviles y en los 4 idiomas.
+### Hecho hoy (2026-09-22)
+- **Vista de escritorio** en carta pública, panel de gerente y superadmin
+  (a partir de ~860px de ancho; el móvil no cambia). Categorías como menú
+  lateral en la carta y en el panel de gerente, tablas sin scroll lateral en
+  el superadmin.
+- **Panel de gerente:** miniatura y aviso "Falta: foto, precio, descripción"
+  por plato en la lista, sin entrar a editar.
+- **Visor de foto navegable:** al tocar la foto de un plato se abre a
+  pantalla completa con nombre/precio/descripción superpuestos, flechas
+  (o deslizar) para pasar al plato siguiente/anterior recorriendo toda la
+  carta por categorías, y un aviso breve al cruzar de categoría.
+- **Importador de carta desde una foto** (`src/carta_bar/importador.py`):
+  sube una foto de una carta en papel, Sonnet 5 (visión) propone los platos,
+  se revisan en una tabla editable y no se crea nada hasta confirmar.
+  **Decisión importante:** es una herramienta de uso propio en el
+  **superadmin**, no un servicio para el gerente — lo dispara quien decide
+  que vale la pena ese gasto (~1-2 céntimos por foto, dentro del tope diario
+  de 5 $ compartido con chat y traducciones). El gerente sigue añadiendo
+  platos y categorías a mano con el panel que ya tenía, sin cambios ahí.
+  Endpoints nuevos, todos bajo sesión de superadmin: `POST
+  /superadmin/api/restaurantes/{id}/leer-carta`, `GET`/`POST
+  .../categorias`, `POST .../platos`.
 
-### Siguiente paso: importador de carta (diseño acordado, sin empezar)
-Lo hace el dueño desde el superadmin al dar de alta un bar; después el gerente
-lo administra con el panel que ya tiene (no se añade nada a su panel).
-1. **Leer:** foto(s) o PDF → modelo con visión → secciones y platos (nombre tal
-   cual, descripción, precio, ingredientes). Los alérgenos que proponga entran
-   **sin confirmar** (`alergenos_confirmados = false`).
-2. **Revisar antes de crear nada:** tabla editable en el superadmin, sobre todo
-   los precios. Hasta pulsar "Crear" no se guarda nada.
-3. **Crear y traducir:** alta de todos los platos de una vez, traducción
-   automática, y el gerente confirma los alérgenos con su casilla.
-Las secciones se crean tal cual las escribió el restaurante (no se reorganizan).
-**Antes de empezar hace falta:** una carta real de ejemplo (foto o PDF) para
-medir cuántos platos y precios lee bien; decidir si solo se importa a bares con
-la carta vacía (recomendado) y si basta con foto o también PDF.
+### Para comprobar en producción
+1. Superadmin → botón "Importar" en La CatedRal → foto real de una carta →
+   revisar la tabla → crear una categoría nueva ("Tostas") → confirmar.
+   Comprobar que el gerente **no** ve ese botón en su panel.
+2. Vista de escritorio: carta pública, panel de gerente y superadmin con la
+   ventana ancha (>860px).
+3. Visor de foto: tocar una foto, deslizar/usar flechas, comprobar el aviso
+   al cambiar de categoría.
+4. `tail -3 /home/xele/copias-carta/copia.log` (cron de la copia diaria).
+5. Móvil con datos móviles y en los 4 idiomas (sigue sin confirmarse).
 
 ### Decisiones tomadas hoy que no se pueden olvidar
-- **El nombre de un plato no se traduce nunca** (decisión del restaurante:
-  el cliente lo pide al camarero por su nombre). Descripción e ingredientes, en
-  el idioma del cliente y sin poner la palabra española entre paréntesis ("en
-  principio así, más adelante vemos"). Forzado en código.
-- **Un plato sin alérgenos confirmados nunca se presenta como apto.**
-- **Las traducciones se hacen con Sonnet 5** (una vez por plato, ~0,007 $); el
-  chat usa las traducciones guardadas y no traduce por su cuenta.
-- **Los QR apuntan a `<restaurante>.jurux.app`** para todos, La CatedRal
-  incluida (`la-catedral.jurux.app`). `cartia.jurux.app` sigue resolviendo por
-  los QR ya impresos.
-- **El gerente no ve costes ni métricas**; solo el superadmin.
+- **El importador es del superadmin, no del gerente**, y no está pensado
+  solo para el alta inicial de un restaurante: también sirve para ampliar
+  una carta ya existente con una sección nueva (se relaja la idea original
+  de "solo bares con la carta vacía").
+- Sigue en pie todo lo de ayer: nombre del plato nunca se traduce, un plato
+  sin alérgenos confirmados nunca es "apto", traducciones con Sonnet 5, QR a
+  `<restaurante>.jurux.app`, el gerente no ve costes ni métricas.
+
+### Aviso de entorno: Python bloqueado en este PC
+Este PC de trabajo tiene una Directiva de Control de aplicaciones de Windows
+que bloquea **cualquier** ejecución de `python.exe` (directo o vía `uv run`),
+incluso el intérprete del propio `.venv` — no es el problema antiguo de la
+DLL de `torch`, es un bloqueo total. `ruff` sí funciona (es un binario aparte
+que no depende de Python). Para verificar con `mypy`/`pytest` de verdad desde
+este PC: lanzar un agente con `isolation: "remote"` (entorno en la nube, sin
+la directiva) y pasarle el contenido exacto de los archivos nuevos o
+modificados como texto en el prompt — un agente en un worktree local normal
+**no sirve**, solo ve el último commit subido a GitHub, no los cambios sin
+commitear. El PC de casa del usuario no tiene este bloqueo.
 
 ### Para retomar
 - **Desplegar** (lo ejecutas tú en el servidor, yo solo doy los comandos):
   `cd /home/xele/cartaBar && git pull && docker compose -f docker-compose.prod.yml up -d --build`
-- **Rehacer las traducciones de La CatedRal en producción:**
-  `docker exec carta-bar uv run --no-sync python -m carta_bar.traductor --forzar`
 - **Superadmin:** `/superadmin` en cualquier subdominio que exista, por ejemplo
   https://la-catedral.jurux.app/superadmin
 - **SQL ya ejecutado en Supabase:** columnas `platos.alergenos_confirmados` y
   `restaurantes.texto_qr`; los platos p010 (Tataki de Atún) y p025, p026, p027
   (las 3 tartas) puestos en `alergenos_confirmados = false`. Las tablas de
   métricas se crean solas al arrancar.
-- **Tests:** 304 pasan. Los 5 de búsqueda y embeddings necesitan el modelo real
-  y no corren en el PC de casa (Windows bloquea la DLL de torch); el resto se
-  corre con un sustituto temporal de `sentence_transformers`.
-- **Modelos:** chat e intérprete, Haiku 4.5; traducciones, Sonnet 5
-  (`MODELO_TRADUCCION`). El gasto se anota con la tarifa de cada modelo
-  (`PRECIOS_POR_MODELO` en `costes.py`); un modelo desconocido se cobra a la más
-  cara para no pasarse del tope de 5 USD.
+- **Tests:** 304+ pasan (313 con los del importador). Los 5 de búsqueda y
+  embeddings necesitan el modelo real y no corren en el PC de trabajo
+  (Windows bloquea la DLL de torch); el resto se corre con un sustituto
+  temporal de `sentence_transformers`.
+- **Modelos:** chat e intérprete, Haiku 4.5; traducciones e importador,
+  Sonnet 5 (`MODELO_TRADUCCION`). El gasto se anota con la tarifa de cada
+  modelo (`PRECIOS_POR_MODELO` en `costes.py`); un modelo desconocido se
+  cobra a la más cara para no pasarse del tope de 5 USD.
+
+### Pendiente suelto (no de código)
+- Confirmar con La CatedRal los alérgenos reales de 4 platos (Tataki de
+  Atún y las 3 tartas).
+- Preguntar si "Solomillo de Ternera" es *veal* o *beef* (ambiguo en
+  español, hoy inconsistente entre idiomas).
 
 ---
 
