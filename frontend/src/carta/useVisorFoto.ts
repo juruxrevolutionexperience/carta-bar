@@ -1,21 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
 
 // Al abrir una foto se mete una entrada en el historial: asi el boton
-// "atras" del movil cierra la foto en vez de salir de la pagina.
+// "atras" del movil cierra el visor en vez de salir de la pagina. Navegar
+// con las flechas dentro del visor (siguiente/mismo modal) no mete una
+// entrada nueva cada vez: solo la primera apertura empuja el historial.
 export function useVisorFoto() {
-  const [src, setSrc] = useState<string | null>(null);
+  const [platoId, setPlatoId] = useState<string | null>(null);
 
   const cerrar = useCallback((volviendoAtras: boolean) => {
-    setSrc((actual) => {
+    setPlatoId((actual) => {
       if (actual === null) return actual;
       if (!volviendoAtras) history.back();
       return null;
     });
   }, []);
 
-  const abrir = useCallback((nuevoSrc: string) => {
-    setSrc(nuevoSrc);
-    history.pushState({ visorFoto: true }, "");
+  const abrir = useCallback((id: string) => {
+    setPlatoId((actual) => {
+      if (actual === null) history.pushState({ visorFoto: true }, "");
+      return id;
+    });
   }, []);
 
   useEffect(() => {
@@ -32,5 +36,5 @@ export function useVisorFoto() {
     return () => document.removeEventListener("keydown", alTeclear);
   }, [cerrar]);
 
-  return { src, abrir, cerrar };
+  return { platoId, abrir, cerrar };
 }

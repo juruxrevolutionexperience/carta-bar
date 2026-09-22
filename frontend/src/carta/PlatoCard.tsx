@@ -6,7 +6,7 @@ import type { Plato } from "./types";
 
 interface Props {
   plato: Plato;
-  onAbrirFoto: (src: string) => void;
+  onAbrirFoto: (id: string) => void;
 }
 
 export function PlatoCard({ plato: p, onAbrirFoto }: Props) {
@@ -42,7 +42,7 @@ export function PlatoCard({ plato: p, onAbrirFoto }: Props) {
       <div
         className={"plato-foto" + (foto ? " con-foto" : "")}
         style={{ background: degradado(p.categoria, p.id) }}
-        onClick={foto ? () => onAbrirFoto(foto) : undefined}
+        onClick={foto ? () => onAbrirFoto(p.id) : undefined}
       >
         {foto ? <img src={foto} alt="" loading="lazy" decoding="async" /> : iconoPlato(p)}
       </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import "./estilos.css";
 import { Carrusel } from "./Carrusel";
@@ -12,9 +12,22 @@ import { useVisorFoto } from "./useVisorFoto";
 import { VisorFoto } from "./VisorFoto";
 
 function CartaApp() {
-  const { config, idioma, categoriasVisibles, cargando, t } = useCartaContext();
+  const { carta, config, idioma, categoriasVisibles, cargando, t } = useCartaContext();
   const [categoriaId, setCategoriaId] = useState<string | null>(null);
   const visor = useVisorFoto();
+
+  // Orden del "escaparate" del visor: todos los platos disponibles, categoria
+  // a categoria en el mismo orden que la carta, para que las flechas naveguen
+  // igual que si se fuera bajando por la carta entera.
+  const platosEnOrden = useMemo(() => {
+    const resultado = [];
+    for (const cat of categoriasVisibles) {
+      for (const p of carta) {
+        if (p.categoria === cat.id && p.disponible) resultado.push(p);
+      }
+    }
+    return resultado;
+  }, [carta, categoriasVisibles]);
 
   // Efectos de pagina completa: titulo de la pestaña, idioma del documento
   // (para lectores de pantalla) y el color de marca del restaurante, que
@@ -63,7 +76,12 @@ function CartaApp() {
       </div>
 
       <Chat />
-      <VisorFoto src={visor.src} onCerrar={() => visor.cerrar(false)} />
+      <VisorFoto
+        platoId={visor.platoId}
+        platos={platosEnOrden}
+        onNavegar={visor.abrir}
+        onCerrar={() => visor.cerrar(false)}
+      />
       <SelectorIdioma />
     </>
   );

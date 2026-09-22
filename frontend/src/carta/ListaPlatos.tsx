@@ -3,7 +3,7 @@ import { PlatoCard } from "./PlatoCard";
 
 interface Props {
   categoriaId: string | null;
-  onAbrirFoto: (src: string) => void;
+  onAbrirFoto: (id: string) => void;
 }
 
 export function ListaPlatos({ categoriaId, onAbrirFoto }: Props) {
