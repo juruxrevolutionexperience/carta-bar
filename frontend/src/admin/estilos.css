@@ -292,6 +292,20 @@ button.secundario {
   margin-top: 2px;
 }
 
+.fila-plato .detalle-falta {
+  font-size: 12px;
+  color: #8a5a00;
+  margin-top: 2px;
+}
+
+.miniatura-fila {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
 .fila-plato.agotado {
   opacity: 0.55;
 }

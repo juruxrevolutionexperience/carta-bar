@@ -21,11 +21,29 @@
   place-items: center;
   font-size: 28px;
   overflow: hidden;
+  transition: transform 0.12s ease;
+}
+.plato-foto.con-foto:active {
+  transform: scale(0.96);
 }
 .plato-foto img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  animation: aparecer-foto 0.25s ease;
+}
+@keyframes aparecer-foto {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .plato-foto img {
+    animation: none;
+  }
 }
 
 .plato-info {

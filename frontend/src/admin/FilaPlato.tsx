@@ -5,6 +5,17 @@ import { FormularioPlato } from "./FormularioPlato";
 import { TEXTO_DIETA, TEXTO_ETIQUETA, type ClaveDieta } from "./textos";
 import type { Plato } from "./types";
 
+// Lo que el gerente tiene que rellenar para que el plato se vea completo en
+// la carta. Sirve de chuleta visual: sin entrar a editar, un vistazo a la
+// miniatura y a este aviso le dice que le falta algo.
+function faltaPorRellenar(plato: Plato): string[] {
+  const falta: string[] = [];
+  if (!plato.foto) falta.push("foto");
+  if (plato.precio === null) falta.push("precio");
+  if (!plato.descripcion.trim()) falta.push("descripción");
+  return falta;
+}
+
 interface Props {
   plato: Plato;
   nombreCategoria: string;
@@ -53,6 +64,7 @@ export function FilaPlato({ plato, nombreCategoria, onCambiado, onQuitarDeLista 
 
   const extra = resumenExtra(plato);
   const agotado = plato.disponible === false;
+  const falta = faltaPorRellenar(plato);
 
   async function alternarDisponible(checked: boolean) {
     if (!plato.id) return;
@@ -67,6 +79,11 @@ export function FilaPlato({ plato, nombreCategoria, onCambiado, onQuitarDeLista 
 
   return (
     <div className={"fila-plato" + (agotado ? " agotado" : "")}>
+      {plato.foto ? (
+        <img className="miniatura-foto miniatura-fila" src={plato.foto} alt="" />
+      ) : (
+        <div className="miniatura-foto miniatura-fila vacia">Sin foto</div>
+      )}
       <div className="info">
         <div className="nombre">
           {plato.nombre}
@@ -79,6 +96,9 @@ export function FilaPlato({ plato, nombreCategoria, onCambiado, onQuitarDeLista 
           {nombreCategoria || plato.categoria} · {formatoPrecio(plato.precio)}
         </div>
         {extra && <div className="detalle-extra">{extra}</div>}
+        {falta.length > 0 && (
+          <div className="detalle-falta">Falta: {falta.join(", ")}</div>
+        )}
       </div>
       <label className="interruptor">
         <input
