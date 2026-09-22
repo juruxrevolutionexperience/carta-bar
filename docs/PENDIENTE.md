@@ -15,48 +15,26 @@ Producción: https://la-catedral.jurux.app (`cartia.jurux.app` sigue funcionando
 
 ## DÓNDE LO DEJAMOS (2026-09-22)
 
-Todo el trabajo de hoy está commiteado y subido a GitHub y desplegado en
-producción (confirmado por commit y contenido, no solo por fecha; último
-commit: "Importador de carta desde foto: herramienta de superadmin").
+Todo el trabajo de hoy está commiteado, subido a GitHub, desplegado en
+producción y **comprobado por el usuario al 100 %**: importador de carta
+(y confirmado que el gerente no ve ese botón), vista de escritorio,
+visor de fotos navegable, copia de seguridad ejecutándose sola de
+madrugada, y móvil con datos móviles en los 4 idiomas. Detalle de cada
+pieza, en la Fase 3 más abajo (ya marcadas ✅).
 
 ### Confirmado en producción (2026-09-21, no volver a probar)
 QR con hoja imprimible (impresión real probada) · chat con respuestas
 completas, 15 platos y avisos en los 4 idiomas · alérgenos confirmados por
 plato · guardar y traducir en segundo plano.
 
-### Hecho hoy (2026-09-22)
-- **Vista de escritorio** en carta pública, panel de gerente y superadmin
-  (a partir de ~860px de ancho; el móvil no cambia). Categorías como menú
-  lateral en la carta y en el panel de gerente, tablas sin scroll lateral en
-  el superadmin.
-- **Panel de gerente:** miniatura y aviso "Falta: foto, precio, descripción"
-  por plato en la lista, sin entrar a editar.
-- **Visor de foto navegable:** al tocar la foto de un plato se abre a
-  pantalla completa con nombre/precio/descripción superpuestos, flechas
-  (o deslizar) para pasar al plato siguiente/anterior recorriendo toda la
-  carta por categorías, y un aviso breve al cruzar de categoría.
-- **Importador de carta desde una foto** (`src/carta_bar/importador.py`):
-  sube una foto de una carta en papel, Sonnet 5 (visión) propone los platos,
-  se revisan en una tabla editable y no se crea nada hasta confirmar.
-  **Decisión importante:** es una herramienta de uso propio en el
-  **superadmin**, no un servicio para el gerente — lo dispara quien decide
-  que vale la pena ese gasto (~1-2 céntimos por foto, dentro del tope diario
-  de 5 $ compartido con chat y traducciones). El gerente sigue añadiendo
-  platos y categorías a mano con el panel que ya tenía, sin cambios ahí.
-  Endpoints nuevos, todos bajo sesión de superadmin: `POST
-  /superadmin/api/restaurantes/{id}/leer-carta`, `GET`/`POST
-  .../categorias`, `POST .../platos`.
-
-### Para comprobar en producción
-1. Superadmin → botón "Importar" en La CatedRal → foto real de una carta →
-   revisar la tabla → crear una categoría nueva ("Tostas") → confirmar.
-   Comprobar que el gerente **no** ve ese botón en su panel.
-2. Vista de escritorio: carta pública, panel de gerente y superadmin con la
-   ventana ancha (>860px).
-3. Visor de foto: tocar una foto, deslizar/usar flechas, comprobar el aviso
-   al cambiar de categoría.
-4. `tail -3 /home/xele/copias-carta/copia.log` (cron de la copia diaria).
-5. Móvil con datos móviles y en los 4 idiomas (sigue sin confirmarse).
+### Decisiones tomadas el 2026-09-22 que no se pueden olvidar
+- **El importador es del superadmin, no del gerente**, y no está pensado
+  solo para el alta inicial de un restaurante: también sirve para ampliar
+  una carta ya existente con una sección nueva (se relaja la idea original
+  de "solo bares con la carta vacía").
+- Sigue en pie todo lo de ayer: nombre del plato nunca se traduce, un plato
+  sin alérgenos confirmados nunca es "apto", traducciones con Sonnet 5, QR a
+  `<restaurante>.jurux.app`, el gerente no ve costes ni métricas.
 
 ### Decisiones tomadas hoy que no se pueden olvidar
 - **El importador es del superadmin, no del gerente**, y no está pensado
@@ -206,11 +184,11 @@ Probado en el iPhone, confirmado bueno.
   (2026-09-21) en una base desechable: 2 restaurantes, 29 platos, 84
   traducciones. La primera prueba falló por una línea `CREATE SCHEMA public;`
   del volcado, y se quitó del propio script. Cron diario a las 04:50
-  instalado; falta comprobar que se ejecuta solo (mirar `copia.log` al día
-  siguiente). Detalle en [docs/COPIAS-DE-SEGURIDAD.md](COPIAS-DE-SEGURIDAD.md)
+  instalado y confirmado (2026-09-22): se ejecutó solo esta noche, `copia.log`
+  limpio. Detalle en [docs/COPIAS-DE-SEGURIDAD.md](COPIAS-DE-SEGURIDAD.md)
 - ⬜ Sacar las copias del servidor: **aparcado hasta que haya clientes** (ver
   "Aparcado")
-- ⬜ Probado en móvil, con datos móviles, en los 4 idiomas
+- ✅ Probado en móvil, con datos móviles, en los 4 idiomas (2026-09-22)
 - ✅ QR generado (PNG y SVG) y verificado leyéndolo. El de La CatedRal impreso apunta a
   `cartia.jurux.app`, que sigue funcionando; el que genera ahora el panel apunta a
   `la-catedral.jurux.app`
@@ -303,11 +281,16 @@ restaurante.
   por bueno; falta probarlo en el móvil con un logo y una portada reales.
   Subtítulo y color de marca quedan fuera: hoy solo se cambian en la base de
   datos
-- ⬜ Importador de carta (PDF o foto → borrador con alérgenos sin confirmar
-  → el gerente los confirma con checkboxes, nunca se dan por buenos solos).
-  Lo hace el dueño desde el superadmin; diseño acordado en "Dónde lo dejamos".
-  Ya está hecha su base de seguridad (`alergenos_confirmados`). Detalle
-  general en
+- ✅ Importador de carta desde foto (`src/carta_bar/importador.py`): sube una
+  foto de una carta en papel, Sonnet 5 (visión) propone los platos, se
+  revisan en una tabla editable y no se crea nada hasta confirmar. Es una
+  herramienta de uso propio en el **superadmin**, no un servicio para el
+  gerente — lo dispara quien decide que vale la pena ese gasto (~1-2
+  céntimos por foto). El gerente sigue añadiendo platos y categorías a mano
+  con el panel que ya tenía, sin cambios ahí. Probado en producción
+  (2026-09-22) con una foto real de La CatedRal: se revisó la tabla, se creó
+  una categoría nueva y se confirmó; el gerente no ve el botón "Importar" en
+  su panel. Detalle general en
   [docs/APARCADO-CARTAS-MULTINEGOCIO.md](APARCADO-CARTAS-MULTINEGOCIO.md)
 - ✅ Código QR del restaurante en el panel del gerente (pestaña "QR"): verlo
   en pantalla, hoja imprimible con nombre + QR + texto editable por el gerente
@@ -338,6 +321,16 @@ restaurante.
   tablas se crean solas al arrancar. El histórico de visitas y preguntas empieza
   el día del despliegue; el coste sí tiene historia. Falta mirar preguntas y
   costes con uso real
+- ✅ Vista de escritorio (a partir de ~860px de ancho, el móvil no cambia)
+  en carta pública, panel de gerente y superadmin: categorías como menú
+  lateral en la carta y en el panel, tablas sin scroll lateral en el
+  superadmin. Probado en producción (2026-09-22) con la ventana ancha
+- ✅ Visor de foto navegable: al tocar la foto de un plato se abre a
+  pantalla completa con nombre/precio/descripción superpuestos, flechas
+  (o deslizar) para pasar al plato siguiente/anterior recorriendo toda la
+  carta por categorías, y un aviso breve al cruzar de categoría. Probado
+  en producción (2026-09-22): flechas, deslizar y el aviso al cambiar de
+  categoría, todo comprobado
 - ✅ Migrar el frontend a React + TypeScript, pantalla a pantalla, sin
   romper nada entre medias (infraestructura con Vite, compilada en una
   etapa nueva del `Dockerfile`, servida por FastAPI en `/assets`):
