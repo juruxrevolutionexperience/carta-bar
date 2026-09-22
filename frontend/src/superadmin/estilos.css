@@ -263,3 +263,23 @@ td.alerta {
   color: var(--tinta-media);
   line-height: 1.5;
 }
+
+/* ---------- escritorio: aprovechar el ancho ---------- */
+
+@media (min-width: 860px) {
+  body:not(.login) {
+    padding: 24px 0;
+  }
+  .app {
+    max-width: 960px;
+    padding: 24px 40px;
+  }
+  /* Con mas ancho, la tabla ya no necesita deslizarse de lado. */
+  .tabla-scroll {
+    overflow-x: visible;
+  }
+  .tabla-scroll table {
+    min-width: 0;
+    white-space: normal;
+  }
+}

@@ -647,3 +647,108 @@ main {
   outline: 2px solid var(--marca);
   outline-offset: 2px;
 }
+
+/* ---------- escritorio: menu de categorias como barra lateral ---------- */
+
+@media (min-width: 860px) {
+  body {
+    padding: 32px 20px;
+  }
+  .app {
+    max-width: 1080px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(23, 19, 16, 0.14);
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    column-gap: 36px;
+    grid-template-areas:
+      "portada portada"
+      "identidad identidad"
+      "titulo main"
+      "carrusel main"
+      "pie pie";
+  }
+  .app > .portada {
+    grid-area: portada;
+  }
+  .app > .identidad {
+    grid-area: identidad;
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+  .app > .seccion-tit {
+    grid-area: titulo;
+    padding: 28px 12px 14px 40px;
+  }
+  .app > .carrusel {
+    grid-area: carrusel;
+    flex-direction: column;
+    overflow: visible;
+    padding: 0 12px 40px 40px;
+    gap: 2px;
+    position: sticky;
+    top: 32px;
+    align-self: start;
+  }
+  .app > .divisor {
+    display: none;
+  }
+  main {
+    grid-area: main;
+    padding: 28px 40px 8px 0;
+  }
+  .app > .pie {
+    grid-area: pie;
+    padding: 18px 40px 36px 0;
+  }
+
+  /* Cada categoria pasa de tarjeta vertical a fila de menu, icono + texto. */
+  .cat-card {
+    flex: none;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 7px 10px;
+    border-radius: 12px;
+    transition: background 0.12s ease;
+  }
+  .cat-card:hover {
+    background: var(--fondo-alt);
+  }
+  .cat-card[aria-selected="true"] {
+    background: var(--fondo-alt);
+  }
+  .cat-visual {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    font-size: 18px;
+  }
+  .cat-card[aria-selected="true"] .cat-visual {
+    box-shadow: 0 0 0 2px var(--tinta);
+  }
+  .cat-textos {
+    min-width: 0;
+  }
+  .cat-nombre {
+    margin-top: 0;
+    min-height: 0;
+    font-size: 14px;
+    -webkit-line-clamp: 1;
+  }
+  .cat-cuenta {
+    margin-top: 1px;
+    font-size: 11.5px;
+  }
+
+  /* Sin el carrusel horizontal debajo, el titulo de categoria no necesita
+     quedarse pegado arriba al hacer scroll. */
+  #titulo-cat {
+    position: static;
+    border-bottom: none;
+    padding: 0 0 16px;
+  }
+}
+

@@ -35,9 +35,13 @@ export function Carrusel({ categoriaSeleccionada, onSeleccionar }: Props) {
                 ICONO_CAT[cat.id] || "🍽️"
               )}
             </div>
-            <div className="cat-nombre">{nomCat}</div>
-            <div className="cat-cuenta">
-              {n} {n === 1 ? t("platos_uno") : t("platos_varios")}
+            {/* Envuelto aparte: en el carrusel movil van uno debajo del otro,
+                en el menu lateral de escritorio van junto al icono. */}
+            <div className="cat-textos">
+              <div className="cat-nombre">{nomCat}</div>
+              <div className="cat-cuenta">
+                {n} {n === 1 ? t("platos_uno") : t("platos_varios")}
+              </div>
             </div>
           </button>
         );
