@@ -5,9 +5,16 @@ interface Props {
   error: boolean;
   seleccionado: string | null;
   onVerQr: (id: string) => void;
+  onImportar: (id: string) => void;
 }
 
-export function ListaRestaurantes({ restaurantes, error, seleccionado, onVerQr }: Props) {
+export function ListaRestaurantes({
+  restaurantes,
+  error,
+  seleccionado,
+  onVerQr,
+  onImportar,
+}: Props) {
   return (
     <div className="panel-tarjeta">
       <h2>Restaurantes</h2>
@@ -24,6 +31,7 @@ export function ListaRestaurantes({ restaurantes, error, seleccionado, onVerQr }
               <th>Nombre</th>
               <th>Platos</th>
               <th>QR</th>
+              <th>Importar</th>
             </tr>
           </thead>
           <tbody>
@@ -40,6 +48,11 @@ export function ListaRestaurantes({ restaurantes, error, seleccionado, onVerQr }
                     onClick={() => onVerQr(r.id)}
                   >
                     Ver QR
+                  </button>
+                </td>
+                <td>
+                  <button type="button" className="secundario" onClick={() => onImportar(r.id)}>
+                    Importar
                   </button>
                 </td>
               </tr>

@@ -59,6 +59,76 @@ export async function crearRestaurante(cuerpo: CuerpoNuevoRestaurante): Promise<
   });
 }
 
+export interface Categoria {
+  id: string;
+  nombre: string;
+  nombre_i18n: Record<string, string>;
+  orden: number;
+}
+
+export interface PlatoLeido {
+  nombre: string;
+  descripcion: string;
+  ingredientes: string[];
+  precio: number | null;
+}
+
+export async function leerCartaDeFoto(restauranteId: string, foto: Blob): Promise<PlatoLeido[]> {
+  const formData = new FormData();
+  formData.append("foto", foto, "carta.jpg");
+  const resp = await apiFetch(
+    `/superadmin/api/restaurantes/${encodeURIComponent(restauranteId)}/leer-carta`,
+    { method: "POST", body: formData }
+  );
+  if (!resp.ok) {
+    const detalle = await resp.text().catch(() => "");
+    throw new Error(detalle || "No se pudo leer la foto");
+  }
+  return resp.json();
+}
+
+export async function cargarCategoriasRestaurante(restauranteId: string): Promise<Categoria[]> {
+  const resp = await apiFetch(
+    `/superadmin/api/restaurantes/${encodeURIComponent(restauranteId)}/categorias`
+  );
+  return resp.json();
+}
+
+export async function crearCategoriaRestaurante(
+  restauranteId: string,
+  nombre: string
+): Promise<Categoria> {
+  const resp = await apiFetch(
+    `/superadmin/api/restaurantes/${encodeURIComponent(restauranteId)}/categorias`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nombre }),
+    }
+  );
+  if (!resp.ok) throw new Error("No se pudo crear la categoría");
+  return resp.json();
+}
+
+export interface CuerpoPlatoImportado {
+  categoria: string;
+  nombre: string;
+  descripcion: string;
+  precio: number | null;
+  ingredientes: string[];
+}
+
+export async function crearPlatoRestaurante(
+  restauranteId: string,
+  cuerpo: CuerpoPlatoImportado
+): Promise<Response> {
+  return apiFetch(`/superadmin/api/restaurantes/${encodeURIComponent(restauranteId)}/platos`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...cuerpo, alergenos: [], alergenos_confirmados: false }),
+  });
+}
+
 export async function cerrarSesion(): Promise<void> {
   await fetch("/superadmin/logout", { method: "POST" });
   window.location.href = "/superadmin/login";

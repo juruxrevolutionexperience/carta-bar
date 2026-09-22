@@ -18,6 +18,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from carta_bar.agente import responder_cliente
 from carta_bar.auth import crear_token_sesion, hash_clave, verificar_clave, verificar_token_sesion
 from carta_bar.busqueda import indexar
+from carta_bar.costes import ConsumoTotal
 from carta_bar.datos import (
     CampoImagenMarca,
     _validar_slug,
@@ -46,8 +47,9 @@ from carta_bar.datos import (
     slug_categoria,
 )
 from carta_bar.embeddings import cargar_modelo
+from carta_bar.importador import PlatoLeido, leer_platos_de_foto
 from carta_bar.limites import LIMITE_LOGIN, LIMITE_PREGUNTAR, limite_superado, limiter
-from carta_bar.llm import MODELO
+from carta_bar.llm import MODELO, MODELO_TRADUCCION
 from carta_bar.logging_config import configurar_logging
 from carta_bar.metricas import (
     MetricasRestaurante,
@@ -959,3 +961,88 @@ def superadmin_crear_restaurante(
     except psycopg.errors.UniqueViolation:
         return Response(status_code=409, content="Ese subdominio ya está en uso")
     return ResumenRestaurante(id=peticion.restaurante_id, nombre=peticion.nombre, num_platos=0)
+
+
+# Importador de carta desde una foto: herramienta de uso propio (dar de alta un
+# restaurante o ampliarle una seccion sin teclear plato a plato), no algo que
+# el gerente vea ni dispare. Solo lee y propone; nada se crea hasta que se
+# confirma cada plato con los endpoints de abajo, igual que si los hubiera
+# metido el gerente a mano.
+@app.post("/superadmin/api/restaurantes/{restaurante_id}/leer-carta", response_model=None)
+async def superadmin_leer_carta(
+    restaurante_id: str, request: Request, foto: UploadFile
+) -> list[PlatoLeido] | Response:
+    if not _sesion_superadmin_activa(request):
+        return Response(status_code=401, content="Sesión no válida")
+    if not _restaurante_existe(restaurante_id):
+        return Response(status_code=404, content="Restaurante no encontrado")
+    if not control.hay_presupuesto(restaurante_id):
+        return Response(status_code=429, content="Tope de gasto diario alcanzado")
+
+    contenido = await foto.read(TAMANO_MAX_FOTO + 1)
+    if len(contenido) > TAMANO_MAX_FOTO or not contenido.startswith(_CABECERA_JPEG):
+        return Response(status_code=400, content="Sube una foto JPEG de menos de 3 MB")
+
+    try:
+        platos, consumo = leer_platos_de_foto(contenido)
+    except Exception as e:
+        log.error("importar_carta_fallido", restaurante_id=restaurante_id, motivo=str(e))
+        return Response(status_code=502, content="No se pudo leer la carta de la foto")
+    control.registrar(restaurante_id, MODELO_TRADUCCION, ConsumoTotal(consumos=[consumo]))
+    return platos
+
+
+@app.get("/superadmin/api/restaurantes/{restaurante_id}/categorias", response_model=None)
+def superadmin_listar_categorias(
+    restaurante_id: str, request: Request
+) -> list[Categoria] | Response:
+    if not _sesion_superadmin_activa(request):
+        return Response(status_code=401, content="Sesión no válida")
+    if not _restaurante_existe(restaurante_id):
+        return Response(status_code=404, content="Restaurante no encontrado")
+    return cargar_categorias(restaurante_id)
+
+
+@app.post(
+    "/superadmin/api/restaurantes/{restaurante_id}/categorias", status_code=201, response_model=None
+)
+def superadmin_crear_categoria(
+    restaurante_id: str, peticion: NombreCategoriaPeticion, request: Request
+) -> Categoria | Response:
+    if not _sesion_superadmin_activa(request):
+        return Response(status_code=401, content="Sesión no válida")
+    if not _restaurante_existe(restaurante_id):
+        return Response(status_code=404, content="Restaurante no encontrado")
+    return crear_categoria(restaurante_id, peticion.nombre)
+
+
+@app.post(
+    "/superadmin/api/restaurantes/{restaurante_id}/platos", status_code=201, response_model=None
+)
+def superadmin_crear_plato(
+    restaurante_id: str, peticion: CrearPlatoPeticion, request: Request, tareas: BackgroundTasks
+) -> Plato | Response:
+    if not _sesion_superadmin_activa(request):
+        return Response(status_code=401, content="Sesión no válida")
+    if not _restaurante_existe(restaurante_id):
+        return Response(status_code=404, content="Restaurante no encontrado")
+    creado = crear_plato(
+        restaurante_id,
+        peticion.categoria,
+        peticion.nombre,
+        peticion.descripcion,
+        peticion.precio,
+        peticion.ingredientes,
+        peticion.alergenos,
+        peticion.etiqueta,
+        peticion.vegano,
+        peticion.vegetariano,
+        peticion.sin_gluten,
+        peticion.sin_lactosa,
+        alergenos_confirmados=peticion.alergenos_confirmados,
+    )
+    if creado is None:
+        return Response(status_code=404, content="Categoría no encontrada")
+    _indices.pop(restaurante_id, None)
+    tareas.add_task(traducir_restaurante, restaurante_id, control)
+    return creado

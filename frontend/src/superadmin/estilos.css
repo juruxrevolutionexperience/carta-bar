@@ -136,6 +136,18 @@ button:disabled {
   cursor: default;
 }
 
+.boton-archivo {
+  display: inline-block;
+  padding: 12px 16px;
+  background: var(--marca);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
 .login button {
   width: 100%;
 }
