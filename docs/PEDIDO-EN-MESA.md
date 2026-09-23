@@ -28,18 +28,40 @@ configuración por restaurante, secciones 11-12). Confirmado que coincide con
 la idea que tenía: "sí, es que me gusta". Vale como plantilla para empezar;
 se irá afinando con el tiempo, no es definitivo.
 
-**Primer bloque a construir** (acordado en la misma conversación, dentro de
-la Fase A): los cimientos, sin pantalla vistosa todavía —
-1. Tablas `mesas`, `sesiones_mesa`, `comensales` (modelo ya especificado en
-   la sección 6, con el índice único que evita dos sesiones para la misma
-   mesa si dos personas escanean a la vez).
-2. Endpoint para entrar por QR: crea sesión y hace anfitrión al primero,
-   une como invitado a partir del segundo.
-3. Cookie firmada de comensal (como ya existe para gerente/superadmin).
+**Primer bloque — ✅ hecho, probado y desplegado (2026-09-23, commit
+`eb8d668`):**
+1. ✅ Tablas `mesas`, `sesiones_mesa`, `comensales` (sección 6, con el índice
+   único que evita dos sesiones para la misma mesa si dos personas escanean
+   a la vez). Se crean solas al arrancar, como el resto del esquema.
+2. ✅ Endpoint para entrar por QR (`POST /api/mesa/entrar`): crea sesión y
+   hace anfitrión al primero, une como invitado a partir del segundo.
+   Maneja la carrera si dos personas escanean a la vez.
+3. ✅ Cookie firmada de comensal (`sesion_comensal`, como ya existe para
+   gerente/superadmin).
+4. ✅ `GET`/`POST /admin/api/mesas` para que el gerente dé de alta mesas.
+5. 12 tests nuevos + los 330 de la suite, todos en verde (verificado con
+   `mypy`/`pytest` reales, no solo revisado a ojo — Python está bloqueado en
+   el PC de trabajo, se verificó en un entorno aparte).
 
-Con esto probado (tests + `demo.jurux.app`, no La CatedRal todavía), el
-siguiente bloque es la pantalla: añadir propuestas desde la carta y el panel
-del anfitrión con el resumen y el total.
+**Todavía sin pantalla:** estos endpoints no tienen ningún botón en el panel
+todavía. El gerente de `demo` no puede dar de alta una mesa a golpe de clic
+hasta el siguiente bloque.
+
+**Decisión pendiente de confirmar antes de seguir — roles gerente/camarero:**
+al plantear cómo probar esto desde el panel, salió que hace falta poder
+entrar como "solo camarero" (ve mesas/comandas, no ve Marca/QR/Cuenta) sin
+montar cuentas individuales por persona. Propuesta hecha el 2026-09-23: dos
+contraseñas por restaurante (una de gerente, una de personal), mismo sitio
+de login, panel distinto según cuál se use — pendiente de que el dueño la
+confirme antes de tocar el modelo de sesión de admin.
+
+**Siguiente bloque** (sin empezar): la pantalla "Mesas" en el panel de
+gerente (dar de alta, ver el QR de cada una, regenerarlo), y después
+propuestas desde la carta + panel del anfitrión con el resumen y el total.
+
+**Para probarlo ahora mismo en `demo.jurux.app`:** el restaurante `demo` no
+tiene contraseña de gerente establecida. En el servidor:
+`docker exec -it carta-bar uv run --no-sync python scripts/establecer_clave_admin.py demo`
 
 Leyenda de tareas: ✅ hecho y probado · 🔍 hecho, falta verificar · ⬜ pendiente
 
