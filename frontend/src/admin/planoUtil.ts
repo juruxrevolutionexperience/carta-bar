@@ -46,15 +46,41 @@ export function limitarPosicion(x: number, y: number, ancho: number, alto: numbe
 }
 
 // Tamano minimo de una casilla y sin salirse del plano desde su esquina.
+// El Math.max exterior es obligatorio: con una mesa colocada fuera de la
+// cuadricula (por ejemplo, guardada cuando el plano era mas grande),
+// COLUMNAS - x sale negativo y devolvia anchos negativos.
 export function limitarTamano(x: number, y: number, ancho: number, alto: number) {
   return {
-    ancho: Math.min(Math.max(ancho, 1), COLUMNAS - x),
-    alto: Math.min(Math.max(alto, 1), FILAS - y),
+    ancho: Math.max(1, Math.min(Math.max(ancho, 1), COLUMNAS - x)),
+    alto: Math.max(1, Math.min(Math.max(alto, 1), FILAS - y)),
   };
 }
 
-function seSolapan(a: Caja, b: Caja): boolean {
+/**
+ * Mete una mesa dentro de la cuadricula actual. Hace falta porque el plano se
+ * ha achicado (era de 24x18): una mesa guardada en la esquina de antes caeria
+ * fuera y quedaria invisible e imposible de tocar. Devuelve null si ya estaba
+ * bien, para no reescribir en el servidor lo que no ha cambiado.
+ */
+export function corregirSiSeSale(caja: Caja): Caja | null {
+  const { ancho, alto } = limitarTamano(
+    Math.min(caja.x, COLUMNAS - 1),
+    Math.min(caja.y, FILAS - 1),
+    caja.ancho,
+    caja.alto
+  );
+  const { x, y } = limitarPosicion(caja.x, caja.y, ancho, alto);
+  if (x === caja.x && y === caja.y && ancho === caja.ancho && alto === caja.alto) return null;
+  return { x, y, ancho, alto };
+}
+
+export function seSolapan(a: Caja, b: Caja): boolean {
   return a.x < b.x + b.ancho && b.x < a.x + a.ancho && a.y < b.y + b.alto && b.y < a.y + a.alto;
+}
+
+/** Si la caja pisa alguna de las otras. Las mesas no se montan unas sobre otras. */
+export function pisaAlguna(caja: Caja, otras: Caja[]): boolean {
+  return otras.some((otra) => seSolapan(caja, otra));
 }
 
 // Primer hueco libre (de arriba a abajo, de izquierda a derecha) donde cabe
@@ -128,4 +154,64 @@ export function detalleVisible(
   if (ancho < 46 || alto < 34) return "minimo";
   if (ancho < 96) return "solo-nombre";
   return "completo";
+}
+
+/**
+ * Nombre que se propone al soltar una forma nueva. Un barril o un taburete
+ * ocupan una casilla y ahi no cabe "Mesa 6": se quedan en el numero pelado.
+ */
+export function nombreParaForma(forma: FormaMesa, nombresUsados: string[]): string {
+  const propuesto = siguienteNombre(nombresUsados);
+  if (forma === "barril" || forma === "taburete") {
+    return propuesto.replace(/^Mesa\s*/i, "");
+  }
+  return propuesto;
+}
+
+// ------------------------------------------------------------------ sillas
+
+/**
+ * Cuantas sillas van en cada lado (arriba, derecha, abajo, izquierda) de una
+ * mesa rectangular. Se reparten en proporcion a lo que mide cada lado, asi que
+ * una mesa alargada pone casi todas arriba y abajo, como en la vida real.
+ *
+ * Dibujar las sillas es lo que permite ver de un golpe si una mesa es de 2 o
+ * de 6, sin tener que leer el numero.
+ */
+export function repartirSillas(
+  capacidad: number,
+  ancho: number,
+  alto: number
+): [number, number, number, number] {
+  const n = Math.max(0, Math.min(Math.round(capacidad), 24));
+  if (n === 0) return [0, 0, 0, 0];
+
+  // Peso de cada lado: arriba y abajo miden `ancho`; los costados, `alto`.
+  const pesos = [ancho, alto, ancho, alto];
+  const total = pesos.reduce((a, b) => a + b, 0);
+  const exactos = pesos.map((p) => (n * p) / total);
+  const lados = exactos.map(Math.floor);
+
+  // Las que sobran por el redondeo van a los lados con mas resto pendiente,
+  // para que la suma sea exactamente la capacidad y no una aproximacion.
+  // A igualdad de resto se prefieren lados opuestos (arriba/abajo antes que
+  // los costados): una mesa de 2 queda con las sillas enfrentadas, como se
+  // sienta la gente, y no las dos en esquina.
+  const preferencia = [0, 2, 1, 3]; // arriba, abajo, derecha, izquierda
+  let faltan = n - lados.reduce((a, b) => a + b, 0);
+  const orden = exactos
+    .map((valor, i) => ({ i, resto: valor - Math.floor(valor) }))
+    .sort((a, b) => b.resto - a.resto || preferencia.indexOf(a.i) - preferencia.indexOf(b.i));
+  let k = 0;
+  while (faltan > 0) {
+    lados[orden[k % 4].i] += 1;
+    faltan -= 1;
+    k += 1;
+  }
+  return lados as [number, number, number, number];
+}
+
+/** Posiciones (0..1) de `n` sillas repartidas a lo largo de un lado. */
+export function repartirALoLargo(n: number): number[] {
+  return Array.from({ length: n }, (_, i) => (i + 1) / (n + 1));
 }

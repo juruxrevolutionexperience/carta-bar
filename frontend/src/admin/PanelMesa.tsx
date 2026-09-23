@@ -12,12 +12,22 @@ interface Props {
   ocupado: boolean;
   onCambio: (cambios: CambiosMesa) => void;
   onEliminar: () => void;
+  onCerrar: () => void;
   onRegenerar: (mesa: Mesa) => void;
 }
 
 // Datos de la mesa seleccionada en el plano. Se monta con key={mesa.id}: al
 // tocar otra mesa el formulario arranca limpio.
-export function PanelMesa({ mesa, zonas, qr, ocupado, onCambio, onEliminar, onRegenerar }: Props) {
+export function PanelMesa({
+  mesa,
+  zonas,
+  qr,
+  ocupado,
+  onCambio,
+  onEliminar,
+  onCerrar,
+  onRegenerar,
+}: Props) {
   const [nombre, setNombre] = useState(mesa.nombre);
   const [capacidad, setCapacidad] = useState(String(mesa.capacidad));
 
@@ -46,7 +56,14 @@ export function PanelMesa({ mesa, zonas, qr, ocupado, onCambio, onEliminar, onRe
 
   return (
     <div className="tarjeta panel-mesa">
-      <h3>{mesa.nombre}</h3>
+      <div className="cabecera-panel">
+        <h3>{mesa.nombre}</h3>
+        <button type="button" className="cerrar-panel" aria-label="Cerrar" onClick={onCerrar}>
+          <svg viewBox="0 0 24 24">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
 
       <label htmlFor="mesa-nombre">Nombre</label>
       <input

@@ -990,6 +990,28 @@ button.secundario {
 
 /* El tirador también a tamaño de pantalla: con el plano alejado se quedaba
    en un punto imposible de agarrar con el dedo. */
+/* Sillas dibujadas alrededor de la mesa: de un vistazo se ve si es de 2 o de
+   6, sin leer el numero. Viven fuera del borde, como en la realidad. */
+.sillas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.silla {
+  position: absolute;
+  background: #7d7468;
+  border-radius: calc(3px / var(--z, 1));
+}
+
+.mesa-plano.forma-barril .silla {
+  background: #9a7a52;
+}
+
+.mesa-plano.seleccionada .silla {
+  background: var(--marca);
+}
+
 .mesa-tirador {
   position: absolute;
   right: calc(-11px / var(--z, 1));
@@ -1277,4 +1299,188 @@ button.secundario.peligro {
 .boton-zonas.activa {
   background: var(--marca-tenue);
   color: var(--marca-viva);
+}
+
+/* ==================================================================
+   TRES APARATOS
+   El mismo plano se usa en tres sitios muy distintos: el movil del
+   gerente, su ordenador y la pantalla tactil del bar. No es el mismo
+   diseno encogido — cambia el reparto de la pantalla (por el ancho) y
+   el tamano de lo que se toca (por el tipo de puntero).
+   ================================================================== */
+
+.cabecera-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.cabecera-panel h3 {
+  margin: 0;
+}
+
+.cerrar-panel {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  border-radius: 9px;
+  color: var(--tinta-media);
+  cursor: pointer;
+}
+
+.cerrar-panel svg {
+  width: 19px;
+  height: 19px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.cerrar-panel:active {
+  background: var(--superficie-alta);
+}
+
+/* ---------- MOVIL: el panel de la mesa sube desde abajo ----------
+   Si se quedase debajo del plano habria que bajar rodando cada vez que se
+   toca una mesa, y ademas empujaria el plano al abrirse. */
+@media (max-width: 999px) {
+  .panel-mesa {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    margin: 0;
+    max-height: 66vh;
+    overflow-y: auto;
+    border-radius: 18px 18px 0 0;
+    border-bottom: none;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    box-shadow: var(--sombra-alta);
+    animation: subir-panel 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  @keyframes subir-panel {
+    from {
+      transform: translateY(100%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .panel-mesa {
+      animation: none;
+    }
+  }
+}
+
+/* ---------- ORDENADOR Y PANTALLA GRANDE: dos columnas ----------
+   El plano a la izquierda con todo el sitio, y los datos de la mesa fijos a
+   la derecha: se toca una mesa y sus datos ya estan ahi, sin desplazarse. */
+/* El hueco del panel esta siempre reservado: si apareciera solo al elegir una
+   mesa, el plano se encogeria de golpe y la pantalla daria un salto. */
+.panel-vacio {
+  display: none;
+}
+
+@media (min-width: 1000px) {
+  .panel-vacio {
+    display: block;
+  }
+
+  .panel-vacio p {
+    font-size: 13.5px;
+    color: var(--tinta-suave);
+  }
+
+  .zona-trabajo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 14px;
+    align-items: start;
+  }
+
+  .zona-trabajo > .tarjeta {
+    margin-bottom: 0;
+  }
+
+  .panel-mesa {
+    position: sticky;
+    top: calc(var(--alto-barra) + 20px);
+    max-height: calc(100vh - var(--alto-barra) - 40px);
+    overflow-y: auto;
+  }
+
+  .app.app-ancha {
+    max-width: 1240px;
+  }
+
+  .plano-scroll {
+    max-height: min(70vh, 640px);
+  }
+}
+
+/* ---------- PANTALLA TACTIL: todo mas grande ----------
+   `pointer: coarse` es el dedo (movil o TPV tactil del bar), frente al raton.
+   Se usa de pie, con prisa y a un brazo de distancia: los botones pequenos de
+   raton ahi no se aciertan. */
+@media (pointer: coarse) {
+  .boton-herramienta {
+    width: 48px;
+    height: 48px;
+  }
+
+  .boton-herramienta svg {
+    width: 23px;
+    height: 23px;
+  }
+
+  .herramientas-plano {
+    padding: 10px;
+    gap: 6px;
+  }
+
+  .pieza {
+    width: 88px;
+    padding: 14px 8px;
+    font-size: 12px;
+  }
+
+  .pestana-zona {
+    padding: 13px 18px;
+    font-size: 15px;
+  }
+
+  .boton-zonas {
+    width: 48px;
+    height: 48px;
+  }
+
+  .item-menu {
+    padding: 15px 12px;
+    font-size: 16px;
+  }
+
+  .selector-vista label {
+    padding: 11px 20px;
+    font-size: 15px;
+  }
+
+  .mesa-tirador {
+    right: calc(-15px / var(--z, 1));
+    bottom: calc(-15px / var(--z, 1));
+    width: calc(30px / var(--z, 1));
+    height: calc(30px / var(--z, 1));
+  }
+
+  .cerrar-panel {
+    width: 44px;
+    height: 44px;
+  }
 }

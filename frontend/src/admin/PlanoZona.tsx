@@ -1,6 +1,7 @@
 import { useRef, useState, type CSSProperties, type PointerEvent } from "react";
 
 import type { Mesa } from "./api";
+import { SillasMesa } from "./SillasMesa";
 import {
   CELDA,
   COLUMNAS,
@@ -9,6 +10,7 @@ import {
   detalleVisible,
   limitarPosicion,
   limitarTamano,
+  pisaAlguna,
   type Caja,
 } from "./planoUtil";
 
@@ -116,7 +118,11 @@ export function PlanoZona({
     const movido =
       gesto.movido ||
       Math.hypot(e.clientX - gesto.inicioX, e.clientY - gesto.inicioY) > UMBRAL_ARRASTRE;
-    setGesto({ ...gesto, actual, movido });
+    // Si ahi pisaria otra mesa, se queda en la ultima posicion buena en vez de
+    // montarse encima: el plano se siente firme y no hay que deshacer nada.
+    const otras = mesas.filter((m) => m.id !== gesto.id);
+    const libre = !pisaAlguna(actual, otras);
+    setGesto({ ...gesto, actual: libre ? actual : gesto.actual, movido });
   }
 
   function soltar() {
@@ -186,6 +192,12 @@ export function PlanoZona({
                 }}
                 onPointerDown={(e) => empezar(e, m, "mover")}
               >
+                <SillasMesa
+                  forma={m.forma}
+                  capacidad={m.capacidad}
+                  ancho={c.ancho}
+                  alto={c.alto}
+                />
                 {/* Contra-gira para leerse siempre derecho aunque la mesa no lo esté. */}
                 <div className="mesa-cabecera" style={{ transform: `rotate(${-m.rotacion}deg)` }}>
                   <span className="mesa-etiqueta">{m.nombre}</span>

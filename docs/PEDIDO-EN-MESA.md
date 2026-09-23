@@ -103,6 +103,38 @@ Probado con un Chromium de verdad (capturas en móvil y escritorio) además de
 las 55 comprobaciones de comportamiento. Para volver a sacar capturas, ver
 "Cómo probar la interfaz" en [ARQUITECTURA.md](ARQUITECTURA.md).
 
+**Segunda vuelta del plano (2026-09-23), con Turbopos como referencia.** El
+dueño pasó una foto de un TPV real y de ahí salió lo que faltaba:
+- **Sillas dibujadas alrededor de cada mesa** según su aforo (`SillasMesa.tsx`,
+  reparto en `repartirSillas`). Es el cambio que más se nota: de un vistazo se
+  ve si una mesa es de 2 o de 6 sin leer ningún número. Una mesa de 2 las pone
+  enfrentadas, no en esquina; una alargada, casi todas arriba y abajo.
+- **Tres aparatos, no uno encogido** (bloque "TRES APARATOS" en `estilos.css`):
+  el reparto de pantalla se decide por el **ancho** y el tamaño de lo que se
+  toca por el **tipo de puntero** (`pointer: coarse` = dedo).
+  - *Móvil:* plano a lo ancho y los datos de la mesa subiendo desde abajo.
+  - *Ordenador:* dos columnas, plano a la izquierda y datos fijos a la derecha.
+  - *TPV táctil del bar (todos los bares tienen uno):* lo mismo, con botones,
+    pestañas y tirador bastante más grandes.
+- **El hueco del panel se reserva siempre** en pantalla ancha: si apareciera
+  solo al elegir una mesa, el plano se encogería de golpe. El dueño pidió
+  expresamente que se viera "más estable".
+- **Las mesas no se montan unas sobre otras:** al arrastrar, si ahí no cabe, la
+  mesa se queda en la última posición buena.
+- **Barriles y taburetes se llaman solo con el número** ("1", "2"): ocupan una
+  casilla y "Mesa 6" no cabía, salía "Mes…".
+
+**Aviso de migración:** el plano pasó de 24×18 casillas a 12×9 (más grandes).
+Una mesa guardada con el plano viejo puede caer fuera del nuevo; al cargar la
+pantalla se trae dentro y se guarda corregida (`corregirSiSeSale`). De paso
+salió un fallo real: `limitarTamano` devolvía anchos negativos para una mesa
+fuera de la cuadrícula.
+
+**Pendiente de esta línea** (por orden acordado): elementos del local (puerta,
+barra, baños, columnas, plantas — necesitan tabla nueva), tema claro/oscuro
+elegible, y el resto de mejoras del plano (líneas guía al alinear, duplicar
+mesa, tamaño del local por zona).
+
 **Decisión para el paso 3 (juntar mesas en servicio, sin hacer):** lo hace el
 camarero durante el servicio y se deshace al cobrar; **no** toca el plano
 fijo. Si las dos mesas tienen comandas, **las cuentas se fusionan en una**; si

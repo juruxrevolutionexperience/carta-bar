@@ -19,9 +19,10 @@ import { PlanoZona } from "./PlanoZona";
 import {
   DISENO,
   FORMAS,
+  corregirSiSeSale,
   huecoLibre,
   limitarZoom,
-  siguienteNombre,
+  nombreParaForma,
   zoomQueCabe,
   type FormaMesa,
 } from "./planoUtil";
@@ -53,6 +54,13 @@ export function SeccionMesas() {
       .then(([zonasCargadas, mesasCargadas, datosQr]) => {
         setZonas(zonasCargadas);
         setMesas(mesasCargadas);
+        // El plano se achicó (era de 24x18 casillas): una mesa colocada en la
+        // esquina de entonces caería fuera y no habría forma de tocarla. Se
+        // traen al plano y se guarda la corrección.
+        for (const m of mesasCargadas) {
+          const arreglada = corregirSiSeSale(m);
+          if (arreglada) void cambiarMesa(m, arreglada);
+        }
         setQr(datosQr);
         setZonaActiva((actual) =>
           zonasCargadas.some((z) => z.id === actual) ? actual : (zonasCargadas[0]?.id ?? null)
@@ -130,7 +138,7 @@ export function SeccionMesas() {
     const { x, y } = huecoLibre(mesasDeLaZona, d.ancho, d.alto);
     void ejecutar(async () => {
       const resp = await crearMesa({
-        nombre: siguienteNombre(mesas.map((m) => m.nombre)),
+        nombre: nombreParaForma(forma, mesas.map((m) => m.nombre)),
         zona_id: zonaId,
         forma,
         x,
@@ -249,62 +257,70 @@ export function SeccionMesas() {
             />
           )}
 
-          <div className="tarjeta">
-            <p className="ayuda">Pulsa una forma para añadirla. Arrástrala para colocarla.</p>
-            <div className="paleta-formas">
-              {FORMAS.map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  className="pieza"
-                  disabled={ocupado || !zonaId || bloqueado}
-                  onClick={() => anadirMesa(f)}
-                >
-                  <span className={`icono-forma forma-${f}`} aria-hidden="true">
-                    <i />
-                  </span>
-                  {DISENO[f].etiqueta}
-                </button>
-              ))}
+          <div className="zona-trabajo">
+            <div className="tarjeta">
+              <p className="ayuda">Pulsa una forma para añadirla. Arrástrala para colocarla.</p>
+              <div className="paleta-formas">
+                {FORMAS.map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    className="pieza"
+                    disabled={ocupado || !zonaId || bloqueado}
+                    onClick={() => anadirMesa(f)}
+                  >
+                    <span className={`icono-forma forma-${f}`} aria-hidden="true">
+                      <i />
+                    </span>
+                    {DISENO[f].etiqueta}
+                  </button>
+                ))}
+              </div>
+
+              <div className="lienzo" ref={caja}>
+                <PlanoZona
+                  mesas={mesasDeLaZona}
+                  seleccionada={seleccionada}
+                  zoom={zoom}
+                  bloqueado={bloqueado}
+                  onSeleccionar={setSeleccionada}
+                  onCambio={(mesa, cambios) => void cambiarMesa(mesa, cambios)}
+                />
+                <HerramientasPlano
+                  zoom={zoom}
+                  bloqueado={bloqueado}
+                  onZoom={(z) => setZoom(limitarZoom(z))}
+                  onAjustar={ajustar}
+                  onBloquear={() => setBloqueado((b) => !b)}
+                />
+              </div>
+
+              {mesasDeLaZona.length === 0 && (
+                <p className="cargando">
+                  Esta zona aún no tiene mesas: pulsa una forma para empezar.
+                </p>
+              )}
             </div>
 
-            <div className="lienzo" ref={caja}>
-              <PlanoZona
-                mesas={mesasDeLaZona}
-                seleccionada={seleccionada}
-                zoom={zoom}
-                bloqueado={bloqueado}
-                onSeleccionar={setSeleccionada}
-                onCambio={(mesa, cambios) => void cambiarMesa(mesa, cambios)}
+            {!mesaElegida && (
+              <div className="tarjeta panel-vacio">
+                <p>Toca una mesa del plano para ver y cambiar sus datos.</p>
+              </div>
+            )}
+            {mesaElegida && (
+              <PanelMesa
+                key={mesaElegida.id}
+                mesa={mesaElegida}
+                zonas={zonas}
+                qr={qr}
+                ocupado={ocupado}
+                onCambio={(cambios) => void cambiarMesa(mesaElegida, cambios)}
+                onEliminar={eliminarElegida}
+                onCerrar={() => setSeleccionada(null)}
+                onRegenerar={regenerar}
               />
-              <HerramientasPlano
-                zoom={zoom}
-                bloqueado={bloqueado}
-                onZoom={(z) => setZoom(limitarZoom(z))}
-                onAjustar={ajustar}
-                onBloquear={() => setBloqueado((b) => !b)}
-              />
-            </div>
-
-            {mesasDeLaZona.length === 0 && (
-              <p className="cargando">
-                Esta zona aún no tiene mesas: pulsa una forma para empezar.
-              </p>
             )}
           </div>
-
-          {mesaElegida && (
-            <PanelMesa
-              key={mesaElegida.id}
-              mesa={mesaElegida}
-              zonas={zonas}
-              qr={qr}
-              ocupado={ocupado}
-              onCambio={(cambios) => void cambiarMesa(mesaElegida, cambios)}
-              onEliminar={eliminarElegida}
-              onRegenerar={regenerar}
-            />
-          )}
         </>
       )}
 
