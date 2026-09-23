@@ -4,9 +4,10 @@ import { PlatoCard } from "./PlatoCard";
 interface Props {
   categoriaId: string | null;
   onAbrirFoto: (id: string) => void;
+  onAnadirALista: (id: string) => void;
 }
 
-export function ListaPlatos({ categoriaId, onAbrirFoto }: Props) {
+export function ListaPlatos({ categoriaId, onAbrirFoto, onAnadirALista }: Props) {
   const { carta, categorias, idioma, t } = useCartaContext();
 
   const cat = categorias.find((c) => c.id === categoriaId);
@@ -22,7 +23,14 @@ export function ListaPlatos({ categoriaId, onAbrirFoto }: Props) {
         {platos.length === 0 ? (
           <p className="vacio">{t("sin_platos")}</p>
         ) : (
-          platos.map((p) => <PlatoCard key={p.id} plato={p} onAbrirFoto={onAbrirFoto} />)
+          platos.map((p) => (
+            <PlatoCard
+              key={p.id}
+              plato={p}
+              onAbrirFoto={onAbrirFoto}
+              onAnadirALista={onAnadirALista}
+            />
+          ))
         )}
       </div>
     </main>

@@ -50,6 +50,11 @@ export interface TextosIdioma {
   sin_platos?: string;
   precio_consultar?: string;
   consultar_alergenos?: string;
+  mi_lista?: string;
+  lista_vacia?: string;
+  total?: string;
+  vaciar_lista?: string;
+  aviso_lista?: string;
   platos_uno?: string;
   platos_varios?: string;
   error_chat?: string;

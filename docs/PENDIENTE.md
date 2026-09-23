@@ -450,6 +450,13 @@ a tener clientes de pago de verdad.
 - Transcripción de voz en el servidor, para iPhone → solo si en Fase 2 se ve que la
   gente usa el micrófono
 - VeriFactu → al montar la facturación
+- Plantilla de etiqueta QR con diseño (ilustración, logo, "Scan Me", tipo
+  posavasos) generada desde el propio panel → hoy se hace con Canva u otra
+  herramienta externa, subiendo el PNG del QR que ya genera el panel. Solo
+  compensa programarlo si hay varios restaurantes dándose de alta a la vez;
+  con un cliente no. El NFC (mismo destino que el QR, se programa aparte con
+  una app tipo "NFC Tools" sobre una pegatina NTAG213) no necesita ningún
+  cambio de código, es un tema físico
 
 ## EN PARALELO (días separados)
 

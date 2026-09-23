@@ -5,9 +5,11 @@ import { Carrusel } from "./Carrusel";
 import { CartaProvider, useCartaContext } from "./CartaContext";
 import { Chat } from "./Chat";
 import { ListaPlatos } from "./ListaPlatos";
+import { MiLista } from "./MiLista";
 import { Portada } from "./Portada";
 import { colorSeguro } from "./seguridad";
 import { SelectorIdioma } from "./SelectorIdioma";
+import { useListaCliente } from "./useListaCliente";
 import { useVisorFoto } from "./useVisorFoto";
 import { VisorFoto } from "./VisorFoto";
 
@@ -15,6 +17,7 @@ function CartaApp() {
   const { carta, config, idioma, categoriasVisibles, cargando, t } = useCartaContext();
   const [categoriaId, setCategoriaId] = useState<string | null>(null);
   const visor = useVisorFoto();
+  const lista = useListaCliente();
 
   // Orden del "escaparate" del visor: todos los platos disponibles, categoria
   // a categoria en el mismo orden que la carta, para que las flechas naveguen
@@ -68,7 +71,11 @@ function CartaApp() {
 
         <div className="divisor"></div>
 
-        <ListaPlatos categoriaId={categoriaId} onAbrirFoto={visor.abrir} />
+        <ListaPlatos
+          categoriaId={categoriaId}
+          onAbrirFoto={visor.abrir}
+          onAnadirALista={lista.anadir}
+        />
 
         <p className="pie">
           {config.aviso_alergenos_i18n?.[idioma] || config.aviso_alergenos || ""}
@@ -82,6 +89,7 @@ function CartaApp() {
         onNavegar={visor.abrir}
         onCerrar={() => visor.cerrar(false)}
       />
+      <MiLista lista={lista} />
       <SelectorIdioma />
     </>
   );

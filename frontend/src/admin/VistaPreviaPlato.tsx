@@ -36,7 +36,7 @@ export function VistaPreviaPlato({ plato }: Props) {
     <div className="vista-previa-carta">
       <div className="vista-previa-titulo">Así se verá en la carta</div>
       <CartaContext.Provider value={valor}>
-        <PlatoCard plato={plato} onAbrirFoto={() => {}} />
+        <PlatoCard plato={plato} onAbrirFoto={() => {}} onAnadirALista={() => {}} />
       </CartaContext.Provider>
     </div>
   );

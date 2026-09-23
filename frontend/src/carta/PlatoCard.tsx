@@ -7,9 +7,10 @@ import type { Plato } from "./types";
 interface Props {
   plato: Plato;
   onAbrirFoto: (id: string) => void;
+  onAnadirALista: (id: string) => void;
 }
 
-export function PlatoCard({ plato: p, onAbrirFoto }: Props) {
+export function PlatoCard({ plato: p, onAbrirFoto, onAnadirALista }: Props) {
   const { idioma, config, textos, t } = useCartaContext();
   const moneda = config.moneda || "€";
 
@@ -60,6 +61,14 @@ export function PlatoCard({ plato: p, onAbrirFoto }: Props) {
               ? t("precio_consultar")
               : Number(p.precio).toFixed(2).replace(".", ",") + " " + moneda}
           </span>
+          <button
+            type="button"
+            className="anadir-lista"
+            aria-label={`${t("mi_lista")}: ${p.nombre}`}
+            onClick={() => onAnadirALista(p.id)}
+          >
+            +
+          </button>
         </div>
         <p className={"desc" + (pendiente ? " pendiente" : "")}>{descripcion}</p>
         <div className="chips">

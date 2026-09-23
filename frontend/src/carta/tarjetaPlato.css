@@ -111,6 +111,29 @@
   white-space: nowrap;
 }
 
+.anadir-lista {
+  align-self: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--marca);
+  color: var(--marca);
+  background: var(--fondo);
+  font-size: 16px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.1s ease;
+}
+.anadir-lista:active {
+  background: var(--marca);
+  color: #fff;
+  transform: scale(0.9);
+}
+
 .desc {
   font-size: 13.5px;
   color: var(--tinta-media);
