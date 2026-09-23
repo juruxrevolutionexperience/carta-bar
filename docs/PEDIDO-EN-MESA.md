@@ -78,6 +78,31 @@ visto en un navegador real: el tacto en el móvil y el aspecto visual quedan
 por confirmar. Los nombres de las tablas nuevas y su RLS se crean solos al
 arrancar (`zonas` y las columnas nuevas de `mesas`, en `sql/esquema.sql`).
 
+**Rediseño del panel (2026-09-23), tras ver un TPV de la competencia:** la
+primera versión funcionaba pero parecía una maqueta. Decidido con el dueño:
+- **Panel oscuro entero.** El fondo es la misma tinta cálida de la carta
+  (`#121110`): la carta del cliente sigue clara, el panel es su reverso. Toda
+  la paleta vive en `:root` de `frontend/src/admin/estilos.css`.
+- **Menú lateral que se despliega** (`MenuLateral.tsx`) en vez de la barra
+  inferior de iconos: con mesas, comandas, cocina y camarero no caben cinco
+  huecos. En escritorio (≥860px) se queda fijo y desaparece la hamburguesa.
+  Las secciones se declaran una sola vez en `secciones.tsx`.
+- **Plano legible:** cuadrícula de 12×9 casillas de 56px (antes 24×18 de 32px,
+  que en un móvil obligaba a un zoom del 43% y dejaba los nombres en "T…").
+- **Texto a tamaño de pantalla:** el plano se escala con `transform: scale()`,
+  pero nombre, aforo y tirador se dividen por `--z` (el zoom) para conservar su
+  tamaño real. Sin eso, al alejar, el texto se volvía ilegible.
+- **Detalle según el sitio** (`detalleVisible` en `planoUtil.ts`): con poco
+  espacio en pantalla se oculta el aforo y queda solo el nombre.
+- **Herramientas del plano:** zoom, "ver el plano entero" (ajusta a lo ancho y
+  a lo alto) y **candado**, para que el gerente pueda mirar sin mover mesas de
+  un roce.
+- **Ocupación en cada pestaña de zona** (TERRAZA 12, SALÓN 6...).
+
+Probado con un Chromium de verdad (capturas en móvil y escritorio) además de
+las 55 comprobaciones de comportamiento. Para volver a sacar capturas, ver
+"Cómo probar la interfaz" en [ARQUITECTURA.md](ARQUITECTURA.md).
+
 **Decisión para el paso 3 (juntar mesas en servicio, sin hacer):** lo hace el
 camarero durante el servicio y se deshace al cobrar; **no** toca el plano
 fijo. Si las dos mesas tienen comandas, **las cuentas se fusionan en una**; si

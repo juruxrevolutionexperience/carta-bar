@@ -173,3 +173,22 @@ nada de `carta_bar` (`load_dotenv` no pisa lo que ya está puesto), y
 `tests/test_aislada.py` comprueba que los repositorios de la suite son en
 memoria. Al arrancar el servidor local para probar a mano, hacer lo mismo:
 `POSTGRES_USER= POSTGRES_PASSWORD= POSTGRES_DB= POSTGRES_HOST= CARTA_BD_ACTIVA=false uvicorn ...`
+
+## Cómo probar la interfaz (sin desplegar)
+
+Dos niveles, los dos contra un servidor local **aislado de producción** (con
+las variables `POSTGRES_*` vacías y `CARTA_BD_ACTIVA=false`, ver arriba):
+
+1. **Comportamiento**, con un DOM simulado (jsdom) sobre el paquete real de
+   Vite: añadir mesas, arrastrarlas, el tirador de tamaño, los límites del
+   plano, zonas, candado. No pinta nada, pero comprueba que la pantalla hace
+   lo que dice y que no salta ningún error de React.
+2. **Aspecto**, con Chromium de verdad (Playwright) haciendo capturas en móvil
+   y en escritorio. En este PC faltaban tres librerías del sistema
+   (`libnspr4`, `libnss3`, `libasound2`); se bajan con `apt-get download` y se
+   extraen con `dpkg-deb -x` a una carpeta propia, sin tocar el sistema, y se
+   apuntan con `LD_LIBRARY_PATH`.
+
+Un cambio de interfaz no se da por bueno sin mirar una captura: el primer
+diseño del plano compilaba, pasaba los tests y aun así dejaba los nombres de
+las mesas en "T…".

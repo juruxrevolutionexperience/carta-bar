@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { DatosQr } from "../shared/HojaQR";
 import {
@@ -16,7 +16,16 @@ import {
 import { OrganizarZonas } from "./OrganizarZonas";
 import { PanelMesa } from "./PanelMesa";
 import { PlanoZona } from "./PlanoZona";
-import { DISENO, FORMAS, huecoLibre, siguienteNombre, type FormaMesa } from "./planoUtil";
+import {
+  DISENO,
+  FORMAS,
+  huecoLibre,
+  limitarZoom,
+  siguienteNombre,
+  zoomQueCabe,
+  type FormaMesa,
+} from "./planoUtil";
+import { HerramientasPlano } from "./HerramientasPlano";
 import { QrMesa } from "./QrMesa";
 
 type Vista = "plano" | "lista";
@@ -33,6 +42,11 @@ export function SeccionMesas() {
   const [compacta, setCompacta] = useState(true);
   const [ocupado, setOcupado] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
+  // Con el plano bloqueado se puede tocar una mesa para ver sus datos, pero no
+  // moverla sin querer. Es lo normal una vez el plano ya está montado.
+  const [bloqueado, setBloqueado] = useState(false);
+  const caja = useRef<HTMLDivElement>(null);
 
   function recargar() {
     Promise.all([cargarZonas(), cargarMesas(), cargarQr()])
@@ -49,6 +63,23 @@ export function SeccionMesas() {
   }
 
   useEffect(recargar, []);
+
+  function ajustar() {
+    const marco = caja.current?.querySelector(".plano-scroll");
+    if (!(marco instanceof HTMLElement)) return;
+    // El alto del hueco lo fija la hoja de estilos (max-height); se lee de ahi
+    // para no repetir el valor en dos sitios.
+    const alto = parseFloat(getComputedStyle(marco).maxHeight);
+    if (marco.clientWidth && alto) setZoom(zoomQueCabe(marco.clientWidth, alto));
+  }
+
+  // Al abrir, el plano entero a la vista: es lo primero que quiere ver el
+  // gerente, y en un móvil a tamaño real solo se vería un tercio.
+  useEffect(() => {
+    if (zonas) ajustar();
+    // Solo al cargar: después manda el zoom que elija el gerente.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zonas !== null]);
 
   if (error) return <section className="seccion">No se pudieron cargar las mesas.</section>;
   if (!zonas || !qr) return <section className="seccion">Cargando…</section>;
@@ -152,36 +183,32 @@ export function SeccionMesas() {
 
   return (
     <section className="seccion">
-      <div className="tarjeta">
-        <div className="cabecera-seccion">
-          <h2>Mesas</h2>
-          <div className="rejilla-opciones">
-            <label className="opcion">
-              <input
-                type="radio"
-                name="vista-mesas"
-                checked={vista === "plano"}
-                onChange={() => setVista("plano")}
-              />
-              Plano
-            </label>
-            <label className="opcion">
-              <input
-                type="radio"
-                name="vista-mesas"
-                checked={vista === "lista"}
-                onChange={() => setVista("lista")}
-              />
-              Lista de QR
-            </label>
-          </div>
-        </div>
-        {aviso && <div className="aviso visible error">{aviso}</div>}
+      <div className="selector-vista" role="radiogroup" aria-label="Vista de las mesas">
+        <label>
+          <input
+            type="radio"
+            name="vista-mesas"
+            checked={vista === "plano"}
+            onChange={() => setVista("plano")}
+          />
+          Plano
+        </label>
+        <label>
+          <input
+            type="radio"
+            name="vista-mesas"
+            checked={vista === "lista"}
+            onChange={() => setVista("lista")}
+          />
+          Lista de QR
+        </label>
       </div>
+      {aviso && <div className="aviso visible error">{aviso}</div>}
 
       {vista === "plano" && (
         <>
-          <div className="pestanas-zona" role="tablist">
+          <div className="fila-zonas">
+            <div className="pestanas-zona" role="tablist">
             {zonas.map((z) => (
               <button
                 key={z.id}
@@ -195,14 +222,21 @@ export function SeccionMesas() {
                 }}
               >
                 {z.nombre}
+                <span className="ocupacion">{mesas.filter((m) => m.zona_id === z.id).length}</span>
               </button>
             ))}
+            </div>
             <button
               type="button"
-              className={"pestana-zona gestionar" + (gestionando ? " activa" : "")}
+              className={"boton-zonas" + (gestionando ? " activa" : "")}
+              aria-label="Gestionar las zonas del local"
+              aria-pressed={gestionando}
               onClick={() => setGestionando((g) => !g)}
             >
-              ⚙ Zonas
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3.2" />
+                <path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5V21a2 2 0 11-4 0v-.1A1.6 1.6 0 007 19.4a1.6 1.6 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1H1a2 2 0 110-4h.1A1.6 1.6 0 002.6 7a1.6 1.6 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.6 1.6 0 001.8.3H7a1.6 1.6 0 001-1.5V1a2 2 0 114 0v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 00-.3 1.8V7a1.6 1.6 0 001.5 1H21a2 2 0 110 4h-.1a1.6 1.6 0 00-1.5 1z" />
+              </svg>
             </button>
           </div>
 
@@ -216,30 +250,46 @@ export function SeccionMesas() {
           )}
 
           <div className="tarjeta">
-            <p className="ayuda">Pulsa una forma para añadir una mesa. Arrástrala para colocarla.</p>
+            <p className="ayuda">Pulsa una forma para añadirla. Arrástrala para colocarla.</p>
             <div className="paleta-formas">
               {FORMAS.map((f) => (
                 <button
                   key={f}
                   type="button"
-                  className="secundario"
-                  disabled={ocupado || !zonaId}
+                  className="pieza"
+                  disabled={ocupado || !zonaId || bloqueado}
                   onClick={() => anadirMesa(f)}
                 >
-                  <span className={`icono-forma forma-${f}`} aria-hidden="true" />
+                  <span className={`icono-forma forma-${f}`} aria-hidden="true">
+                    <i />
+                  </span>
                   {DISENO[f].etiqueta}
                 </button>
               ))}
             </div>
 
-            <PlanoZona
-              mesas={mesasDeLaZona}
-              seleccionada={seleccionada}
-              onSeleccionar={setSeleccionada}
-              onCambio={(mesa, cambios) => void cambiarMesa(mesa, cambios)}
-            />
+            <div className="lienzo" ref={caja}>
+              <PlanoZona
+                mesas={mesasDeLaZona}
+                seleccionada={seleccionada}
+                zoom={zoom}
+                bloqueado={bloqueado}
+                onSeleccionar={setSeleccionada}
+                onCambio={(mesa, cambios) => void cambiarMesa(mesa, cambios)}
+              />
+              <HerramientasPlano
+                zoom={zoom}
+                bloqueado={bloqueado}
+                onZoom={(z) => setZoom(limitarZoom(z))}
+                onAjustar={ajustar}
+                onBloquear={() => setBloqueado((b) => !b)}
+              />
+            </div>
+
             {mesasDeLaZona.length === 0 && (
-              <p className="cargando">Esta zona aún no tiene mesas: pulsa una forma para empezar.</p>
+              <p className="cargando">
+                Esta zona aún no tiene mesas: pulsa una forma para empezar.
+              </p>
             )}
           </div>
 
@@ -263,17 +313,17 @@ export function SeccionMesas() {
           <p>Cada mesa tiene su propio QR. Imprímelo y déjalo en esa mesa.</p>
           {mesas.length === 0 && <p className="cargando">Todavía no hay mesas.</p>}
           {mesas.length > 0 && (
-            <div className="rejilla-opciones" style={{ marginBottom: 12 }}>
-              <label className="opcion">
+            <div className="selector-vista" role="radiogroup" aria-label="Tamaño del QR">
+              <label>
                 <input
                   type="radio"
                   name="tamano-mesa"
                   checked={compacta}
                   onChange={() => setCompacta(true)}
                 />
-                Tarjeta pequeña (soporte de mesa)
+                Tarjeta pequeña
               </label>
-              <label className="opcion">
+              <label>
                 <input
                   type="radio"
                   name="tamano-mesa"

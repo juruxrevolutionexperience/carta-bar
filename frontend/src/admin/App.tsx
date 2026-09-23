@@ -2,17 +2,20 @@ import { useEffect, useState } from "react";
 
 import "./estilos.css";
 import { cargarCarta, cargarCategorias } from "./api";
-import { NavInferior, type Seccion } from "./NavInferior";
+import { BarraSuperior } from "./BarraSuperior";
+import { MenuLateral } from "./MenuLateral";
 import { SeccionCuenta } from "./SeccionCuenta";
 import { SeccionMesas } from "./SeccionMesas";
 import { SeccionMarca } from "./SeccionMarca";
 import { SeccionEspeciales } from "./SeccionEspeciales";
 import { SeccionPlatos } from "./SeccionPlatos";
 import { SeccionQr } from "./SeccionQr";
+import { SECCIONES, tituloDe, type Seccion } from "./secciones";
 import { CATEGORIA_ESPECIALES, platoVacio, type Categoria, type Plato } from "./types";
 
 export function App() {
-  const [seccion, setSeccion] = useState<Seccion>("platos");
+  const [seccion, setSeccion] = useState<Seccion>(SECCIONES[0].id);
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const [platos, setPlatos] = useState<Plato[] | null>(null);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [error, setError] = useState(false);
@@ -48,40 +51,44 @@ export function App() {
   const especiales = platos?.filter((p) => p.categoria === CATEGORIA_ESPECIALES) ?? null;
 
   return (
-    <div className={"app" + (seccion === "mesas" ? " app-ancha" : "")}>
-      <header>
-        <h1>Panel de gestión</h1>
-      </header>
+    <>
+      <BarraSuperior titulo={tituloDe(seccion)} onAbrirMenu={() => setMenuAbierto(true)} />
+      <MenuLateral
+        activa={seccion}
+        abierto={menuAbierto}
+        onCambiar={setSeccion}
+        onCerrar={() => setMenuAbierto(false)}
+      />
 
-      {seccion === "platos" && (
-        <SeccionPlatos
-          platos={normales}
-          error={error}
-          categorias={categorias}
-          onActualizar={actualizarPlato}
-          onQuitar={quitarPlato}
-          onCreado={anadirPlato}
-          onCambioCategorias={(nuevas) =>
-            setCategorias([...nuevas].sort((a, b) => a.orden - b.orden))
-          }
-        />
-      )}
-      {seccion === "especiales" && (
-        <SeccionEspeciales
-          especiales={especiales}
-          error={error}
-          categoriasPorId={categoriasPorId}
-          onActualizar={actualizarPlato}
-          onQuitar={quitarPlato}
-          onAnadir={anadirEspecial}
-        />
-      )}
-      {seccion === "mesas" && <SeccionMesas />}
-      {seccion === "marca" && <SeccionMarca />}
-      {seccion === "qr" && <SeccionQr />}
-      {seccion === "cuenta" && <SeccionCuenta />}
-
-      <NavInferior activa={seccion} onCambiar={setSeccion} />
-    </div>
+      <div className={"app" + (seccion === "mesas" ? " app-ancha" : "")}>
+        {seccion === "platos" && (
+          <SeccionPlatos
+            platos={normales}
+            error={error}
+            categorias={categorias}
+            onActualizar={actualizarPlato}
+            onQuitar={quitarPlato}
+            onCreado={anadirPlato}
+            onCambioCategorias={(nuevas) =>
+              setCategorias([...nuevas].sort((a, b) => a.orden - b.orden))
+            }
+          />
+        )}
+        {seccion === "especiales" && (
+          <SeccionEspeciales
+            especiales={especiales}
+            error={error}
+            categoriasPorId={categoriasPorId}
+            onActualizar={actualizarPlato}
+            onQuitar={quitarPlato}
+            onAnadir={anadirEspecial}
+          />
+        )}
+        {seccion === "mesas" && <SeccionMesas />}
+        {seccion === "marca" && <SeccionMarca />}
+        {seccion === "qr" && <SeccionQr />}
+        {seccion === "cuenta" && <SeccionCuenta />}
+      </div>
+    </>
   );
 }

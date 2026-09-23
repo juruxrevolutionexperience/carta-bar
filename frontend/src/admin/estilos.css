@@ -1,14 +1,35 @@
+/* Panel de gestion: tema oscuro. Es una herramienta de trabajo que se usa de
+   pie, en un bar, muchas veces con poca luz — nada que ver con la carta que ve
+   el cliente, que sigue clara. El fondo es el mismo tono de tinta calida de la
+   carta (#171310), asi que las dos pantallas son la misma marca del reves. */
 :root {
-  --marca: #b03a2e;
-  --tinta: #171310;
-  --tinta-media: #6a615b;
-  --fondo: #ffffff;
-  --fondo-alt: #f6f3f0;
-  --borde: #ede8e3;
-  --verde: #1e7a48;
-  --verde-suave: #e7f4ec;
-  --rojo: #b03a2e;
-  --rojo-suave: #fbeae8;
+  --fondo: #121110;
+  --superficie: #1c1b19;
+  --superficie-alta: #262421;
+  --superficie-viva: #302d29;
+  --borde: #3a3630;
+  --borde-suave: #292724;
+
+  --tinta: #f7f2ee;
+  --tinta-media: #b5a79d;
+  --tinta-suave: #8a7d74;
+
+  --marca: #e0654b;
+  --marca-viva: #f0785e;
+  --marca-tenue: rgba(224, 101, 75, 0.14);
+
+  --verde: #46c98b;
+  --verde-suave: rgba(70, 201, 139, 0.14);
+  --ambar: #e8a33d;
+  --ambar-suave: rgba(232, 163, 61, 0.14);
+  --rojo: #ef6a5e;
+  --rojo-suave: rgba(239, 106, 94, 0.14);
+
+  --sombra: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --sombra-alta: 0 12px 32px rgba(0, 0, 0, 0.5);
+
+  --alto-barra: 56px;
+  --ancho-menu: 264px;
 }
 
 * {
@@ -27,24 +48,21 @@ html {
 }
 
 body {
-  background: var(--fondo-alt);
+  background: var(--fondo);
   color: var(--tinta);
   font-family: system-ui, sans-serif;
   min-height: 100vh;
-  padding: 24px;
-  /* Sitio para la barra inferior fija, más el gesto de inicio del iPhone. */
-  padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  /* La barra superior es fija: el contenido empieza por debajo de ella. */
+  padding: calc(var(--alto-barra) + env(safe-area-inset-top) + 20px) 20px
+    calc(32px + env(safe-area-inset-bottom));
   touch-action: pan-x pan-y;
   overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
 }
 
 .app {
-  max-width: 480px;
+  max-width: 560px;
   margin: 0 auto;
-}
-
-header {
-  margin-bottom: 24px;
 }
 
 h1 {
@@ -52,16 +70,18 @@ h1 {
 }
 
 .tarjeta {
-  background: var(--fondo);
-  border: 1px solid var(--borde);
+  background: var(--superficie);
+  border: 1px solid var(--borde-suave);
   border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 16px;
+  padding: 20px;
+  margin-bottom: 14px;
+  box-shadow: var(--sombra);
 }
 
 .tarjeta h2 {
   font-size: 15px;
   margin-bottom: 8px;
+  letter-spacing: -0.01em;
 }
 
 .tarjeta p {
@@ -82,6 +102,8 @@ select,
 textarea {
   width: 100%;
   padding: 11px 13px;
+  background: var(--superficie-alta);
+  color: var(--tinta);
   border: 1px solid var(--borde);
   border-radius: 10px;
   /* 16px minimo: por debajo, Safari en iPhone hace zoom automatico al enfocar. */
@@ -99,6 +121,11 @@ select:focus,
 textarea:focus {
   outline: 2px solid var(--marca);
   outline-offset: 1px;
+  border-color: transparent;
+}
+
+input::placeholder {
+  color: var(--tinta-suave);
 }
 
 input[type="search"] {
@@ -127,7 +154,7 @@ input[type="search"] {
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--tinta-media);
-  background: var(--fondo-alt);
+  background: var(--superficie-alta);
   border-left: 4px solid transparent;
   border-radius: 6px;
   padding: 8px 10px;
@@ -162,7 +189,7 @@ button.primario {
   margin-top: 16px;
   padding: 11px 16px;
   background: var(--marca);
-  color: #fff;
+  color: #1a0f0c;
   border: none;
   border-radius: 10px;
   font-size: 14px;
@@ -294,7 +321,7 @@ button.secundario {
 
 .fila-plato .detalle-falta {
   font-size: 12px;
-  color: #8a5a00;
+  color: var(--ambar);
   margin-top: 2px;
 }
 
@@ -385,7 +412,7 @@ button.secundario {
   border-radius: 10px;
   object-fit: cover;
   border: 1px solid var(--borde);
-  background: var(--fondo-alt);
+  background: var(--superficie-alta);
   flex-shrink: 0;
 }
 
@@ -439,42 +466,170 @@ button.secundario {
   text-align: left;
 }
 
-.nav-inferior {
+/* Barra superior fija + menu lateral que se despliega. Sustituye a la barra
+   inferior de iconos: con mesas, comandas, cocina y camarero son ya demasiadas
+   secciones para cinco huecos. */
+.barra-superior {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0 0 auto 0;
+  z-index: 30;
   display: flex;
-  justify-content: space-around;
-  background: var(--fondo);
-  border-top: 1px solid var(--borde);
-  padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
-  z-index: 10;
+  align-items: center;
+  gap: 12px;
+  height: calc(var(--alto-barra) + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) 12px 0;
+  background: rgba(18, 17, 16, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--borde-suave);
 }
 
-.nav-item {
+.boton-menu {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
   background: none;
   border: none;
+  border-radius: 10px;
+  color: var(--tinta);
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  padding: 6px 22px;
-  color: var(--tinta-media);
-  font-size: 11px;
 }
 
-.nav-item svg {
+.boton-menu:active {
+  background: var(--superficie-alta);
+}
+
+.boton-menu svg {
   width: 22px;
   height: 22px;
   stroke: currentColor;
   fill: none;
-  stroke-width: 1.8;
+  stroke-width: 1.9;
+  stroke-linecap: round;
 }
 
-.nav-item.activo {
-  color: var(--marca);
+.titulo-barra {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.marca-barra {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
+/* El velo cubre la pantalla al abrir el menu: un toque fuera lo cierra. */
+.velo-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.velo-menu.visible {
+  opacity: 1;
+}
+
+.menu-lateral {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 41;
+  width: var(--ancho-menu);
+  max-width: 82vw;
+  display: flex;
+  flex-direction: column;
+  background: var(--superficie);
+  border-right: 1px solid var(--borde);
+  box-shadow: var(--sombra-alta);
+  padding: calc(env(safe-area-inset-top) + 16px) 12px
+    calc(env(safe-area-inset-bottom) + 16px);
+  transform: translateX(-100%);
+  transition: transform 0.24s cubic-bezier(0.32, 0.72, 0, 1);
+  overflow-y: auto;
+}
+
+.menu-lateral.abierto {
+  transform: translateX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-lateral,
+  .velo-menu {
+    transition: none;
+  }
+}
+
+.cabecera-menu {
+  padding: 4px 10px 18px;
+}
+
+.cabecera-menu .nombre {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.cabecera-menu .sub {
+  font-size: 12px;
+  color: var(--tinta-suave);
+  margin-top: 2px;
+}
+
+.grupo-menu {
+  padding: 14px 10px 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
+.item-menu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 10px;
+  background: none;
+  border: none;
+  border-radius: 10px;
+  color: var(--tinta-media);
+  font-size: 14.5px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.item-menu svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.item-menu:active {
+  background: var(--superficie-alta);
+}
+
+.item-menu.activo {
+  background: var(--marca-tenue);
+  color: var(--marca-viva);
+  font-weight: 600;
 }
 
 /* Gestion de categorias */
@@ -484,7 +639,7 @@ button.secundario {
   gap: 8px;
   padding: 8px 10px;
   margin-top: 6px;
-  background: var(--fondo-alt);
+  background: var(--superficie-alta);
   border-left: 4px solid transparent;
   border-radius: 6px;
 }
@@ -568,8 +723,8 @@ button.secundario {
   margin-left: 6px;
   padding: 1px 8px;
   border-radius: 20px;
-  background: #fdf1d6;
-  color: #8a5a00;
+  background: var(--ambar-suave);
+  color: var(--ambar);
   font-size: 11px;
   font-weight: 600;
 }
@@ -585,172 +740,139 @@ button.secundario {
 
 @media (min-width: 860px) {
   body {
-    padding: 40px 40px 40px 264px;
+    padding-left: calc(var(--ancho-menu) + 40px);
+    padding-right: 40px;
   }
   .app {
-    max-width: 640px;
+    max-width: 900px;
     margin: 0;
   }
-
-  .nav-inferior {
-    position: fixed;
-    inset: 0 auto 0 0;
-    width: 200px;
-    height: 100vh;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-start;
-    gap: 4px;
-    padding: 32px 12px;
-    border-top: none;
-    border-right: 1px solid var(--borde);
+  /* Con sitio de sobra el menu se queda siempre abierto y deja de ser un
+     panel deslizante: el velo y el boton de hamburguesa sobran. */
+  .menu-lateral {
+    transform: none;
+    box-shadow: none;
   }
-  .nav-item {
-    flex-direction: row;
-    justify-content: flex-start;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 10px;
-    font-size: 14px;
+  .velo-menu,
+  .boton-menu {
+    display: none;
   }
-  .nav-item.activo {
-    background: var(--fondo-alt);
-  }
-  .nav-item svg {
-    width: 19px;
-    height: 19px;
-    flex-shrink: 0;
+  .barra-superior {
+    left: var(--ancho-menu);
+    padding-left: 24px;
   }
 }
 
-/* Mesas y plano del local */
-.mesa-qr {
-  margin-top: 8px;
-}
+/* ==================================================================
+   MESAS · plano del local
+   ================================================================== */
 
-.mesa-qr > summary {
-  cursor: pointer;
-  padding: 10px 12px;
-  background: var(--fondo-alt);
-  border-radius: 8px;
-  font-weight: 600;
-}
-
-.mesa-qr-cuerpo {
-  padding-top: 12px;
-}
-
-.titulo-zona-lista {
-  margin: 16px 0 4px;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--tinta-media);
-}
-
+/* ---------- pestañas de zona, con su ocupación ---------- */
 .pestanas-zona {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   overflow-x: auto;
-  padding: 2px 0 12px;
+  scrollbar-width: none;
+  margin-bottom: 12px;
+  padding-bottom: 2px;
+}
+
+.pestanas-zona::-webkit-scrollbar {
+  display: none;
 }
 
 .pestana-zona {
   flex: 0 0 auto;
-  border: 1px solid var(--borde);
-  background: var(--fondo);
-  color: var(--tinta);
-  border-radius: 100px;
-  padding: 8px 14px;
-  font-size: 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  border: none;
+  background: var(--superficie);
+  color: var(--tinta-media);
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-family: inherit;
+  font-size: 13.5px;
   font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   cursor: pointer;
+  white-space: nowrap;
+}
+
+.pestana-zona .ocupacion {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--tinta-suave);
 }
 
 .pestana-zona.activa {
   background: var(--marca);
-  border-color: var(--marca);
-  color: #fff;
+  color: #1a0f0c;
+}
+
+.pestana-zona.activa .ocupacion {
+  color: rgba(26, 15, 12, 0.65);
 }
 
 .pestana-zona.gestionar {
-  color: var(--tinta-media);
+  background: none;
+  border: 1px dashed var(--borde);
+  color: var(--tinta-suave);
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .pestana-zona.gestionar.activa {
-  background: var(--fondo-alt);
-  border-color: var(--borde);
-  color: var(--tinta);
+  background: var(--superficie-alta);
+  border-style: solid;
+  border-color: var(--marca);
+  color: var(--marca-viva);
 }
 
-.paleta-formas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 8px 0 14px;
+/* ---------- lienzo del plano ---------- */
+.lienzo {
+  position: relative;
+  border: 1px solid var(--borde-suave);
+  border-radius: 14px;
+  background: #0b0a09;
+  overflow: hidden;
 }
 
-.paleta-formas button.secundario {
-  margin-top: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.icono-forma {
-  display: inline-block;
-  border: 2px solid currentColor;
-  background: transparent;
-  width: 16px;
-  height: 16px;
-}
-.icono-forma.forma-redonda,
-.icono-forma.forma-barril,
-.icono-forma.forma-taburete {
-  border-radius: 50%;
-}
-.icono-forma.forma-cuadrada {
-  border-radius: 3px;
-}
-.icono-forma.forma-rectangular {
-  width: 24px;
-  height: 14px;
-  border-radius: 3px;
-}
-.icono-forma.forma-taburete {
-  width: 10px;
-  height: 10px;
-}
-
-/* El plano se desplaza dentro de su caja (tiene tamano fijo por casillas). */
 .plano-scroll {
   overflow: auto;
-  max-width: 100%;
-  border: 1px solid var(--borde);
-  border-radius: 10px;
-  background: var(--fondo-alt);
+  /* El dedo desplaza el plano; sobre una mesa, la arrastra (touch-action en
+     .mesa-plano). Sin esto, mover una mesa haría scroll a la vez. */
+  touch-action: pan-x pan-y;
+  max-height: min(62vh, 560px);
 }
 
 .plano {
   position: relative;
+  transform-origin: 0 0;
   background-image:
-    linear-gradient(to right, var(--borde) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--borde) 1px, transparent 1px);
-  touch-action: pan-x pan-y;
-  user-select: none;
+    linear-gradient(to right, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
 }
 
+.plano.bloqueado .mesa-plano {
+  cursor: default;
+}
+
+/* ---------- una mesa ---------- */
 .mesa-plano {
   position: absolute;
-  display: grid;
-  place-items: center;
-  background: var(--fondo);
-  border: 2px solid var(--tinta-media);
-  border-radius: 6px;
+  background: #322e29;
+  border: 1.5px solid #4c463e;
+  border-radius: 8px;
   box-sizing: border-box;
   cursor: grab;
-  /* El dedo sobre una mesa la arrastra en vez de desplazar el plano. */
   touch-action: none;
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s;
 }
 
 .mesa-plano.forma-redonda,
@@ -760,75 +882,399 @@ button.secundario {
 }
 
 .mesa-plano.forma-barril {
-  background: #e9dcc9;
-  border-color: #8a6b3f;
+  background: #4a3826;
+  border-color: #7d6143;
 }
 
 .mesa-plano.forma-taburete {
-  background: var(--fondo-alt);
+  background: #3c3833;
 }
 
 .mesa-plano.seleccionada {
   border-color: var(--marca);
-  box-shadow: 0 0 0 3px rgba(176, 58, 46, 0.25);
-  z-index: 2;
+  box-shadow:
+    0 0 0 3px rgba(224, 101, 75, 0.3),
+    var(--sombra);
+  z-index: 3;
 }
 
 .mesa-plano.moviendo {
   cursor: grabbing;
-  opacity: 0.9;
+  box-shadow: var(--sombra-alta);
+  z-index: 4;
 }
 
-.mesa-nombre {
-  max-width: 100%;
-  padding: 0 2px;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.1;
-  text-align: center;
+/* Etiqueta de nombre arriba a la izquierda y aforo arriba a la derecha: deja
+   el centro libre para el estado de la mesa (tiempo y total) en servicio. */
+.mesa-cabecera {
+  position: absolute;
+  inset: 0 0 auto 0;
+  /* Recorta el nombre si no cabe, pero sin tocar el tirador de tamaño, que
+     vive fuera de la mesa y quedaba cortado por la mitad. */
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(4px / var(--z, 1));
+  padding: calc(5px / var(--z, 1)) calc(6px / var(--z, 1));
   pointer-events: none;
 }
 
+.mesa-etiqueta {
+  max-width: 100%;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 5px;
+  /* --z es el zoom del plano: dividir por él deja el texto del mismo tamaño en
+     pantalla a cualquier zoom, en vez de encogerse hasta no leerse. */
+  font-size: calc(11px / var(--z, 1));
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  color: var(--tinta);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mesa-aforo {
+  display: flex;
+  align-items: center;
+  gap: calc(2px / var(--z, 1));
+  flex-shrink: 0;
+  font-size: calc(11px / var(--z, 1));
+  font-weight: 600;
+  color: var(--tinta-media);
+}
+
+.mesa-aforo svg {
+  width: calc(11px / var(--z, 1));
+  height: calc(11px / var(--z, 1));
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+/* En una mesa redonda la esquina se curva y la etiqueta se salía del círculo:
+   ahí el nombre y el aforo van centrados. */
+.mesa-plano.forma-redonda .mesa-cabecera,
+.mesa-plano.forma-barril .mesa-cabecera,
+.mesa-plano.forma-taburete .mesa-cabecera {
+  inset: 0;
+  flex-direction: column;
+  justify-content: center;
+  padding: calc(4px / var(--z, 1));
+}
+
+/* Las mesas de una sola casilla (barril, taburete) no tienen sitio para la
+   cabecera: solo el nombre, centrado y diminuto. */
+.mesa-plano.mini .mesa-cabecera {
+  inset: 0;
+  padding: 2px;
+  justify-content: center;
+}
+
+.mesa-plano.mini .mesa-etiqueta {
+  background: none;
+  padding: 0;
+  font-size: calc(10px / var(--z, 1));
+}
+
+.plano-scroll {
+  scrollbar-width: thin;
+}
+
+.mesa-plano.mini .mesa-aforo {
+  display: none;
+}
+
+/* El tirador también a tamaño de pantalla: con el plano alejado se quedaba
+   en un punto imposible de agarrar con el dedo. */
 .mesa-tirador {
   position: absolute;
-  right: -9px;
-  bottom: -9px;
-  width: 20px;
-  height: 20px;
+  right: calc(-11px / var(--z, 1));
+  bottom: calc(-11px / var(--z, 1));
+  width: calc(22px / var(--z, 1));
+  height: calc(22px / var(--z, 1));
   border-radius: 50%;
   background: var(--marca);
-  border: 2px solid #fff;
+  border: calc(2px / var(--z, 1)) solid var(--fondo);
+  box-shadow: var(--sombra);
   cursor: nwse-resize;
   touch-action: none;
+}
+
+/* ---------- barra de herramientas del plano ---------- */
+.herramientas-plano {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  background: var(--superficie);
+  border-top: 1px solid var(--borde-suave);
+}
+
+.herramientas-plano .separador {
+  flex: 1;
+}
+
+.boton-herramienta {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: none;
+  border-radius: 9px;
+  color: var(--tinta-media);
+  cursor: pointer;
+}
+
+.boton-herramienta svg {
+  width: 19px;
+  height: 19px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.boton-herramienta:active {
+  background: var(--superficie-alta);
+}
+
+.boton-herramienta:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.boton-herramienta.encendido {
+  background: var(--marca-tenue);
+  color: var(--marca-viva);
+}
+
+.nivel-zoom {
+  min-width: 46px;
+  text-align: center;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta-suave);
+}
+
+/* ---------- paleta de formas ---------- */
+.paleta-formas {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px 0 10px;
+}
+
+.paleta-formas::-webkit-scrollbar {
+  display: none;
+}
+
+.pieza {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 74px;
+  padding: 10px 6px;
+  background: var(--superficie);
+  border: 1px solid var(--borde-suave);
+  border-radius: 12px;
+  color: var(--tinta-media);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pieza:active {
+  border-color: var(--marca);
+  color: var(--marca-viva);
+}
+
+.pieza:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.icono-forma {
+  width: 26px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+}
+
+.icono-forma i {
+  display: block;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+}
+
+.icono-forma.forma-redonda i {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+}
+.icono-forma.forma-cuadrada i {
+  width: 19px;
+  height: 19px;
+}
+.icono-forma.forma-rectangular i {
+  width: 26px;
+  height: 15px;
+}
+.icono-forma.forma-barril i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+.icono-forma.forma-taburete i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* ---------- panel de la mesa elegida ---------- */
+.panel-mesa h3 {
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
 }
 
 .panel-mesa .acciones-mesa {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
-.panel-mesa button.secundario {
-  margin-top: 12px;
-}
-
-.panel-mesa .acciones-mesa button.secundario {
+.panel-mesa .acciones-mesa button {
+  flex: 1;
   margin-top: 0;
 }
 
 button.secundario.peligro {
   color: var(--rojo);
+  border-color: rgba(239, 106, 94, 0.4);
 }
 
+/* ---------- QR de cada mesa ---------- */
+.mesa-qr {
+  margin-top: 8px;
+}
+
+.mesa-qr > summary {
+  cursor: pointer;
+  padding: 11px 13px;
+  background: var(--superficie-alta);
+  border-radius: 9px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.mesa-qr-cuerpo {
+  padding-top: 12px;
+}
+
+.titulo-zona-lista {
+  margin: 18px 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--tinta-suave);
+}
+
+/* ---------- ancho extra solo en la pantalla del plano ---------- */
 .app.app-ancha {
-  max-width: 640px;
+  max-width: 620px;
 }
 
 @media (min-width: 860px) {
   .app.app-ancha {
-    max-width: 1000px;
+    max-width: 1100px;
   }
+}
+
+/* Selector de vista. Con <input type=radio> el navegador pinta su propio
+   circulito azul, que rompe el tema oscuro: aqui el radio es invisible y lo
+   que se ve es la etiqueta. */
+.selector-vista {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  margin-bottom: 12px;
+  background: var(--superficie);
+  border-radius: 11px;
+}
+
+.selector-vista label {
+  margin: 0;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--tinta-media);
+  cursor: pointer;
+  user-select: none;
+}
+
+.selector-vista input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.selector-vista label:has(input:checked) {
+  background: var(--superficie-viva);
+  color: var(--tinta);
+}
+
+.selector-vista label:has(input:focus-visible) {
+  outline: 2px solid var(--marca);
+}
+
+/* Fila de pestañas + el engranaje de zonas, que no se va con el desplazamiento. */
+.fila-zonas {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.fila-zonas .pestanas-zona {
+  flex: 1;
+  min-width: 0;
+}
+
+.boton-zonas {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: var(--superficie);
+  border: none;
+  border-radius: 10px;
+  color: var(--tinta-media);
+  cursor: pointer;
+}
+
+.boton-zonas svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+}
+
+.boton-zonas.activa {
+  background: var(--marca-tenue);
+  color: var(--marca-viva);
 }

@@ -5,9 +5,12 @@
 export type FormaMesa = "redonda" | "cuadrada" | "rectangular" | "barril" | "taburete";
 
 // El plano de cada zona es una cuadricula fija: cada casilla mide CELDA px.
-export const COLUMNAS = 24;
-export const FILAS = 18;
-export const CELDA = 32;
+// Pocas casillas y grandes a proposito: con una cuadricula fina las mesas
+// salen diminutas en un movil y no se lee su nombre. Una mesa normal ocupa
+// 2 de 12 columnas, o sea la sexta parte del ancho.
+export const COLUMNAS = 12;
+export const FILAS = 9;
+export const CELDA = 56;
 
 // Mismos valores que DISENO_POR_FORMA en src/carta_bar/mesas.py.
 export const DISENO: Record<
@@ -82,4 +85,47 @@ export function siguienteNombre(nombres: string[]): string {
 // Cuantos giros de 45 grados, siempre entre 0 y 359.
 export function girar(rotacion: number, grados: number): number {
   return (((rotacion + grados) % 360) + 360) % 360;
+}
+
+// --------------------------------------------------------------- zoom
+
+export const ZOOM_MIN = 0.4;
+export const ZOOM_MAX = 1.6;
+
+export function limitarZoom(z: number): number {
+  return Math.min(Math.max(z, ZOOM_MIN), ZOOM_MAX);
+}
+
+// Zoom al que el plano entero cabe en el hueco disponible. Mira el alto ademas
+// del ancho: en una pantalla apaisada solo el ancho daba un zoom tan grande que
+// las mesas de abajo quedaban cortadas. Se redondea hacia abajo a centesimas
+// para que no asome una franja por un pixel de redondeo.
+export function zoomQueCabe(anchoDisponible: number, altoDisponible: number): number {
+  const porAncho = anchoDisponible / (COLUMNAS * CELDA);
+  const porAlto = altoDisponible / (FILAS * CELDA);
+  return limitarZoom(Math.floor(Math.min(porAncho, porAlto) * 100) / 100);
+}
+
+// --------------------------------------------- que cabe escrito en una mesa
+
+/** Ancho que ocupa una mesa en la pantalla, ya contando el zoom. */
+export function anchoEnPantalla(anchoCasillas: number, zoom: number): number {
+  return anchoCasillas * CELDA * zoom;
+}
+
+/**
+ * Que se puede escribir dentro de una mesa segun el sitio que tenga en
+ * pantalla. Sin esto, con el plano alejado el nombre y el aforo se pisaban y
+ * quedaban en "T..." y una rayita.
+ */
+export function detalleVisible(
+  anchoCasillas: number,
+  altoCasillas: number,
+  zoom: number
+): "completo" | "solo-nombre" | "minimo" {
+  const ancho = anchoEnPantalla(anchoCasillas, zoom);
+  const alto = anchoEnPantalla(altoCasillas, zoom);
+  if (ancho < 46 || alto < 34) return "minimo";
+  if (ancho < 96) return "solo-nombre";
+  return "completo";
 }

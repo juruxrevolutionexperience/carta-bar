@@ -1,13 +1,24 @@
-import { useRef, useState, type PointerEvent } from "react";
+import { useRef, useState, type CSSProperties, type PointerEvent } from "react";
 
 import type { Mesa } from "./api";
-import { CELDA, COLUMNAS, FILAS, alinear, limitarPosicion, limitarTamano, type Caja } from "./planoUtil";
+import {
+  CELDA,
+  COLUMNAS,
+  FILAS,
+  alinear,
+  detalleVisible,
+  limitarPosicion,
+  limitarTamano,
+  type Caja,
+} from "./planoUtil";
 
 interface Props {
   mesas: Mesa[];
   seleccionada: string | null;
+  zoom: number;
+  bloqueado: boolean;
   onSeleccionar: (id: string | null) => void;
-  // Se llama una sola vez al soltar, con lo que cambio (posicion o tamano).
+  // Se llama una sola vez al soltar, con lo que cambió (posición o tamaño).
   onCambio: (mesa: Mesa, cambios: Partial<Caja>) => void;
 }
 
@@ -21,14 +32,31 @@ interface Gesto {
   movido: boolean;
 }
 
-// Por debajo de estos pixeles de desplazamiento es un toque, no un arrastre.
+// Por debajo de estos píxeles de desplazamiento es un toque, no un arrastre.
 const UMBRAL_ARRASTRE = 4;
 
-export function PlanoZona({ mesas, seleccionada, onSeleccionar, onCambio }: Props) {
+function IconoPersonas() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+      <path d="M16 5.2a3.2 3.2 0 010 5.6M18 14.4c1.8.9 3 2.7 3 5.6" />
+    </svg>
+  );
+}
+
+export function PlanoZona({
+  mesas,
+  seleccionada,
+  zoom,
+  bloqueado,
+  onSeleccionar,
+  onCambio,
+}: Props) {
   const [gesto, setGestoEstado] = useState<Gesto | null>(null);
-  // Copia sincrona del gesto: entre dos eventos seguidos (un movimiento y el
-  // soltar, por ejemplo) React puede no haber repintado aun, y el manejador
-  // leeria una posicion un paso atrasada.
+  // Copia síncrona del gesto: entre dos eventos seguidos (un movimiento y el
+  // soltar, por ejemplo) React puede no haber repintado aún, y el manejador
+  // leería una posición un paso atrasada.
   const gestoRef = useRef<Gesto | null>(null);
 
   function setGesto(nuevo: Gesto | null) {
@@ -37,8 +65,12 @@ export function PlanoZona({ mesas, seleccionada, onSeleccionar, onCambio }: Prop
   }
 
   function empezar(e: PointerEvent<HTMLElement>, mesa: Mesa, modo: Gesto["modo"]) {
+    if (bloqueado) {
+      onSeleccionar(mesa.id);
+      return;
+    }
     e.stopPropagation();
-    // La captura hace que el arrastre siga funcionando aunque el dedo salga de la mesa.
+    // La captura hace que el arrastre siga aunque el dedo salga de la mesa.
     e.currentTarget.setPointerCapture(e.pointerId);
     onSeleccionar(mesa.id);
     const origen = { x: mesa.x, y: mesa.y, ancho: mesa.ancho, alto: mesa.alto };
@@ -56,8 +88,10 @@ export function PlanoZona({ mesas, seleccionada, onSeleccionar, onCambio }: Prop
   function arrastrar(e: PointerEvent<HTMLElement>) {
     const gesto = gestoRef.current;
     if (!gesto) return;
-    const dx = (e.clientX - gesto.inicioX) / CELDA;
-    const dy = (e.clientY - gesto.inicioY) / CELDA;
+    // Con el plano reducido, un mismo recorrido del dedo son más casillas.
+    const paso = CELDA * zoom;
+    const dx = (e.clientX - gesto.inicioX) / paso;
+    const dy = (e.clientY - gesto.inicioY) / paso;
     const { origen } = gesto;
     const actual: Caja =
       gesto.modo === "mover"
@@ -80,7 +114,8 @@ export function PlanoZona({ mesas, seleccionada, onSeleccionar, onCambio }: Prop
             ),
           };
     const movido =
-      gesto.movido || Math.hypot(e.clientX - gesto.inicioX, e.clientY - gesto.inicioY) > UMBRAL_ARRASTRE;
+      gesto.movido ||
+      Math.hypot(e.clientX - gesto.inicioX, e.clientY - gesto.inicioY) > UMBRAL_ARRASTRE;
     setGesto({ ...gesto, actual, movido });
   }
 
@@ -101,54 +136,77 @@ export function PlanoZona({ mesas, seleccionada, onSeleccionar, onCambio }: Prop
 
   return (
     <div className="plano-scroll">
+      {/* El marco ocupa el tamaño ya escalado: es lo que hace que la barra de
+          desplazamiento sepa cuánto plano hay al ampliar. */}
       <div
-        className="plano"
         style={{
-          width: COLUMNAS * CELDA,
-          height: FILAS * CELDA,
-          backgroundSize: `${CELDA}px ${CELDA}px`,
+          width: COLUMNAS * CELDA * zoom,
+          height: FILAS * CELDA * zoom,
         }}
-        onPointerDown={(e) => {
-          if (e.target === e.currentTarget) onSeleccionar(null);
-        }}
-        onPointerMove={arrastrar}
-        onPointerUp={soltar}
-        onPointerCancel={soltar}
       >
-        {mesas.map((m) => {
-          const c: Caja = gesto?.id === m.id ? gesto.actual : m;
-          const elegida = seleccionada === m.id;
-          return (
-            <div
-              key={m.id}
-              className={
-                `mesa-plano forma-${m.forma}` +
-                (elegida ? " seleccionada" : "") +
-                (gesto?.id === m.id ? " moviendo" : "")
-              }
-              style={{
-                left: c.x * CELDA,
-                top: c.y * CELDA,
-                width: c.ancho * CELDA,
-                height: c.alto * CELDA,
-                transform: `rotate(${m.rotacion}deg)`,
-              }}
-              onPointerDown={(e) => empezar(e, m, "mover")}
-            >
-              {/* El texto contra-gira para leerse siempre derecho. */}
-              <span className="mesa-nombre" style={{ transform: `rotate(${-m.rotacion}deg)` }}>
-                {m.nombre}
-              </span>
-              {elegida && (
-                <span
-                  className="mesa-tirador"
-                  aria-label="Cambiar el tamaño"
-                  onPointerDown={(e) => empezar(e, m, "tamano")}
-                />
-              )}
-            </div>
-          );
-        })}
+        <div
+          className={"plano" + (bloqueado ? " bloqueado" : "")}
+          style={
+            {
+              width: COLUMNAS * CELDA,
+              height: FILAS * CELDA,
+              transform: `scale(${zoom})`,
+              backgroundSize: `${CELDA}px ${CELDA}px`,
+              // Los textos y el tirador se dividen por --z para conservar su
+              // tamaño en pantalla aunque el plano esté reducido.
+              "--z": zoom,
+            } as CSSProperties
+          }
+          onPointerDown={(e) => {
+            if (e.target === e.currentTarget) onSeleccionar(null);
+          }}
+          onPointerMove={arrastrar}
+          onPointerUp={soltar}
+          onPointerCancel={soltar}
+        >
+          {mesas.map((m) => {
+            const c: Caja = gesto?.id === m.id ? gesto.actual : m;
+            const elegida = seleccionada === m.id;
+            const detalle = detalleVisible(c.ancho, c.alto, zoom);
+            return (
+              <div
+                key={m.id}
+                className={
+                  `mesa-plano forma-${m.forma}` +
+                  (detalle === "minimo" ? " mini" : "") +
+                  (elegida ? " seleccionada" : "") +
+                  (gesto?.id === m.id ? " moviendo" : "")
+                }
+                style={{
+                  left: c.x * CELDA,
+                  top: c.y * CELDA,
+                  width: c.ancho * CELDA,
+                  height: c.alto * CELDA,
+                  transform: `rotate(${m.rotacion}deg)`,
+                }}
+                onPointerDown={(e) => empezar(e, m, "mover")}
+              >
+                {/* Contra-gira para leerse siempre derecho aunque la mesa no lo esté. */}
+                <div className="mesa-cabecera" style={{ transform: `rotate(${-m.rotacion}deg)` }}>
+                  <span className="mesa-etiqueta">{m.nombre}</span>
+                  {detalle === "completo" && (
+                    <span className="mesa-aforo">
+                      <IconoPersonas />
+                      {m.capacidad}
+                    </span>
+                  )}
+                </div>
+                {elegida && !bloqueado && (
+                  <span
+                    className="mesa-tirador"
+                    aria-label="Cambiar el tamaño"
+                    onPointerDown={(e) => empezar(e, m, "tamano")}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
