@@ -677,6 +677,18 @@ def admin_crear_mesa(
     return mesas.crear_mesa(restaurante_id, peticion.nombre)
 
 
+@app.post("/admin/api/mesas/{mesa_id}/regenerar-qr", response_model=None)
+def admin_regenerar_qr_mesa(
+    mesa_id: str, request: Request, restaurante_id: RestauranteActual
+) -> Mesa | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    mesa = mesas.regenerar_token(restaurante_id, mesa_id)
+    if mesa is None:
+        return Response(status_code=404, content="Mesa no encontrada")
+    return mesa
+
+
 class EntrarMesaPeticion(BaseModel):
     token_qr: str = Field(min_length=1, max_length=200)
     nombre: str | None = Field(default=None, max_length=60)

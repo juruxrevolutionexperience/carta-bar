@@ -55,6 +55,10 @@ class RepositorioMesas(Protocol):
 
     def listar_mesas(self, restaurante_id: str) -> list[Mesa]: ...
 
+    def regenerar_token(self, restaurante_id: str, mesa_id: str) -> Mesa | None:
+        """Token nuevo para la mesa (el QR impreso deja de valer). None si no existe."""
+        ...
+
     def mesa_por_token(self, token_qr: str) -> Mesa | None: ...
 
     def sesion_abierta_de(self, restaurante_id: str, mesa_id: str) -> SesionMesa | None: ...
@@ -95,6 +99,14 @@ class RepositorioMesasMemoria:
     def listar_mesas(self, restaurante_id: str) -> list[Mesa]:
         return [m for m in self.mesas.values() if m.restaurante_id == restaurante_id]
 
+    def regenerar_token(self, restaurante_id: str, mesa_id: str) -> Mesa | None:
+        mesa = self.mesas.get(mesa_id)
+        if mesa is None or mesa.restaurante_id != restaurante_id:
+            return None
+        nueva = mesa.model_copy(update={"token_qr": secrets.token_urlsafe(20)})
+        self.mesas[mesa_id] = nueva
+        return nueva
+
     def mesa_por_token(self, token_qr: str) -> Mesa | None:
         return next((m for m in self.mesas.values() if m.token_qr == token_qr), None)
 
@@ -132,6 +144,11 @@ INSERT INTO mesas (restaurante_id, id, nombre, token_qr) VALUES (%s, %s, %s, %s)
 _LISTAR_MESAS = """
 SELECT id, nombre, token_qr, activa FROM mesas
 WHERE restaurante_id = %s ORDER BY nombre
+"""
+
+_REGENERAR_TOKEN = """
+UPDATE mesas SET token_qr = %s WHERE restaurante_id = %s AND id = %s
+RETURNING nombre, activa
 """
 
 _MESA_POR_TOKEN = """
@@ -177,6 +194,21 @@ class RepositorioMesasPostgres:
             Mesa(restaurante_id=restaurante_id, id=f[0], nombre=f[1], token_qr=f[2], activa=f[3])
             for f in filas
         ]
+
+    def regenerar_token(self, restaurante_id: str, mesa_id: str) -> Mesa | None:
+        token = secrets.token_urlsafe(20)
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(_REGENERAR_TOKEN, (token, restaurante_id, mesa_id))
+            fila = cur.fetchone()
+        if fila is None:
+            return None
+        return Mesa(
+            restaurante_id=restaurante_id,
+            id=mesa_id,
+            nombre=fila[0],
+            token_qr=token,
+            activa=fila[1],
+        )
 
     def mesa_por_token(self, token_qr: str) -> Mesa | None:
         with self.pool.connection() as conn, conn.cursor() as cur:

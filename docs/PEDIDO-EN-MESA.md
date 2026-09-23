@@ -55,9 +55,17 @@ contraseñas por restaurante (una de gerente, una de personal), mismo sitio
 de login, panel distinto según cuál se use — pendiente de que el dueño la
 confirme antes de tocar el modelo de sesión de admin.
 
-**Siguiente bloque** (sin empezar): la pantalla "Mesas" en el panel de
-gerente (dar de alta, ver el QR de cada una, regenerarlo), y después
-propuestas desde la carta + panel del anfitrión con el resumen y el total.
+**Segundo bloque — 🔍 hecho en local, falta desplegar y probar (2026-09-23):**
+pestaña "Mesas" en el panel del gerente: alta de mesas, QR de cada una (tarjeta
+pequeña u hoja completa, PNG/SVG, reutilizando la hoja del QR de la carta) y
+"Cambiar el QR de esta mesa" (`POST /admin/api/mesas/{id}/regenerar-qr`; el
+token viejo deja de valer, con tests, incluida otra mesa ajena). El QR de cada
+mesa apunta a `<carta>/?mesa=<token>`, pero **la carta aún no lee ese
+parámetro**: hasta el siguiente bloque abre la carta normal.
+
+**Siguiente bloque** (sin empezar): que la carta lea `?mesa=`, llame a
+`/api/mesa/entrar` y muestre la barra inferior; después propuestas desde la
+carta + panel del anfitrión con el resumen y el total.
 
 **Para probarlo ahora mismo en `demo.jurux.app`:** el restaurante `demo` no
 tiene contraseña de gerente establecida. En el servidor:

@@ -166,3 +166,46 @@ def test_segundo_en_entrar_es_invitado(gerente: TestClient) -> None:
 def test_token_desconocido_da_404(gerente: TestClient) -> None:
     r = TestClient(app).post("/api/mesa/entrar", json={"token_qr": "no-existe-este-token"})
     assert r.status_code == 404
+
+
+# ------------------------------------------------------ regenerar el QR de una mesa
+
+
+def test_regenerar_token_invalida_el_anterior(repo: RepositorioMesasMemoria) -> None:
+    mesa = repo.crear_mesa("bar1", "Terraza 7")
+    nueva = repo.regenerar_token("bar1", mesa.id)
+    assert nueva is not None
+    assert nueva.token_qr != mesa.token_qr
+    assert nueva.id == mesa.id and nueva.nombre == mesa.nombre
+    # El QR impreso antes ya no abre nada; el nuevo si.
+    assert entrar_por_qr(repo, mesa.token_qr, "Ana", "es") is None
+    assert entrar_por_qr(repo, nueva.token_qr, "Ana", "es") is not None
+
+
+def test_regenerar_token_de_una_mesa_ajena_o_inexistente_da_none(
+    repo: RepositorioMesasMemoria,
+) -> None:
+    mesa = repo.crear_mesa("bar1", "Terraza 7")
+    assert repo.regenerar_token("bar2", mesa.id) is None
+    assert repo.regenerar_token("bar1", "mesa-que-no-existe") is None
+    # Y la mesa de bar1 conserva su token.
+    assert repo.mesa_por_token(mesa.token_qr) is not None
+
+
+def test_regenerar_qr_por_api(gerente: TestClient) -> None:
+    creada = gerente.post("/admin/api/mesas", json={"nombre": "Terraza API 4"}).json()
+    r = gerente.post(f"/admin/api/mesas/{creada['id']}/regenerar-qr")
+    assert r.status_code == 200
+    nueva = r.json()
+    assert nueva["id"] == creada["id"]
+    assert nueva["token_qr"] != creada["token_qr"]
+
+    viejo = TestClient(app).post("/api/mesa/entrar", json={"token_qr": creada["token_qr"]})
+    nuevo = TestClient(app).post("/api/mesa/entrar", json={"token_qr": nueva["token_qr"]})
+    assert viejo.status_code == 404
+    assert nuevo.status_code == 200
+
+
+def test_regenerar_qr_exige_sesion_y_existir(gerente: TestClient) -> None:
+    assert TestClient(app).post("/admin/api/mesas/mesa-x/regenerar-qr").status_code == 401
+    assert gerente.post("/admin/api/mesas/mesa-que-no-existe/regenerar-qr").status_code == 404

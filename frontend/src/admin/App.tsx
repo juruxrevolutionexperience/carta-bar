@@ -4,6 +4,7 @@ import "./estilos.css";
 import { cargarCarta, cargarCategorias } from "./api";
 import { NavInferior, type Seccion } from "./NavInferior";
 import { SeccionCuenta } from "./SeccionCuenta";
+import { SeccionMesas } from "./SeccionMesas";
 import { SeccionMarca } from "./SeccionMarca";
 import { SeccionEspeciales } from "./SeccionEspeciales";
 import { SeccionPlatos } from "./SeccionPlatos";
@@ -75,6 +76,7 @@ export function App() {
           onAnadir={anadirEspecial}
         />
       )}
+      {seccion === "mesas" && <SeccionMesas />}
       {seccion === "marca" && <SeccionMarca />}
       {seccion === "qr" && <SeccionQr />}
       {seccion === "cuenta" && <SeccionCuenta />}

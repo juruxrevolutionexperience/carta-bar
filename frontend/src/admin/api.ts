@@ -61,6 +61,32 @@ export async function guardarTextoQr(texto: string): Promise<Response> {
   });
 }
 
+export interface Mesa {
+  id: string;
+  nombre: string;
+  token_qr: string;
+  activa: boolean;
+}
+
+export async function cargarMesas(): Promise<Mesa[]> {
+  const resp = await apiFetch("/admin/api/mesas");
+  return resp.json();
+}
+
+export async function crearMesa(nombre: string): Promise<Response> {
+  return apiFetch("/admin/api/mesas", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nombre }),
+  });
+}
+
+export async function regenerarQrMesa(mesaId: string): Promise<Response> {
+  return apiFetch(`/admin/api/mesas/${encodeURIComponent(mesaId)}/regenerar-qr`, {
+    method: "POST",
+  });
+}
+
 export async function actualizarDisponibilidad(
   platoId: string,
   disponible: boolean
