@@ -1,4 +1,5 @@
 import type { DatosQr } from "../shared/HojaQR";
+import type { FormaMesa } from "./planoUtil";
 import type { Alergeno, Categoria, ConfigMarca, Etiqueta, Plato, TipoImagenMarca } from "./types";
 
 // Centraliza lo que en la version anterior se repetia en cada fetch: si la
@@ -61,24 +62,90 @@ export async function guardarTextoQr(texto: string): Promise<Response> {
   });
 }
 
+export interface Zona {
+  id: string;
+  nombre: string;
+  orden: number;
+}
+
 export interface Mesa {
   id: string;
   nombre: string;
   token_qr: string;
   activa: boolean;
+  zona_id: string | null;
+  forma: FormaMesa;
+  x: number;
+  y: number;
+  ancho: number;
+  alto: number;
+  rotacion: number;
+  capacidad: number;
 }
+
+// Lo que se puede cambiar de una mesa desde el plano (el token y el estado no).
+export type CambiosMesa = Partial<
+  Pick<Mesa, "nombre" | "zona_id" | "forma" | "x" | "y" | "ancho" | "alto" | "rotacion" | "capacidad">
+>;
 
 export async function cargarMesas(): Promise<Mesa[]> {
   const resp = await apiFetch("/admin/api/mesas");
   return resp.json();
 }
 
-export async function crearMesa(nombre: string): Promise<Response> {
-  return apiFetch("/admin/api/mesas", {
+export async function cargarZonas(): Promise<Zona[]> {
+  const resp = await apiFetch("/admin/api/zonas");
+  return resp.json();
+}
+
+export async function crearZona(nombre: string): Promise<Response> {
+  return apiFetch("/admin/api/zonas", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ nombre }),
   });
+}
+
+export async function renombrarZona(id: string, nombre: string): Promise<Response> {
+  return apiFetch(`/admin/api/zonas/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nombre }),
+  });
+}
+
+export async function ordenarZonas(ids: string[]): Promise<Response> {
+  return apiFetch("/admin/api/orden-zonas", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids }),
+  });
+}
+
+export async function eliminarZona(id: string): Promise<Response> {
+  return apiFetch(`/admin/api/zonas/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export async function crearMesa(
+  cuerpo: CambiosMesa & { nombre: string }
+): Promise<Response> {
+  return apiFetch("/admin/api/mesas", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(cuerpo),
+  });
+}
+
+export async function actualizarMesa(id: string, cambios: CambiosMesa): Promise<Response> {
+  return apiFetch(`/admin/api/mesas/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(cambios),
+  });
+}
+
+export async function eliminarMesa(id: string): Promise<Response> {
+  return apiFetch(`/admin/api/mesas/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
 export async function regenerarQrMesa(mesaId: string): Promise<Response> {

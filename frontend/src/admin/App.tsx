@@ -48,7 +48,7 @@ export function App() {
   const especiales = platos?.filter((p) => p.categoria === CATEGORIA_ESPECIALES) ?? null;
 
   return (
-    <div className="app">
+    <div className={"app" + (seccion === "mesas" ? " app-ancha" : "")}>
       <header>
         <h1>Panel de gestión</h1>
       </header>

@@ -55,13 +55,35 @@ contraseñas por restaurante (una de gerente, una de personal), mismo sitio
 de login, panel distinto según cuál se use — pendiente de que el dueño la
 confirme antes de tocar el modelo de sesión de admin.
 
-**Segundo bloque — 🔍 hecho en local, falta desplegar y probar (2026-09-23):**
-pestaña "Mesas" en el panel del gerente: alta de mesas, QR de cada una (tarjeta
-pequeña u hoja completa, PNG/SVG, reutilizando la hoja del QR de la carta) y
-"Cambiar el QR de esta mesa" (`POST /admin/api/mesas/{id}/regenerar-qr`; el
-token viejo deja de valer, con tests, incluida otra mesa ajena). El QR de cada
-mesa apunta a `<carta>/?mesa=<token>`, pero **la carta aún no lee ese
-parámetro**: hasta el siguiente bloque abre la carta normal.
+**Segundo bloque — plano del local (2026-09-23): 🔍 hecho en local, falta
+desplegar y probar en el móvil.** Decidido con el dueño del producto:
+- **Zonas sin límite** (Terraza, Barra, Salón 1...), como pestañas; se crean,
+  renombran, reordenan arrastrando y borran. Un bar sin zonas recibe "Sala".
+- **Mesas con forma y tamaño:** redonda, cuadrada, rectangular, barril y
+  taburete. Se colocan con el dedo sobre una cuadrícula (24 × 18 casillas, con
+  imán), se redimensionan con un tirador, se giran de 45° en 45° y se mueven
+  de zona. El nombre es libre y el número no es obligatorio ("Barril 1",
+  "Terraza 4" o solo "4"); al crear una se propone "Mesa N".
+- **Se pueden borrar mesas y zonas.** Sin historial se borran del todo; con
+  historial de sesiones se archivan (`activa = false`) y dejan de verse y de
+  abrir con su QR. Con clientes sentados no se borra nada (409).
+- **La barra es una mesa más.** Los taburetes no llevan QR propio.
+- Cada mesa sigue con su QR y "Cambiar el QR de esta mesa"; la vista "Lista de
+  QR" queda para imprimirlos todos.
+
+Hecho con tests (`tests/test_plano.py`, 45), SQL verificado contra un Postgres
+real y la interfaz probada con un DOM simulado (43 comprobaciones: añadir,
+arrastrar, tirador, límites del plano, giro, zonas, borrar). **No** se ha
+visto en un navegador real: el tacto en el móvil y el aspecto visual quedan
+por confirmar. Los nombres de las tablas nuevas y su RLS se crean solos al
+arrancar (`zonas` y las columnas nuevas de `mesas`, en `sql/esquema.sql`).
+
+**Decisión para el paso 3 (juntar mesas en servicio, sin hacer):** lo hace el
+camarero durante el servicio y se deshace al cobrar; **no** toca el plano
+fijo. Si las dos mesas tienen comandas, **las cuentas se fusionan en una**; si
+están vacías, se juntan sin más. Ojo: si las dos tienen comandas de comida o
+bebida, hay que decidir cómo se ven los tickets ya enviados (siguen siendo los
+de cada mesa original, con la cuenta común).
 
 **Siguiente bloque** (sin empezar): que la carta lea `?mesa=`, llame a
 `/api/mesa/entrar` y muestre la barra inferior; después propuestas desde la

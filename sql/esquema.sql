@@ -136,6 +136,27 @@ CREATE TABLE IF NOT EXISTS mesas (
     PRIMARY KEY (restaurante_id, id)
 );
 
+-- Plano del local: zonas (Terraza, Salon 1...) y, en cada mesa, su forma,
+-- tamano y posicion. x, y, ancho y alto se miden en casillas de la
+-- cuadricula del plano. Una mesa con activa = false esta "borrada" pero se
+-- conserva porque tiene sesiones en el historico (nada se borra).
+CREATE TABLE IF NOT EXISTS zonas (
+    restaurante_id TEXT NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
+    id             TEXT NOT NULL,
+    nombre         TEXT NOT NULL,
+    orden          INTEGER NOT NULL,
+    PRIMARY KEY (restaurante_id, id)
+);
+
+ALTER TABLE mesas ADD COLUMN IF NOT EXISTS zona_id   TEXT;
+ALTER TABLE mesas ADD COLUMN IF NOT EXISTS forma     TEXT    NOT NULL DEFAULT 'cuadrada';
+ALTER TABLE mesas ADD COLUMN IF NOT EXISTS x         REAL    NOT NULL DEFAULT 0;
+ALTER TABLE mesas ADD COLUMN IF NOT EXISTS y         REAL    NOT NULL DEFAULT 0;
+ALTER TABLE mesas ADD COLUMN IF NOT EXISTS ancho     REAL    NOT NULL DEFAULT 2;
+ALTER TABLE mesas ADD COLUMN IF NOT EXISTS alto      REAL    NOT NULL DEFAULT 2;
+ALTER TABLE mesas ADD COLUMN IF NOT EXISTS rotacion  INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE mesas ADD COLUMN IF NOT EXISTS capacidad INTEGER NOT NULL DEFAULT 4;
+
 CREATE TABLE IF NOT EXISTS sesiones_mesa (
     id             TEXT PRIMARY KEY,
     restaurante_id TEXT NOT NULL,
@@ -173,6 +194,7 @@ ALTER TABLE platos               ENABLE ROW LEVEL SECURITY;
 ALTER TABLE traducciones_platos  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE visitas_diarias      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE preguntas_diarias    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE zonas                ENABLE ROW LEVEL SECURITY;
 ALTER TABLE mesas                ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sesiones_mesa        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comensales           ENABLE ROW LEVEL SECURITY;

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { colorCategoria } from "../carta/iconos";
 import {
@@ -8,6 +8,7 @@ import {
   renombrarCategoria,
 } from "./api";
 import { CATEGORIA_ESPECIALES, type Categoria, type Plato } from "./types";
+import { useArrastreOrden } from "./useArrastreOrden";
 
 interface Props {
   categorias: Categoria[];
@@ -21,15 +22,9 @@ export function OrganizarCategorias({ categorias, platos, onCambio }: Props) {
   const [nombreEditado, setNombreEditado] = useState("");
   const [ocupado, setOcupado] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
-  // Orden provisional (ids) mientras el dedo arrastra una fila; null = sin arrastre.
-  const [arrastre, setArrastre] = useState<{ id: string; orden: string[] } | null>(null);
-  const filas = useRef<Map<string, HTMLDivElement>>(new Map());
 
   // La del "especial del dia" es interna: se gestiona en su propia seccion.
   const base = categorias.filter((c) => c.id !== CATEGORIA_ESPECIALES);
-  const lista = arrastre
-    ? arrastre.orden.map((id) => base.find((c) => c.id === id)!).filter(Boolean)
-    : base;
   const especial = categorias.filter((c) => c.id === CATEGORIA_ESPECIALES);
 
   function cuantosPlatos(id: string): number {
@@ -81,33 +76,9 @@ export function OrganizarCategorias({ categorias, platos, onCambio }: Props) {
     });
   }
 
-  function empezarArrastre(e: React.PointerEvent<HTMLButtonElement>, id: string) {
-    if (ocupado) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    setArrastre({ id, orden: base.map((c) => c.id) });
-  }
-
-  function arrastrar(e: React.PointerEvent<HTMLButtonElement>) {
-    if (!arrastre) return;
-    // La fila sobre la que esta el dedo pasa a ser el destino de la arrastrada.
-    const destino = arrastre.orden.find((id) => {
-      const caja = filas.current.get(id)?.getBoundingClientRect();
-      return caja !== undefined && e.clientY >= caja.top && e.clientY <= caja.bottom;
-    });
-    if (destino === undefined || destino === arrastre.id) return;
-    const siguiente = arrastre.orden.filter((id) => id !== arrastre.id);
-    siguiente.splice(arrastre.orden.indexOf(destino), 0, arrastre.id);
-    setArrastre({ id: arrastre.id, orden: siguiente });
-  }
-
-  function soltar() {
-    if (!arrastre) return;
-    const nuevoOrden = arrastre.orden;
-    setArrastre(null);
-    if (nuevoOrden.every((id, i) => id === base[i].id)) return;
-    const reordenada = nuevoOrden.map((id) => base.find((c) => c.id === id)!);
+  function guardarOrden(reordenada: Categoria[]) {
     void ejecutar(async () => {
-      const resp = await ordenarCategorias(nuevoOrden);
+      const resp = await ordenarCategorias(reordenada.map((c) => c.id));
       if (resp.status === 204) {
         // Mismos numeros de orden que el servidor: 1..n en la nueva secuencia.
         onCambio([...especial, ...reordenada.map((c, i) => ({ ...c, orden: i + 1 }))]);
@@ -116,6 +87,8 @@ export function OrganizarCategorias({ categorias, platos, onCambio }: Props) {
       }
     });
   }
+
+  const { lista, arrastrandoId, refFila, asa } = useArrastreOrden(base, guardarOrden, ocupado);
 
   function borrar(c: Categoria) {
     if (!window.confirm(`¿Eliminar la categoría "${c.nombre}"? No se puede deshacer.`)) return;
@@ -141,11 +114,8 @@ export function OrganizarCategorias({ categorias, platos, onCambio }: Props) {
           return (
             <div
               key={c.id}
-              ref={(el) => {
-                if (el) filas.current.set(c.id, el);
-                else filas.current.delete(c.id);
-              }}
-              className={"fila-categoria" + (arrastre?.id === c.id ? " arrastrando" : "")}
+              ref={refFila(c.id)}
+              className={"fila-categoria" + (arrastrandoId === c.id ? " arrastrando" : "")}
               style={{ borderLeftColor: colorCategoria(c.id) }}
             >
               {editando === c.id ? (
@@ -174,10 +144,7 @@ export function OrganizarCategorias({ categorias, platos, onCambio }: Props) {
                     className="asa"
                     aria-label={`Arrastrar ${c.nombre} para cambiar su orden`}
                     disabled={ocupado}
-                    onPointerDown={(e) => empezarArrastre(e, c.id)}
-                    onPointerMove={arrastrar}
-                    onPointerUp={soltar}
-                    onPointerCancel={soltar}
+                    {...asa(c.id)}
                   >
                     ⠿
                   </button>

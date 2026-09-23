@@ -51,7 +51,14 @@ from carta_bar.importador import PlatoLeido, leer_platos_de_foto
 from carta_bar.limites import LIMITE_LOGIN, LIMITE_PREGUNTAR, limite_superado, limiter
 from carta_bar.llm import MODELO, MODELO_TRADUCCION
 from carta_bar.logging_config import configurar_logging
-from carta_bar.mesas import Mesa, crear_repositorio_mesas, entrar_por_qr
+from carta_bar.mesas import (
+    FormaMesa,
+    Mesa,
+    Zona,
+    ZonaNoExisteError,
+    crear_repositorio_mesas,
+    entrar_por_qr,
+)
 from carta_bar.metricas import (
     MetricasRestaurante,
     anotar_pregunta,
@@ -664,8 +671,133 @@ def admin_listar_mesas(
     return mesas.listar_mesas(restaurante_id)
 
 
-class CrearMesaPeticion(BaseModel):
+class NombrePlanoPeticion(BaseModel):
+    """Nombre de una zona o de una mesa: libre ("Terraza", "Barril 1", "4")."""
+
     nombre: str = Field(min_length=1, max_length=60)
+
+    @field_validator("nombre")
+    @classmethod
+    def _limpiar(cls, v: str) -> str:
+        limpio = " ".join(v.split())
+        if not limpio:
+            raise ValueError("el nombre no puede estar vacio")
+        return limpio
+
+
+class OrdenZonasPeticion(BaseModel):
+    ids: list[str] = Field(max_length=200)
+
+
+class DisenoMesa(BaseModel):
+    """Forma, tamano y posicion de una mesa en el plano (casillas de cuadricula)."""
+
+    forma: FormaMesa
+    x: float = Field(ge=0, le=200)
+    y: float = Field(ge=0, le=200)
+    ancho: float = Field(gt=0, le=20)
+    alto: float = Field(gt=0, le=20)
+    rotacion: int = Field(ge=0, lt=360)
+    capacidad: int = Field(ge=1, le=30)
+
+
+class CrearMesaPeticion(NombrePlanoPeticion):
+    # Todo lo demas es opcional: sin diseno nace cuadrada, en el origen, en la
+    # primera zona (asi sigue valiendo `{"nombre": "..."}` a secas).
+    zona_id: str | None = Field(default=None, max_length=100)
+    forma: FormaMesa | None = None
+    x: float | None = Field(default=None, ge=0, le=200)
+    y: float | None = Field(default=None, ge=0, le=200)
+    ancho: float | None = Field(default=None, gt=0, le=20)
+    alto: float | None = Field(default=None, gt=0, le=20)
+    rotacion: int | None = Field(default=None, ge=0, lt=360)
+    capacidad: int | None = Field(default=None, ge=1, le=30)
+
+
+class ActualizarMesaPeticion(BaseModel):
+    """Cambio parcial: solo se toca lo que venga en la peticion."""
+
+    nombre: str | None = Field(default=None, min_length=1, max_length=60)
+    zona_id: str | None = Field(default=None, max_length=100)
+    forma: FormaMesa | None = None
+    x: float | None = Field(default=None, ge=0, le=200)
+    y: float | None = Field(default=None, ge=0, le=200)
+    ancho: float | None = Field(default=None, gt=0, le=20)
+    alto: float | None = Field(default=None, gt=0, le=20)
+    rotacion: int | None = Field(default=None, ge=0, lt=360)
+    capacidad: int | None = Field(default=None, ge=1, le=30)
+
+    @field_validator("nombre")
+    @classmethod
+    def _limpiar(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        limpio = " ".join(v.split())
+        if not limpio:
+            raise ValueError("el nombre no puede estar vacio")
+        return limpio
+
+
+@app.get("/admin/api/zonas", response_model=None)
+def admin_listar_zonas(
+    request: Request, restaurante_id: RestauranteActual
+) -> list[Zona] | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    return mesas.listar_zonas(restaurante_id)
+
+
+@app.post("/admin/api/zonas", status_code=201, response_model=None)
+def admin_crear_zona(
+    peticion: NombrePlanoPeticion, request: Request, restaurante_id: RestauranteActual
+) -> Zona | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    return mesas.crear_zona(restaurante_id, peticion.nombre)
+
+
+# Ruta propia (no /zonas/orden) para no chocar con /zonas/{zona_id}.
+@app.put("/admin/api/orden-zonas", response_model=None)
+def admin_ordenar_zonas(
+    peticion: OrdenZonasPeticion, request: Request, restaurante_id: RestauranteActual
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    if not mesas.ordenar_zonas(restaurante_id, peticion.ids):
+        return Response(status_code=400, content="El orden debe incluir todas las zonas, una vez")
+    return Response(status_code=204)
+
+
+@app.put("/admin/api/zonas/{zona_id}", response_model=None)
+def admin_renombrar_zona(
+    zona_id: str,
+    peticion: NombrePlanoPeticion,
+    request: Request,
+    restaurante_id: RestauranteActual,
+) -> Zona | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    zona = mesas.renombrar_zona(restaurante_id, zona_id, peticion.nombre)
+    if zona is None:
+        return Response(status_code=404, content="Zona no encontrada")
+    return zona
+
+
+@app.delete("/admin/api/zonas/{zona_id}", response_model=None)
+def admin_eliminar_zona(
+    zona_id: str, request: Request, restaurante_id: RestauranteActual
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    resultado = mesas.eliminar_zona(restaurante_id, zona_id)
+    if resultado == "no_existe":
+        return Response(status_code=404, content="Zona no encontrada")
+    if resultado == "sesion_abierta":
+        return Response(
+            status_code=409,
+            content="Hay una mesa de esta zona con clientes sentados: espera a que se cierre",
+        )
+    return Response(status_code=204)
 
 
 @app.post("/admin/api/mesas", status_code=201, response_model=None)
@@ -674,7 +806,48 @@ def admin_crear_mesa(
 ) -> Mesa | Response:
     if not _sesion_activa(request, restaurante_id):
         return Response(status_code=401, content="Sesión no válida")
-    return mesas.crear_mesa(restaurante_id, peticion.nombre)
+    diseno = peticion.model_dump(exclude={"nombre", "zona_id"}, exclude_none=True)
+    try:
+        return mesas.crear_mesa(restaurante_id, peticion.nombre, peticion.zona_id, **diseno)
+    except ZonaNoExisteError:
+        return Response(status_code=404, content="Zona no encontrada")
+
+
+@app.put("/admin/api/mesas/{mesa_id}", response_model=None)
+def admin_actualizar_mesa(
+    mesa_id: str,
+    peticion: ActualizarMesaPeticion,
+    request: Request,
+    restaurante_id: RestauranteActual,
+) -> Mesa | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    try:
+        mesa = mesas.actualizar_mesa(
+            restaurante_id, mesa_id, peticion.model_dump(exclude_none=True)
+        )
+    except ZonaNoExisteError:
+        return Response(status_code=404, content="Zona no encontrada")
+    if mesa is None:
+        return Response(status_code=404, content="Mesa no encontrada")
+    return mesa
+
+
+@app.delete("/admin/api/mesas/{mesa_id}", response_model=None)
+def admin_eliminar_mesa(
+    mesa_id: str, request: Request, restaurante_id: RestauranteActual
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    resultado = mesas.eliminar_mesa(restaurante_id, mesa_id)
+    if resultado == "no_existe":
+        return Response(status_code=404, content="Mesa no encontrada")
+    if resultado == "sesion_abierta":
+        return Response(
+            status_code=409,
+            content="Hay clientes sentados en esta mesa: espera a que se cierre",
+        )
+    return Response(status_code=204)
 
 
 @app.post("/admin/api/mesas/{mesa_id}/regenerar-qr", response_model=None)

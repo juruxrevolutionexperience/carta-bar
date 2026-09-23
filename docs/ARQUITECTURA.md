@@ -162,3 +162,14 @@ en `docs/PENDIENTE.md`):
 7. **Coste:** cada llamada se anota con la tarifa de su modelo
    (`PRECIOS_POR_MODELO`); un modelo desconocido se cobra a la más cara. El tope
    diario de 5 USD cubre chat y traducciones.
+
+## Los tests nunca tocan la base real
+
+`llm.py` carga el `.env` al importarse, y en un PC con las credenciales de
+Supabase eso conectaba la suite a producción: los tests de mesas crearon mesas
+y sesiones de verdad en la base real. Ahora `tests/conftest.py` vacía las
+variables `POSTGRES_*` y pone `CARTA_BD_ACTIVA=false` **antes** de importar
+nada de `carta_bar` (`load_dotenv` no pisa lo que ya está puesto), y
+`tests/test_aislada.py` comprueba que los repositorios de la suite son en
+memoria. Al arrancar el servidor local para probar a mano, hacer lo mismo:
+`POSTGRES_USER= POSTGRES_PASSWORD= POSTGRES_DB= POSTGRES_HOST= CARTA_BD_ACTIVA=false uvicorn ...`

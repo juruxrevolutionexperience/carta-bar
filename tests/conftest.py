@@ -3,9 +3,19 @@ para toda la suite, salvo donde un test lo pida explicitamente (ver
 test_multitenant.py). Sin esto, cada peticion de TestClient (Host: testserver)
 intentaria de verdad comprobar si "testserver" es un restaurante real."""
 
-import pytest
+import os
 
-from carta_bar.api import RESTAURANTE_ID, _resolver_restaurante, app
+# Los tests NUNCA deben tocar la base de datos real. `llm.py` carga el .env al
+# importarse, y en un PC con las credenciales de Supabase eso conectaria la suite
+# a produccion (los tests de mesas crean mesas y sesiones de verdad). Se vacian
+# antes de importar nada de carta_bar: load_dotenv no pisa lo que ya esta puesto.
+for _variable in ("POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DB", "POSTGRES_HOST"):
+    os.environ[_variable] = ""
+os.environ["CARTA_BD_ACTIVA"] = "false"
+
+import pytest  # noqa: E402
+
+from carta_bar.api import RESTAURANTE_ID, _resolver_restaurante, app  # noqa: E402
 
 
 @pytest.fixture(autouse=True)

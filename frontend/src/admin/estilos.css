@@ -623,18 +623,7 @@ button.secundario {
   }
 }
 
-/* Mesas */
-.form-mesa-nueva {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.form-mesa-nueva button.primario {
-  margin-top: 0;
-  white-space: nowrap;
-}
-
+/* Mesas y plano del local */
 .mesa-qr {
   margin-top: 8px;
 }
@@ -649,4 +638,197 @@ button.secundario {
 
 .mesa-qr-cuerpo {
   padding-top: 12px;
+}
+
+.titulo-zona-lista {
+  margin: 16px 0 4px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--tinta-media);
+}
+
+.pestanas-zona {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 0 12px;
+}
+
+.pestana-zona {
+  flex: 0 0 auto;
+  border: 1px solid var(--borde);
+  background: var(--fondo);
+  color: var(--tinta);
+  border-radius: 100px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pestana-zona.activa {
+  background: var(--marca);
+  border-color: var(--marca);
+  color: #fff;
+}
+
+.pestana-zona.gestionar {
+  color: var(--tinta-media);
+}
+
+.pestana-zona.gestionar.activa {
+  background: var(--fondo-alt);
+  border-color: var(--borde);
+  color: var(--tinta);
+}
+
+.paleta-formas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 14px;
+}
+
+.paleta-formas button.secundario {
+  margin-top: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icono-forma {
+  display: inline-block;
+  border: 2px solid currentColor;
+  background: transparent;
+  width: 16px;
+  height: 16px;
+}
+.icono-forma.forma-redonda,
+.icono-forma.forma-barril,
+.icono-forma.forma-taburete {
+  border-radius: 50%;
+}
+.icono-forma.forma-cuadrada {
+  border-radius: 3px;
+}
+.icono-forma.forma-rectangular {
+  width: 24px;
+  height: 14px;
+  border-radius: 3px;
+}
+.icono-forma.forma-taburete {
+  width: 10px;
+  height: 10px;
+}
+
+/* El plano se desplaza dentro de su caja (tiene tamano fijo por casillas). */
+.plano-scroll {
+  overflow: auto;
+  max-width: 100%;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  background: var(--fondo-alt);
+}
+
+.plano {
+  position: relative;
+  background-image:
+    linear-gradient(to right, var(--borde) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--borde) 1px, transparent 1px);
+  touch-action: pan-x pan-y;
+  user-select: none;
+}
+
+.mesa-plano {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  background: var(--fondo);
+  border: 2px solid var(--tinta-media);
+  border-radius: 6px;
+  box-sizing: border-box;
+  cursor: grab;
+  /* El dedo sobre una mesa la arrastra en vez de desplazar el plano. */
+  touch-action: none;
+}
+
+.mesa-plano.forma-redonda,
+.mesa-plano.forma-barril,
+.mesa-plano.forma-taburete {
+  border-radius: 50%;
+}
+
+.mesa-plano.forma-barril {
+  background: #e9dcc9;
+  border-color: #8a6b3f;
+}
+
+.mesa-plano.forma-taburete {
+  background: var(--fondo-alt);
+}
+
+.mesa-plano.seleccionada {
+  border-color: var(--marca);
+  box-shadow: 0 0 0 3px rgba(176, 58, 46, 0.25);
+  z-index: 2;
+}
+
+.mesa-plano.moviendo {
+  cursor: grabbing;
+  opacity: 0.9;
+}
+
+.mesa-nombre {
+  max-width: 100%;
+  padding: 0 2px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.mesa-tirador {
+  position: absolute;
+  right: -9px;
+  bottom: -9px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--marca);
+  border: 2px solid #fff;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+.panel-mesa .acciones-mesa {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.panel-mesa button.secundario {
+  margin-top: 12px;
+}
+
+.panel-mesa .acciones-mesa button.secundario {
+  margin-top: 0;
+}
+
+button.secundario.peligro {
+  color: var(--rojo);
+}
+
+.app.app-ancha {
+  max-width: 640px;
+}
+
+@media (min-width: 860px) {
+  .app.app-ancha {
+    max-width: 1000px;
+  }
 }
