@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 
 // "Mi lista": un recordatorio personal del cliente mientras mira la carta, no
-// un pedido. Vive solo en su movil (localStorage), nunca en el servidor: no es
-// el primer ladrillo de las comandas (docs/APARCADO-PEDIDO-EN-MESA.md), es una
-// cosa mas pequena que no depende de esperar a que se cumpla ese requisito.
+// un pedido. Vive solo en su movil (localStorage), nunca en el servidor: es
+// independiente del sistema de comandas (docs/PEDIDO-EN-MESA.md), no su
+// primer ladrillo.
 const CLAVE_BASE = "carta_lista_";
 
 function clave(): string {

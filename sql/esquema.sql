@@ -123,3 +123,41 @@ CREATE TABLE IF NOT EXISTS preguntas_diarias (
     rechazadas     INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (restaurante_id, dia, idioma)
 );
+
+-- Pedido en mesa (docs/PEDIDO-EN-MESA.md), primer bloque: mesas y sesiones.
+-- El resto (propuestas, comandas, tickets) llega en el siguiente bloque.
+
+CREATE TABLE IF NOT EXISTS mesas (
+    restaurante_id TEXT NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
+    id             TEXT NOT NULL,
+    nombre         TEXT NOT NULL,
+    token_qr       TEXT NOT NULL UNIQUE,
+    activa         BOOLEAN NOT NULL DEFAULT true,
+    PRIMARY KEY (restaurante_id, id)
+);
+
+CREATE TABLE IF NOT EXISTS sesiones_mesa (
+    id             TEXT PRIMARY KEY,
+    restaurante_id TEXT NOT NULL,
+    mesa_id        TEXT NOT NULL,
+    estado         TEXT NOT NULL,
+    abierta_en     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    cerrada_en     TIMESTAMPTZ,
+    FOREIGN KEY (restaurante_id, mesa_id) REFERENCES mesas(restaurante_id, id)
+);
+
+-- Solo una sesion abierta por mesa. Si dos personas escanean a la vez, decide
+-- este indice, no un "if" en Python: el segundo INSERT falla y se une como
+-- invitado a la que ya creo el primero.
+CREATE UNIQUE INDEX IF NOT EXISTS una_sesion_abierta_por_mesa
+    ON sesiones_mesa (restaurante_id, mesa_id)
+    WHERE estado != 'cerrada';
+
+CREATE TABLE IF NOT EXISTS comensales (
+    id         TEXT PRIMARY KEY,
+    sesion_id  TEXT NOT NULL REFERENCES sesiones_mesa(id) ON DELETE CASCADE,
+    nombre     TEXT NOT NULL,
+    rol        TEXT NOT NULL,
+    idioma     TEXT NOT NULL DEFAULT 'es',
+    creado_en  TIMESTAMPTZ NOT NULL DEFAULT now()
+);

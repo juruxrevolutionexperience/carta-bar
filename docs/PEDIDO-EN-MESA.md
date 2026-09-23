@@ -3,12 +3,43 @@
 Documento base del sistema de pedido desde la mesa, construido encima de la carta digital
 existente.
 
-**Estado: aparcado. No se empieza hasta cumplir el requisito de entrada.**
+**Estado: en marcha desde el 2026-09-23, saltando el requisito 3 a propósito.**
 
-Requisito de entrada:
-1. Carta digital desplegada en producción con HTTPS.
-2. Panel de gestión funcionando (el restaurante edita su carta solo).
-3. Al menos un restaurante usándolo de verdad durante un mes.
+Requisito de entrada original:
+1. ✅ Carta digital desplegada en producción con HTTPS.
+2. ✅ Panel de gestión funcionando (el restaurante edita su carta solo).
+3. ⬜ Al menos un restaurante usándolo de verdad durante un mes — **no
+   cumplido**. El QR físico en las mesas ni siquiera está puesto todavía
+   (previsto para la semana del 2026-09-28); el mes de uso real no ha
+   empezado a contar.
+
+**Por qué se empieza igual:** decisión explícita del dueño del producto el
+2026-09-23, tras que se lo planteara dos veces en la misma conversación. Sus
+palabras: "son reglas que yo pongo, eso significa que si digo que avanzamos
+es por algo". No es que el requisito 3 se cumpliera, es que decidió saltarlo
+a sabiendas. Queda anotado aquí para que quien retome esto no piense que fue
+un despiste.
+
+**Plan revisado con el dueño del producto (2026-09-23):** se repasó en la
+conversación, bloque a bloque — el modelo de anfitrión/invitados, el
+recorrido completo del cliente (secciones 5.1-5.7) y la parte del
+restaurante (alta de mesas, pantalla de cocina/barra, móvil del camarero,
+configuración por restaurante, secciones 11-12). Confirmado que coincide con
+la idea que tenía: "sí, es que me gusta". Vale como plantilla para empezar;
+se irá afinando con el tiempo, no es definitivo.
+
+**Primer bloque a construir** (acordado en la misma conversación, dentro de
+la Fase A): los cimientos, sin pantalla vistosa todavía —
+1. Tablas `mesas`, `sesiones_mesa`, `comensales` (modelo ya especificado en
+   la sección 6, con el índice único que evita dos sesiones para la misma
+   mesa si dos personas escanean a la vez).
+2. Endpoint para entrar por QR: crea sesión y hace anfitrión al primero,
+   une como invitado a partir del segundo.
+3. Cookie firmada de comensal (como ya existe para gerente/superadmin).
+
+Con esto probado (tests + `demo.jurux.app`, no La CatedRal todavía), el
+siguiente bloque es la pantalla: añadir propuestas desde la carta y el panel
+del anfitrión con el resumen y el total.
 
 Leyenda de tareas: ✅ hecho y probado · 🔍 hecho, falta verificar · ⬜ pendiente
 
@@ -912,9 +943,7 @@ tener las comandas funcionando.
 
 ## Recordatorio final
 
-Este documento es un plan, no una lista de tareas para mañana. Se empieza cuando se cumple el
-requisito de entrada de la primera página.
-
-Si te encuentras editando este archivo antes de tener la carta desplegada y el panel
-funcionando, es la señal de que se ha vuelto a perder el orden. Cierra el archivo y vuelve al
-PENDIENTE.md.
+Este documento es un plan, no una lista de tareas para mañana. Se empezó el 2026-09-23 saltando
+a propósito el requisito 3 (ver arriba) — eso ya está decidido y no hay que replanteárselo cada
+vez. Lo que sí sigue en pie: **una fase no se empieza hasta cerrar la anterior** (principio 8).
+Antes de tocar la Fase B, comprobar que la Fase A cumple de verdad su "Terminada cuando".

@@ -9,7 +9,7 @@ import numpy as np
 import psycopg
 import structlog
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator, model_validator
 from slowapi.errors import RateLimitExceeded
@@ -51,6 +51,7 @@ from carta_bar.importador import PlatoLeido, leer_platos_de_foto
 from carta_bar.limites import LIMITE_LOGIN, LIMITE_PREGUNTAR, limite_superado, limiter
 from carta_bar.llm import MODELO, MODELO_TRADUCCION
 from carta_bar.logging_config import configurar_logging
+from carta_bar.mesas import Mesa, crear_repositorio_mesas, entrar_por_qr
 from carta_bar.metricas import (
     MetricasRestaurante,
     anotar_pregunta,
@@ -141,6 +142,7 @@ modelo = cargar_modelo()
 _repositorio_uso = crear_repositorio()
 control = ControlGasto(_repositorio_uso)
 metricas = crear_repositorio_metricas(_repositorio_uso)
+mesas = crear_repositorio_mesas()
 
 # Indice de busqueda del chat: uno por restaurante, calculado la primera vez
 # que se le pregunta algo (no todos de golpe al arrancar). Se vacia para un
@@ -643,6 +645,72 @@ def admin_eliminar_categoria(
             content="La categoría tiene platos: muévelos o elimínalos antes de borrarla",
         )
     return Response(status_code=204)
+
+
+# ------------------------------------------------ pedido en mesa (primer bloque)
+#
+# docs/PEDIDO-EN-MESA.md. Cookie propia (no la de gerente/superadmin): un
+# comensal no es un usuario del panel, es quien esta sentado a una mesa.
+
+COOKIE_COMENSAL = "sesion_comensal"
+
+
+@app.get("/admin/api/mesas", response_model=None)
+def admin_listar_mesas(
+    request: Request, restaurante_id: RestauranteActual
+) -> list[Mesa] | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    return mesas.listar_mesas(restaurante_id)
+
+
+class CrearMesaPeticion(BaseModel):
+    nombre: str = Field(min_length=1, max_length=60)
+
+
+@app.post("/admin/api/mesas", status_code=201, response_model=None)
+def admin_crear_mesa(
+    peticion: CrearMesaPeticion, request: Request, restaurante_id: RestauranteActual
+) -> Mesa | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    return mesas.crear_mesa(restaurante_id, peticion.nombre)
+
+
+class EntrarMesaPeticion(BaseModel):
+    token_qr: str = Field(min_length=1, max_length=200)
+    nombre: str | None = Field(default=None, max_length=60)
+    idioma: str = Field(default="es", pattern=r"^[a-z]{2}$")
+
+
+class EntrarMesaRespuesta(BaseModel):
+    sesion_id: str
+    comensal_id: str
+    rol: str
+
+
+@app.post("/api/mesa/entrar", response_model=None)
+def api_mesa_entrar(
+    peticion: EntrarMesaPeticion, request: Request
+) -> EntrarMesaRespuesta | Response:
+    resultado = entrar_por_qr(mesas, peticion.token_qr, peticion.nombre, peticion.idioma)
+    if resultado is None:
+        return Response(status_code=404, content="Mesa no encontrada")
+    sesion, comensal = resultado
+
+    respuesta = JSONResponse(
+        EntrarMesaRespuesta(
+            sesion_id=sesion.id, comensal_id=comensal.id, rol=comensal.rol
+        ).model_dump()
+    )
+    respuesta.set_cookie(
+        COOKIE_COMENSAL,
+        crear_token_sesion(comensal.id),
+        httponly=True,
+        secure=request.url.scheme == "https",
+        samesite="lax",
+    )
+    return respuesta
 
 
 # Comprimida en el navegador (canvas, JPEG calidad 0.8) antes de llegar aqui:

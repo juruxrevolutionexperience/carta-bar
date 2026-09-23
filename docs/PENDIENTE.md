@@ -5,6 +5,12 @@ Leyenda: ✅ hecho y probado · 🔍 hecho, falta verificar · ⬜ pendiente
 Producción: https://la-catedral.jurux.app (`cartia.jurux.app` sigue funcionando) · cómo está montado, en
 [docs/ARQUITECTURA.md](ARQUITECTURA.md)
 
+**Pedido en mesa (comandas):** en marcha desde el 2026-09-23, en paralelo a
+todo lo de aquí — es su propio documento con sus propias fases (A-D), no
+forma parte de la numeración de fases de abajo. Detalle, estado y por qué se
+empezó saltando su requisito de entrada, en
+[docs/PEDIDO-EN-MESA.md](PEDIDO-EN-MESA.md).
+
 ## Reglas
 1. Solo se trabaja en la fase actual.
 2. Una fase se cierra cuando se cumple su "Terminada cuando".
@@ -425,12 +431,6 @@ a tener clientes de pago de verdad.
   y un Ctrl+C a mitad pierde esa pasada (y el gasto de esas llamadas no se anota)
 - "Langostino" sale como *langoustine* en francés (no es exacto: son gambas);
   mismo alérgeno, así que es solo cosmético → corregirlo si vuelve a molestar
-- Pedido en mesa (comandas: anfitrión/invitados, cocina/barra en tiempo
-  real, cuenta) → especificación completa lista, pero no se empieza
-  hasta cumplir su propio requisito de entrada — un restaurante
-  usando la carta y el panel de verdad durante un mes (la Fase 2 que
-  aún no ha empezado). Detalle completo en
-  [docs/APARCADO-PEDIDO-EN-MESA.md](APARCADO-PEDIDO-EN-MESA.md)
 - Vídeo en los platos → después del panel
 - Botones de filtro sin LLM (sin gluten, vegetariano...) → decidir con el coste medido en Fase 2
 - Reducir coste del chat con niveles (filtros → plantillas → caché → LLM),

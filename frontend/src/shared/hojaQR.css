@@ -131,20 +131,20 @@
   }
 
   /* Tarjeta minima para un soporte pequeno de mesa: sin nombre ni URL, solo
-     el QR grande y una frase corta, en el tamaño habitual de esos soportes
-     (aprox. tarjeton A6) en vez de ocupar la pagina entera. */
+     el QR grande y una frase corta, en tamaño A7 (7,4x10,5cm) — el habitual
+     de los "table talkers" de bar, mucho menos sitio que una hoja A6/A4. */
   .hoja-qr-impresion.compacta .hoja-qr {
-    width: 100mm;
-    height: 148mm;
+    width: 74mm;
+    height: 105mm;
     justify-content: center;
-    gap: 10mm;
+    gap: 6mm;
   }
 
   .hoja-qr-impresion.compacta .hoja-qr-codigo {
-    width: 65mm;
+    width: 48mm;
   }
 
   .hoja-qr-impresion.compacta .hoja-qr-texto {
-    font-size: 20pt;
+    font-size: 13pt;
   }
 }
