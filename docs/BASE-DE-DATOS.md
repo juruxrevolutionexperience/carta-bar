@@ -118,9 +118,12 @@ Conectar la base de datos es solo el principio. Lo que viene, por orden:
 
 1. **Mover los JSON a tablas.** Hoy `datos/<restaurante>/` son ficheros:
    `platos`, `categorias`, `traducciones` y `config` pasan a tablas.
-2. **RLS.** Está escrita como nota en `sql/esquema.sql` pero **sin activar**:
-   activarla ahora, sin políticas definidas, bloquearía todos los accesos.
-   Va junto con los roles.
+2. ✅ **RLS.** Activada el 2026-09-23 en las 10 tablas, sin políticas: la
+   clave pública de Supabase (`anon`) no puede leer ni escribir nada. La app
+   sigue funcionando porque entra como `postgres`, que se salta RLS
+   (`rolbypassrls = true`, comprobado; la web se probó tras activarla). Las
+   sentencias están al final de `sql/esquema.sql`: toda tabla nueva añade ahí
+   su `ENABLE ROW LEVEL SECURITY`.
 3. **Resolución del restaurante por subdominio** (`lacatedral.tuapp.com`).
    Regla que no se salta nunca: **jamás fiarse de un `restaurante_id` que
    venga en el cuerpo de la petición**.

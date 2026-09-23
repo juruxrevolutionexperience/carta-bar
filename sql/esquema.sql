@@ -161,3 +161,18 @@ CREATE TABLE IF NOT EXISTS comensales (
     idioma     TEXT NOT NULL DEFAULT 'es',
     creado_en  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- RLS activada en todas las tablas y SIN politicas: la clave publica (anon) y
+-- las autenticadas de Supabase no pueden leer ni escribir nada. La app entra
+-- con el usuario `postgres`, que se salta RLS (rolbypassrls = true, comprobado
+-- el 2026-09-23). Toda tabla nueva debe anadir aqui su ENABLE.
+ALTER TABLE uso_llm              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE restaurantes         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE categorias           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE platos               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE traducciones_platos  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE visitas_diarias      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE preguntas_diarias    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE mesas                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sesiones_mesa        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE comensales           ENABLE ROW LEVEL SECURITY;

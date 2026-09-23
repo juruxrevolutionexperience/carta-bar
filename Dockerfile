@@ -37,6 +37,8 @@ ENV HF_HUB_OFFLINE=1 \
 
 COPY datos ./datos
 COPY sql ./sql
+# Scripts de mantenimiento que se lanzan con `docker exec` (p. ej. establecer_clave_admin.py).
+COPY scripts ./scripts
 COPY --from=frontend /frontend/dist ./web/dist
 
 EXPOSE 8000
