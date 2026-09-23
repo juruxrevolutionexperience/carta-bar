@@ -7,6 +7,7 @@ export function SeccionQr() {
   const [datos, setDatos] = useState<DatosQr | null>(null);
   const [error, setError] = useState(false);
   const [texto, setTexto] = useState("");
+  const [compacta, setCompacta] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [aviso, setAviso] = useState<{ texto: string; tipo: "error" | "exito" } | null>(null);
 
@@ -53,7 +54,32 @@ export function SeccionQr() {
         <p>
           Escanéalo con tu móvil para probar la carta, o imprime la hoja y ponla en las mesas.
         </p>
-        <HojaQR url={datos.url} nombre={datos.nombre} texto={texto.trim() || datos.texto} />
+        <div className="rejilla-opciones" style={{ marginBottom: 14 }}>
+          <label className="opcion">
+            <input
+              type="radio"
+              name="tamano-qr"
+              checked={!compacta}
+              onChange={() => setCompacta(false)}
+            />
+            Hoja completa (nombre + QR + enlace)
+          </label>
+          <label className="opcion">
+            <input
+              type="radio"
+              name="tamano-qr"
+              checked={compacta}
+              onChange={() => setCompacta(true)}
+            />
+            Tarjeta pequeña (para soporte de mesa)
+          </label>
+        </div>
+        <HojaQR
+          url={datos.url}
+          nombre={datos.nombre}
+          texto={texto.trim() || datos.texto}
+          compacta={compacta}
+        />
       </div>
 
       <div className="tarjeta">

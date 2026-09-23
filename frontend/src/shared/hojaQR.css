@@ -129,4 +129,22 @@
   .hoja-qr-impresion .hoja-qr-url {
     font-size: 14pt;
   }
+
+  /* Tarjeta minima para un soporte pequeno de mesa: sin nombre ni URL, solo
+     el QR grande y una frase corta, en el tamaño habitual de esos soportes
+     (aprox. tarjeton A6) en vez de ocupar la pagina entera. */
+  .hoja-qr-impresion.compacta .hoja-qr {
+    width: 100mm;
+    height: 148mm;
+    justify-content: center;
+    gap: 10mm;
+  }
+
+  .hoja-qr-impresion.compacta .hoja-qr-codigo {
+    width: 65mm;
+  }
+
+  .hoja-qr-impresion.compacta .hoja-qr-texto {
+    font-size: 20pt;
+  }
 }

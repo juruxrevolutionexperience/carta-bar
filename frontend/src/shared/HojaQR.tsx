@@ -10,6 +10,13 @@ export interface DatosQr {
   texto: string;
 }
 
+interface Props extends DatosQr {
+  // Hoja completa (nombre + QR + texto + URL) o tarjeta minima para un
+  // soporte pequeno de mesa: solo el QR grande y el texto, sin nombre ni URL
+  // (mas facil de leer de un vistazo y mas barata de imprimir).
+  compacta?: boolean;
+}
+
 function descargar(href: string, archivo: string) {
   const enlace = document.createElement("a");
   enlace.href = href;
@@ -19,7 +26,7 @@ function descargar(href: string, archivo: string) {
 
 // La hoja lista para imprimir (nombre, QR grande y un texto) y los botones
 // para usarla. Solo la hoja sale en papel: ver hojaQR.css.
-export function HojaQR({ url, nombre, texto }: DatosQr) {
+export function HojaQR({ url, nombre, texto, compacta = false }: Props) {
   const [svg, setSvg] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const [copiado, setCopiado] = useState(false);
@@ -56,14 +63,14 @@ export function HojaQR({ url, nombre, texto }: DatosQr) {
 
   const contenido: ReactNode = (
     <>
-      <h3 className="hoja-qr-nombre">{nombre}</h3>
+      {!compacta && <h3 className="hoja-qr-nombre">{nombre}</h3>}
       {svg && (
         <img className="hoja-qr-codigo" src={svgADataUrl(svg)} alt={`Código QR de ${url}`} />
       )}
       {!svg && !error && <div className="hoja-qr-codigo hoja-qr-espera">Generando…</div>}
       {error && <div className="hoja-qr-codigo hoja-qr-espera">No se pudo generar el QR.</div>}
       <p className="hoja-qr-texto">{texto}</p>
-      <p className="hoja-qr-url">{url.replace(/^https?:\/\//, "")}</p>
+      {!compacta && <p className="hoja-qr-url">{url.replace(/^https?:\/\//, "")}</p>}
     </>
   );
 
@@ -76,7 +83,7 @@ export function HojaQR({ url, nombre, texto }: DatosQr) {
           con "visibility" no vale: seguiria ocupando sitio y saldrian varias
           hojas. */}
       {createPortal(
-        <div className="hoja-qr-impresion">
+        <div className={"hoja-qr-impresion" + (compacta ? " compacta" : "")}>
           <div className="hoja-qr">{contenido}</div>
         </div>,
         document.body
