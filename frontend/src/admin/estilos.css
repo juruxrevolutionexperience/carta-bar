@@ -943,6 +943,61 @@ button.secundario {
 .plano {
   position: relative;
   transform-origin: 0 0;
+  /* Es un dibujo, no un texto: un doble clic no debe dejar el numero de una
+     mesa resaltado en azul. */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Pantalla grande (ordenador o TPV): sin botones de zoom, como en Turbopos. El
+   local entero cabe siempre y el plano se reajusta solo. En el movil se quedan. */
+@media (min-width: 1000px) {
+  /* Con .lienzo delante para ganar a la regla base, que va mas abajo. */
+  .lienzo .herramientas-plano {
+    display: none;
+  }
+}
+
+/* Resumen que llena la columna de la derecha mientras no hay una mesa elegida. */
+.panel-vacio h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.resumen-zona {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-bottom: 10px;
+}
+
+.resumen-zona .cifra {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--tinta);
+  margin-left: 6px;
+}
+
+.resumen-zona .cifra:first-child {
+  margin-left: 0;
+  color: var(--marca-viva);
+}
+
+.leyenda-plano {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.punto-ocupada {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--mesa-ocupada);
+  border: 1.5px solid var(--marca);
 }
 
 .plano.edicion {

@@ -109,6 +109,24 @@ export function SeccionMesas() {
     if (marco.clientWidth && alto) setZoom(zoomQueCabe(marco.clientWidth, alto));
   }
 
+  // En una pantalla grande no hay botones de zoom (como en un TPV: el local
+  // cabe siempre), asi que el plano se reajusta solo al cambiar el tamaño de la
+  // ventana. Si el gerente acerca o aleja a mano (movil), se respeta hasta que
+  // pulse "ver el plano entero".
+  const zoomManual = useRef(false);
+  useEffect(() => {
+    const lienzo = caja.current;
+    if (!lienzo || typeof ResizeObserver === "undefined") return;
+    // Se observa el lienzo y no el marco del plano: el ancho del lienzo no
+    // depende del zoom, asi que no hay bucle.
+    const observador = new ResizeObserver(() => {
+      if (!zoomManual.current) ajustar();
+    });
+    observador.observe(lienzo);
+    return () => observador.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zonas !== null, vista]);
+
   // Al abrir, el plano entero a la vista: es lo primero que quiere ver el
   // gerente, y en un móvil a tamaño real solo se vería un tercio.
   useEffect(() => {
@@ -361,8 +379,14 @@ export function SeccionMesas() {
                 />
                 <HerramientasPlano
                   zoom={zoom}
-                  onZoom={(z) => setZoom(limitarZoom(z))}
-                  onAjustar={ajustar}
+                  onZoom={(z) => {
+                    zoomManual.current = true;
+                    setZoom(limitarZoom(z));
+                  }}
+                  onAjustar={() => {
+                    zoomManual.current = false;
+                    ajustar();
+                  }}
                 />
               </div>
 
@@ -377,7 +401,17 @@ export function SeccionMesas() {
 
             {!mesaElegida && (
               <div className="tarjeta panel-vacio">
-                <p>Toca una mesa del plano para ver y cambiar sus datos.</p>
+                <h3>{zonas.find((z) => z.id === zonaId)?.nombre}</h3>
+                <p className="resumen-zona">
+                  <span className="cifra">{mesasDeLaZona.filter((m) => m.ocupada).length}</span>
+                  con clientes
+                  <span className="cifra">{mesasDeLaZona.filter((m) => !m.ocupada).length}</span>
+                  libres
+                </p>
+                <p className="leyenda-plano">
+                  <span className="punto-ocupada" /> Mesa con clientes
+                </p>
+                <p>Toca una mesa del plano para ver sus datos y su QR.</p>
               </div>
             )}
             {mesaElegida && (
