@@ -19,6 +19,30 @@ empezó saltando su requisito de entrada, en
 
 ---
 
+## DÓNDE LO DEJAMOS (2026-09-24) — LEER PRIMERO
+
+- **Frontend de mesas: CERRADO** por decisión del usuario. Último cambio
+  (plano en móvil: alto medido en JS, barra en dos filas, zoom sin flotar)
+  desplegado en `dc2538c`. No se toca más salvo fallo real.
+- **Siguiente: backend del pedido en mesa.** Todo el flujo acordado está en
+  `docs/PEDIDO-EN-MESA.md`, secciones "Flujo de mesa y pedidos" y "Bloque 1
+  en detalle". Orden: bloque 1 (estados, abrir, unirse, confirmar, liberar)
+  → bloque 2 (pedidos, rondas, pedir la cuenta) → bloque 3 (rol camarero +
+  acceso rápido tipo rejilla por zona, como Comandator).
+- **Acordado con el usuario (2026-09-24):** confirmación del camarero cuando
+  abre un cliente; "¿seguro?" antes de enviar comanda y, una vez enviada,
+  solo el personal la deshace; el camarero/gerente puede liberar mesas;
+  pedir la cuenta desde la carta; segunda contraseña "camarero" por
+  restaurante. Principio: plantear cada bloque a fondo justo antes de
+  hacerlo, no resolver todo de golpe.
+- **Pendiente de respuesta del usuario para arrancar el bloque 1:**
+  1. ¿Código de 4 cifras para que un invitado se una a una mesa con clientes?
+  2. ¿Cierre automático: 30 min "por confirmar" sin confirmar y 4 h sin
+     actividad?
+- Sin cambios de código pendientes de subir; solo estos dos documentos.
+- Nota: unos textos legales de Mansel que se pegaron el 2026-09-24 eran de
+  otro proyecto. Ignorarlos, no tienen nada que ver con Carta Bar.
+
 ## DÓNDE LO DEJAMOS (2026-09-22)
 
 Todo el trabajo de hoy está commiteado, subido a GitHub, desplegado en

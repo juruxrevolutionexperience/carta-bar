@@ -1141,3 +1141,48 @@ Este documento es un plan, no una lista de tareas para mañana. Se empezó el 20
 a propósito el requisito 3 (ver arriba) — eso ya está decidido y no hay que replanteárselo cada
 vez. Lo que sí sigue en pie: **una fase no se empieza hasta cerrar la anterior** (principio 8).
 Antes de tocar la Fase B, comprobar que la Fase A cumple de verdad su "Terminada cuando".
+
+## Flujo de mesa y pedidos (planteado 2026-09-24, se resuelve por bloques)
+
+Principio: no resolver todo ahora; cada bloque se plantea a fondo justo antes de desarrollarlo.
+
+Estados de mesa: libre, por confirmar (la abrió un cliente), abierta, pidiendo cuenta, cerrada.
+
+- Abre el cliente (QR) o el camarero. Si abre el cliente, el primer pedido necesita un toque de confirmación del camarero.
+- Enviar una comanda pide confirmación al cliente ("¿seguro?"). Una vez enviada, SOLO el personal autorizado (camarero/gerente) puede deshacerla o cancelarla; el cliente no.
+- El cliente puede pedir la cuenta desde la carta. El cierre y el cobro los hace siempre el camarero.
+- Sesiones abandonadas o falsas: el camarero o gerente puede liberar la mesa en cualquier momento (cierra la sesión y la vuelve a verde). Cierre automático de mesas olvidadas tras N horas (por decidir).
+- Abuso (alguien pide cosas sin sentido): el pedido de un cliente sin confirmar no llega a cocina; el camarero puede expulsar a un comensal y bloquear el código de la sesión. Límites de peticiones por sesión y por IP (por decidir al llegar a ese bloque).
+- Camarero: segunda contraseña por restaurante; ve solo acceso rápido y comandas.
+
+Bloques: 1) estados y abrir/unirse/confirmar/liberar, 2) pedidos, rondas y cuenta, 3) rol camarero y acceso rápido.
+
+### Bloque 1 en detalle: estados, abrir, unirse, confirmar, liberar
+
+Se apoya en lo que ya existe (`sesiones_mesa`, `comensales`, `/api/mesa/entrar`, el índice único de una sesión abierta por mesa). No se sustituye nada.
+
+Base de datos (ALTER idempotentes en `sql/esquema.sql`):
+- `sesiones_mesa.estado` admite además `por_confirmar` (hoy: abierta, cuenta_pedida, cerrada).
+- `sesiones_mesa`: `abierta_por` (cliente/personal), `comensales_declarados`, `codigo` (4 cifras), `confirmada_en`, `ultima_actividad`, `motivo_cierre` (cobrada/liberada/automatica).
+- `comensales.expulsado_en`: un comensal expulsado pierde el acceso aunque conserve la cookie.
+
+Cliente (carta):
+- `POST /api/mesa/entrar` {token_qr, nombre, idioma, comensales?, codigo?}
+  - Mesa libre: crea la sesión `por_confirmar`, entra como anfitrión y recibe el código para compartirlo.
+  - Mesa abierta sin clientes dentro (la abrió el camarero): el primero entra como anfitrión, sin código.
+  - Mesa con clientes: hace falta el código para unirse como invitado. Sin él o con un código erróneo, error y límite de intentos.
+- `GET /api/mesa/yo`: estado de mi sesión (mesa, estado, comensales; el código solo si soy anfitrión). Si la mesa se cerró o me expulsaron, 401 y la carta lo olvida.
+
+Personal (`/admin`, hoy la cookie del gerente; con el bloque 3, también el camarero):
+- `POST /admin/api/mesas/{id}/abrir` {comensales}: la deja `abierta`. Si ya estaba `por_confirmar`, la confirma y no crea otra (fusión).
+- `POST /admin/api/mesas/{id}/confirmar`
+- `POST /admin/api/mesas/{id}/liberar`: la cierra con motivo `liberada` y vuelve a verde.
+- `GET /admin/api/mesas/{id}/sesion`: estado, código y comensales.
+- `POST /admin/api/mesas/{id}/nuevo-codigo` y `POST /admin/api/comensales/{id}/expulsar`.
+- El listado de mesas devuelve el `estado` de cada una (libre/por_confirmar/abierta/cuenta_pedida), además de `ocupada`.
+
+Cierre automático (se aplica al leer, sin procesos aparte): `por_confirmar` sin confirmar tras 30 min y cualquier sesión sin actividad tras 4 h se cierran con motivo `automatica`.
+
+Tests: cada transición, la fusión cliente/camarero, código correcto/erróneo, expulsado sin acceso, liberar, cierres automáticos (con reloj inyectado), y que un restaurante no pueda tocar mesas de otro.
+
+Fuera del bloque 1: pedidos y cuenta (bloque 2), rol camarero y acceso rápido (bloque 3), colores nuevos en el plano (con el bloque 3).
