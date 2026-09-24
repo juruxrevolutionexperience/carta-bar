@@ -124,7 +124,49 @@ dueño pasó una foto de un TPV real y de ahí salió lo que faltaba:
 - **Barriles y taburetes se llaman solo con el número** ("1", "2"): ocupan una
   casilla y "Mesa 6" no cabía, salía "Mes…".
 
-**Aviso de migración:** el plano pasó de 24×18 casillas a 12×9 (más grandes).
+**Tercera vuelta del plano (2026-09-24): escala Turbopos.** El dueño comparó
+lado a lado una captura de Turbopos y la nuestra: "no está desarrollado, quiero
+lo mismo que Turbopos a nuestro estilo" (no habla de color ni de interfaz, solo
+del panel de mesas). La causa era una decisión de la segunda vuelta: cuadrícula
+gorda de 12×9 casillas de 56 px, "a propósito" para que en el móvil se leyera el
+nombre. Con eso una mesa ocupaba 1/6 del plano, cinco mesas lo llenaban y había
+que hacer scroll. **Regla del dueño: ante cualquier duda de diseño de esta
+pantalla, hacerlo como Turbopos.** Cambios:
+- **Plano fino de 48×30 unidades** (`COLUMNAS`/`FILAS`/`CELDA = 20` en
+  `planoUtil.ts`). Mesa de 4 = 3×3, rectangular 6×3, barril 2×2, taburete 1×1
+  (`DISENO_POR_FORMA` en `mesas.py`, mismos valores). Al abrir se ve el local
+  entero (zoom que cabe); en móvil se acerca con el zoom (0,2–3, cada pulsación
+  ×1,25).
+- **Dos modos, ojo y lápiz** (arriba a la izquierda del plano, como Turbopos).
+  *Ojo (servicio):* sin paleta, sin cuadrícula, las mesas solo se tocan para ver
+  su estado y su QR. *Lápiz (edición):* paleta de formas, guía cada 4 unidades,
+  mover, tirador de tamaño, girar, borrar. Un local sin mesas se abre en edición;
+  uno montado, en servicio. Sustituye al candado, que ya no existe.
+- **Ocupación real:** `Mesa.ocupada` (se calcula al listar: hay una sesión sin
+  cerrar) pinta la mesa en rojo con el icono de personas, y la pestaña de zona
+  muestra `ocupadas/total` (TERRAZA 5/20). Se refresca cada 8 s sin tocar lo que
+  se esté moviendo. **Todavía no se provoca escaneando el QR**: la carta aún no
+  lee `?mesa=` ni llama a `/api/mesa/entrar` (siguiente bloque). Para probarlo a
+  mano: `curl -X POST https://<bar>.jurux.app/api/mesa/entrar -H "Content-Type:
+  application/json" -d '{"token_qr":"<lo que va tras ?mesa= en el enlace del QR>"}'`.
+  Ojo: una mesa con sesión abierta no se puede borrar (409) y aún no hay forma de
+  cerrarla desde la pantalla; en pruebas, con SQL:
+  `UPDATE sesiones_mesa SET estado='cerrada', cerrada_en=now() WHERE restaurante_id='demo' AND estado!='cerrada';`
+- **Mesa limpia:** contorno fino y el nombre centrado (sin la etiqueta con
+  fondo); el aforo solo en las mesas grandes; en las diminutas nada hasta
+  acercar (`detalleVisible`). Sillas finas a escala de la mesa.
+- **Migración:** las zonas guardadas en el plano viejo se convierten una sola
+  vez al arrancar (`zonas.plano_version`: posiciones ×4 en x y ×3 en y, tamaños
+  ×1,5 hacia arriba; ninguna mesa se sale ni se monta sobre otra). Las zonas
+  nuevas nacen ya en la versión 2.
+- Visto con un Chromium sin cabeza (PC, edición y móvil de 500 px de ancho) con
+  datos de prueba. **Sin ver aún en un móvil real ni en el TPV.**
+- **Sigue pendiente de Turbopos** (por orden): elementos del local (barra
+  rayada, plantas, puertas, baños; necesitan tabla nueva), pellizco para hacer
+  zoom en el móvil, líneas guía al alinear, duplicar mesa.
+
+**Aviso de migración (segunda vuelta, ya superado por la tercera):** el plano
+pasó de 24×18 casillas a 12×9 (más grandes).
 Una mesa guardada con el plano viejo puede caer fuera del nuevo; al cargar la
 pantalla se trae dentro y se guarda corregida (`corregirSiSeSale`). De paso
 salió un fallo real: `limitarTamano` devolvía anchos negativos para una mesa

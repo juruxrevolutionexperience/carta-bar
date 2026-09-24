@@ -24,13 +24,15 @@ RolComensal = Literal["anfitrion", "invitado"]
 FormaMesa = Literal["redonda", "cuadrada", "rectangular", "barril", "taburete"]
 ResultadoEliminar = Literal["ok", "no_existe", "sesion_abierta"]
 
-# Tamano (en casillas del plano) y aforo con los que nace cada forma. El
-# editor del panel usa los mismos valores al soltar una mesa nueva.
+# Tamano (en unidades del plano, que mide 48 x 30) y aforo con los que nace
+# cada forma. El editor del panel usa los mismos valores al soltar una mesa
+# nueva (DISENO en frontend/src/admin/planoUtil.ts). Una mesa de 4 mide 3 de
+# 48 unidades, como en un TPV: caben decenas en la misma pantalla.
 DISENO_POR_FORMA: dict[str, tuple[float, float, int]] = {
-    "redonda": (2, 2, 4),
-    "cuadrada": (2, 2, 4),
-    "rectangular": (4, 2, 6),
-    "barril": (1, 1, 2),
+    "redonda": (3, 3, 4),
+    "cuadrada": (3, 3, 4),
+    "rectangular": (6, 3, 6),
+    "barril": (2, 2, 2),
     "taburete": (1, 1, 1),
 }
 
@@ -57,10 +59,13 @@ class Mesa(BaseModel):
     forma: FormaMesa = "cuadrada"
     x: float = 0
     y: float = 0
-    ancho: float = 2
-    alto: float = 2
+    ancho: float = 3
+    alto: float = 3
     rotacion: int = 0
     capacidad: int = 4
+    # Hay clientes sentados (sesion sin cerrar). No se guarda en la mesa: se
+    # calcula al listarlas, y es lo que pinta la mesa en rojo en el plano.
+    ocupada: bool = False
 
 
 class SesionMesa(BaseModel):
@@ -269,7 +274,12 @@ class RepositorioMesasMemoria:
 
     def listar_mesas(self, restaurante_id: str) -> list[Mesa]:
         self.listar_zonas(restaurante_id)
-        return [m for m in self.mesas.values() if m.restaurante_id == restaurante_id and m.activa]
+        ocupadas = {s.mesa_id for s in self.sesiones.values() if s.estado != "cerrada"}
+        return [
+            m.model_copy(update={"ocupada": m.id in ocupadas})
+            for m in self.mesas.values()
+            if m.restaurante_id == restaurante_id and m.activa
+        ]
 
     def regenerar_token(self, restaurante_id: str, mesa_id: str) -> Mesa | None:
         mesa = self.mesas.get(mesa_id)
@@ -335,6 +345,10 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 
 _LISTAR_MESAS = f"""
 SELECT {_COLUMNAS_MESA} FROM mesas WHERE restaurante_id = %s AND activa ORDER BY nombre
+"""
+
+_MESAS_OCUPADAS = """
+SELECT DISTINCT mesa_id FROM sesiones_mesa WHERE restaurante_id = %s AND estado != 'cerrada'
 """
 
 _MESA_POR_ID_BLOQUEADA = f"""
@@ -602,7 +616,12 @@ class RepositorioMesasPostgres:
             self._asegurar_zonas(cur, restaurante_id)
             cur.execute(_LISTAR_MESAS, (restaurante_id,))
             filas = cur.fetchall()
-        return [_mesa_de_fila(restaurante_id, f) for f in filas]
+            cur.execute(_MESAS_OCUPADAS, (restaurante_id,))
+            ocupadas = {f[0] for f in cur.fetchall()}
+        return [
+            _mesa_de_fila(restaurante_id, f).model_copy(update={"ocupada": f[0] in ocupadas})
+            for f in filas
+        ]
 
     def regenerar_token(self, restaurante_id: str, mesa_id: str) -> Mesa | None:
         with self.pool.connection() as conn, conn.cursor() as cur:

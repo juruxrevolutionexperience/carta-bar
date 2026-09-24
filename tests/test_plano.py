@@ -344,3 +344,49 @@ def test_una_mesa_borrada_ya_no_deja_entrar_por_su_qr(gerente: TestClient) -> No
     gerente.delete(f"/admin/api/mesas/{mesa['id']}")
     r = TestClient(app).post("/api/mesa/entrar", json={"token_qr": mesa["token_qr"]})
     assert r.status_code == 404
+
+
+# --------------------------------------------- ocupacion (mesas en rojo en el plano)
+
+
+def test_una_mesa_con_clientes_sentados_sale_ocupada(repo: RepositorioMesasMemoria) -> None:
+    ocupada = repo.crear_mesa("bar1", "1")
+    libre = repo.crear_mesa("bar1", "2")
+    assert entrar_por_qr(repo, ocupada.token_qr, "Ana", "es") is not None
+
+    por_id = {m.id: m for m in repo.listar_mesas("bar1")}
+    assert por_id[ocupada.id].ocupada is True
+    assert por_id[libre.id].ocupada is False
+
+
+def test_al_cerrar_la_sesion_la_mesa_deja_de_estar_ocupada(repo: RepositorioMesasMemoria) -> None:
+    mesa = repo.crear_mesa("bar1", "1")
+    resultado = entrar_por_qr(repo, mesa.token_qr, "Ana", "es")
+    assert resultado is not None
+    sesion, _ = resultado
+    repo.sesiones[sesion.id] = sesion.model_copy(update={"estado": "cerrada"})
+
+    assert repo.listar_mesas("bar1")[0].ocupada is False
+
+
+def test_la_ocupacion_de_un_bar_no_pasa_a_otro(repo: RepositorioMesasMemoria) -> None:
+    de_bar1 = repo.crear_mesa("bar1", "1")
+    de_bar2 = repo.crear_mesa("bar2", "1")
+    assert entrar_por_qr(repo, de_bar1.token_qr, "Ana", "es") is not None
+
+    assert repo.listar_mesas("bar2")[0].id == de_bar2.id
+    assert repo.listar_mesas("bar2")[0].ocupada is False
+
+
+def test_las_mesas_nuevas_nacen_con_las_medidas_del_plano_fino() -> None:
+    # Mismos valores que DISENO en frontend/src/admin/planoUtil.ts.
+    from carta_bar.mesas import DISENO_POR_FORMA
+
+    esperado: dict[str, tuple[float, float, int]] = {
+        "redonda": (3, 3, 4),
+        "cuadrada": (3, 3, 4),
+        "rectangular": (6, 3, 6),
+        "barril": (2, 2, 2),
+        "taburete": (1, 1, 1),
+    }
+    assert DISENO_POR_FORMA == esperado

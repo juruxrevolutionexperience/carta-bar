@@ -9,6 +9,8 @@ interface Props {
   mesa: Mesa;
   zonas: Zona[];
   qr: DatosQr;
+  // Modo lápiz: se puede cambiar todo. En modo ojo solo se ve el estado y el QR.
+  editando: boolean;
   ocupado: boolean;
   onCambio: (cambios: CambiosMesa) => void;
   onEliminar: () => void;
@@ -22,6 +24,7 @@ export function PanelMesa({
   mesa,
   zonas,
   qr,
+  editando,
   ocupado,
   onCambio,
   onEliminar,
@@ -65,6 +68,13 @@ export function PanelMesa({
         </button>
       </div>
 
+      <p className={"estado-mesa" + (mesa.ocupada ? " con-clientes" : "")}>
+        {mesa.ocupada ? "Con clientes" : "Libre"} · {mesa.capacidad}{" "}
+        {mesa.capacidad === 1 ? "persona" : "personas"}
+      </p>
+
+      {editando && (
+        <>
       <label htmlFor="mesa-nombre">Nombre</label>
       <input
         id="mesa-nombre"
@@ -135,15 +145,24 @@ export function PanelMesa({
           Girar ↻
         </button>
       </div>
+        </>
+      )}
 
       <details className="mesa-qr">
         <summary>QR de esta mesa</summary>
         <QrMesa mesa={mesa} qr={qr} compacta={true} ocupado={ocupado} onRegenerar={onRegenerar} />
       </details>
 
-      <button type="button" className="secundario peligro" disabled={ocupado} onClick={onEliminar}>
-        Eliminar mesa
-      </button>
+      {editando && (
+        <button
+          type="button"
+          className="secundario peligro"
+          disabled={ocupado}
+          onClick={onEliminar}
+        >
+          Eliminar mesa
+        </button>
+      )}
     </div>
   );
 }

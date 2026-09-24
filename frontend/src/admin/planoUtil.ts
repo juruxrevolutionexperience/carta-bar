@@ -4,23 +4,24 @@
 
 export type FormaMesa = "redonda" | "cuadrada" | "rectangular" | "barril" | "taburete";
 
-// El plano de cada zona es una cuadricula fija: cada casilla mide CELDA px.
-// Pocas casillas y grandes a proposito: con una cuadricula fina las mesas
-// salen diminutas en un movil y no se lee su nombre. Una mesa normal ocupa
-// 2 de 12 columnas, o sea la sexta parte del ancho.
-export const COLUMNAS = 12;
-export const FILAS = 9;
-export const CELDA = 56;
+// El plano de cada zona mide 48 x 30 unidades y cada unidad son CELDA px a zoom
+// 1. Es fino a proposito, como el mapa de mesas de un TPV: el local entero a la
+// vista y mesas pequenas (una de 4 mide 3 de 48 unidades, la dieciseisava parte
+// del ancho), con sitio para decenas de mesas, barriles y taburetes. En el
+// movil se ve entero y se acerca con el zoom para leer o mover algo.
+export const COLUMNAS = 48;
+export const FILAS = 30;
+export const CELDA = 20;
 
 // Mismos valores que DISENO_POR_FORMA en src/carta_bar/mesas.py.
 export const DISENO: Record<
   FormaMesa,
   { ancho: number; alto: number; capacidad: number; etiqueta: string }
 > = {
-  redonda: { ancho: 2, alto: 2, capacidad: 4, etiqueta: "Redonda" },
-  cuadrada: { ancho: 2, alto: 2, capacidad: 4, etiqueta: "Cuadrada" },
-  rectangular: { ancho: 4, alto: 2, capacidad: 6, etiqueta: "Rectangular" },
-  barril: { ancho: 1, alto: 1, capacidad: 2, etiqueta: "Barril" },
+  redonda: { ancho: 3, alto: 3, capacidad: 4, etiqueta: "Redonda" },
+  cuadrada: { ancho: 3, alto: 3, capacidad: 4, etiqueta: "Cuadrada" },
+  rectangular: { ancho: 6, alto: 3, capacidad: 6, etiqueta: "Rectangular" },
+  barril: { ancho: 2, alto: 2, capacidad: 2, etiqueta: "Barril" },
   taburete: { ancho: 1, alto: 1, capacidad: 1, etiqueta: "Taburete" },
 };
 
@@ -115,8 +116,13 @@ export function girar(rotacion: number, grados: number): number {
 
 // --------------------------------------------------------------- zoom
 
-export const ZOOM_MIN = 0.4;
-export const ZOOM_MAX = 1.6;
+// El minimo deja ver el plano entero en un movil estrecho (unos 360 px de
+// ancho dan 0,37); el maximo, leer y mover una mesa con el dedo.
+export const ZOOM_MIN = 0.2;
+export const ZOOM_MAX = 3;
+// Cada pulsacion de acercar/alejar multiplica: con un rango tan grande, sumar
+// una cantidad fija se quedaria corto al alejar y se pasaria al acercar.
+export const ZOOM_FACTOR = 1.25;
 
 export function limitarZoom(z: number): number {
   return Math.min(Math.max(z, ZOOM_MIN), ZOOM_MAX);
@@ -151,8 +157,10 @@ export function detalleVisible(
 ): "completo" | "solo-nombre" | "minimo" {
   const ancho = anchoEnPantalla(anchoCasillas, zoom);
   const alto = anchoEnPantalla(altoCasillas, zoom);
-  if (ancho < 46 || alto < 34) return "minimo";
-  if (ancho < 96) return "solo-nombre";
+  // Como en un TPV: lo normal es solo el nombre (el numero) en el centro; el
+  // aforo, solo en mesas grandes; y en las diminutas nada (sale al acercar).
+  if (ancho < 26 || alto < 20) return "minimo";
+  if (ancho < 90 || alto < 44) return "solo-nombre";
   return "completo";
 }
 

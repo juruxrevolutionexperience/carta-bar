@@ -11,6 +11,7 @@ from pathlib import Path
 import pglast
 import pytest
 
+from carta_bar.mesas import _MESAS_OCUPADAS
 from carta_bar.metricas import (
     _LEER_COSTES,
     _LEER_PREGUNTAS,
@@ -56,6 +57,7 @@ def test_el_esquema_crea_la_tabla_y_su_indice() -> None:
         _LEER_VISITAS,
         _LEER_PREGUNTAS,
         _LEER_COSTES,
+        _MESAS_OCUPADAS,
     ],
 )
 def test_las_consultas_son_sql_valido(consulta: str) -> None:
@@ -83,3 +85,15 @@ def test_el_esquema_anade_la_columna_de_alergenos_confirmados_sin_romper_lo_exis
         "ALTER TABLE platos ADD COLUMN IF NOT EXISTS alergenos_confirmados "
         "BOOLEAN NOT NULL DEFAULT true"
     ) in sql
+
+
+def test_la_conversion_del_plano_se_hace_una_sola_vez() -> None:
+    """Las zonas nuevas nacen ya en la version 2: si el default fuera 1, cada
+    reinicio volveria a multiplicar las posiciones de las mesas."""
+    sql = Path("sql/esquema.sql").read_text(encoding="utf-8")
+    anade = sql.index("ADD COLUMN IF NOT EXISTS plano_version INTEGER NOT NULL DEFAULT 1")
+    default_nuevo = sql.index("ALTER COLUMN plano_version SET DEFAULT 2")
+    convierte = sql.index("WHERE plano_version = 1")
+    assert anade < default_nuevo < convierte
+    # Marca la zona como convertida en el mismo statement que mueve sus mesas.
+    assert "UPDATE zonas SET plano_version = 2" in sql

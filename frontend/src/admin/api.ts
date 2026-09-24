@@ -81,6 +81,8 @@ export interface Mesa {
   alto: number;
   rotacion: number;
   capacidad: number;
+  // Hay clientes sentados. Lo calcula el servidor al listar; no se edita.
+  ocupada?: boolean;
 }
 
 // Lo que se puede cambiar de una mesa desde el plano (el token y el estado no).

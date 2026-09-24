@@ -18,7 +18,9 @@ interface Props {
   mesas: Mesa[];
   seleccionada: string | null;
   zoom: number;
-  bloqueado: boolean;
+  // Modo lápiz: se pueden mover, redimensionar y ver la cuadrícula. Sin él (modo
+  // ojo, el de servicio) las mesas solo se tocan para ver sus datos.
+  editando: boolean;
   onSeleccionar: (id: string | null) => void;
   // Se llama una sola vez al soltar, con lo que cambió (posición o tamaño).
   onCambio: (mesa: Mesa, cambios: Partial<Caja>) => void;
@@ -51,7 +53,7 @@ export function PlanoZona({
   mesas,
   seleccionada,
   zoom,
-  bloqueado,
+  editando,
   onSeleccionar,
   onCambio,
 }: Props) {
@@ -67,7 +69,7 @@ export function PlanoZona({
   }
 
   function empezar(e: PointerEvent<HTMLElement>, mesa: Mesa, modo: Gesto["modo"]) {
-    if (bloqueado) {
+    if (!editando) {
       onSeleccionar(mesa.id);
       return;
     }
@@ -151,13 +153,15 @@ export function PlanoZona({
         }}
       >
         <div
-          className={"plano" + (bloqueado ? " bloqueado" : "")}
+          className={"plano" + (editando ? " edicion" : "")}
           style={
             {
               width: COLUMNAS * CELDA,
               height: FILAS * CELDA,
               transform: `scale(${zoom})`,
-              backgroundSize: `${CELDA}px ${CELDA}px`,
+              // Guía cada 4 unidades y solo al editar: en servicio el plano es
+              // un local limpio, sin cuadrícula.
+              backgroundSize: `${CELDA * 4}px ${CELDA * 4}px`,
               // Los textos y el tirador se dividen por --z para conservar su
               // tamaño en pantalla aunque el plano esté reducido.
               "--z": zoom,
@@ -181,8 +185,10 @@ export function PlanoZona({
                   `mesa-plano forma-${m.forma}` +
                   (detalle === "minimo" ? " mini" : "") +
                   (elegida ? " seleccionada" : "") +
+                  (m.ocupada ? " ocupada" : "") +
                   (gesto?.id === m.id ? " moviendo" : "")
                 }
+                title={m.nombre}
                 style={{
                   left: c.x * CELDA,
                   top: c.y * CELDA,
@@ -198,17 +204,26 @@ export function PlanoZona({
                   ancho={c.ancho}
                   alto={c.alto}
                 />
-                {/* Contra-gira para leerse siempre derecho aunque la mesa no lo esté. */}
-                <div className="mesa-cabecera" style={{ transform: `rotate(${-m.rotacion}deg)` }}>
-                  <span className="mesa-etiqueta">{m.nombre}</span>
-                  {detalle === "completo" && (
-                    <span className="mesa-aforo">
-                      <IconoPersonas />
-                      {m.capacidad}
-                    </span>
-                  )}
-                </div>
-                {elegida && !bloqueado && (
+                {/* Contra-gira para leerse siempre derecho aunque la mesa no lo esté.
+                    Nombre centrado, como en un TPV; el aforo solo en las grandes y,
+                    si hay clientes, el icono de personas en la esquina. */}
+                {detalle !== "minimo" && (
+                  <div className="mesa-centro" style={{ transform: `rotate(${-m.rotacion}deg)` }}>
+                    <span className="mesa-etiqueta">{m.nombre}</span>
+                    {detalle === "completo" && (
+                      <span className="mesa-aforo">
+                        <IconoPersonas />
+                        {m.capacidad}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {m.ocupada && detalle !== "minimo" && (
+                  <span className="mesa-ocupada-icono" title="Con clientes">
+                    <IconoPersonas />
+                  </span>
+                )}
+                {elegida && editando && (
                   <span
                     className="mesa-tirador"
                     aria-label="Cambiar el tamaño"

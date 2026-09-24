@@ -7,16 +7,18 @@ interface Props {
   alto: number;
 }
 
-// Medidas de una silla, en píxeles del plano (antes del zoom).
-const LARGO = CELDA * 0.42;
-const GRUESO = CELDA * 0.16;
-const SEPARACION = CELDA * 0.05;
+// Medidas de una silla, en píxeles del plano (antes del zoom). Finas, como en
+// un TPV: el largo depende de la mesa (en un barril pequeño una silla grande
+// la taparía) y el grosor es fijo.
+const GRUESO = CELDA * 0.4;
+const SEPARACION = CELDA * 0.15;
 
 // Las sillas son decoración: el lector de pantalla ya oye el aforo en el texto
 // de la mesa, así que aquí sobra (aria-hidden en el contenedor).
 export function SillasMesa({ forma, capacidad, ancho, alto }: Props) {
   const anchoPx = ancho * CELDA;
   const altoPx = alto * CELDA;
+  const LARGO = Math.min(CELDA * 1.3, Math.min(anchoPx, altoPx) * 0.5);
 
   // En las mesas redondas las sillas van en corona alrededor del centro.
   if (forma === "redonda" || forma === "barril") {

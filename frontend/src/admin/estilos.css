@@ -837,7 +837,7 @@ button.secundario {
   position: relative;
   border: 1px solid var(--borde-suave);
   border-radius: 14px;
-  background: #0b0a09;
+  background: #121110;
   overflow: hidden;
 }
 
@@ -849,30 +849,38 @@ button.secundario {
   max-height: min(62vh, 560px);
 }
 
+/* El plano es el local visto desde arriba, limpio: sin cuadrícula. Solo al
+   editar aparece una guía suave cada 4 unidades para colocar con ojo. */
 .plano {
   position: relative;
   transform-origin: 0 0;
+}
+
+.plano.edicion {
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
 }
 
-.plano.bloqueado .mesa-plano {
-  cursor: default;
-}
-
-/* ---------- una mesa ---------- */
+/* ---------- una mesa ----------
+   Como en un TPV: contorno fino y el numero dentro, nada de bloques con
+   etiquetas. Las que tienen clientes se tiñen de rojo. */
 .mesa-plano {
   position: absolute;
-  background: #322e29;
-  border: 1.5px solid #4c463e;
-  border-radius: 8px;
+  background: #25221f;
+  border: calc(1.5px / var(--z, 1)) solid #7a7166;
+  border-radius: calc(4px / var(--z, 1));
   box-sizing: border-box;
-  cursor: grab;
+  cursor: pointer;
   touch-action: none;
   transition:
+    background 0.12s,
     border-color 0.12s,
     box-shadow 0.12s;
+}
+
+.plano.edicion .mesa-plano {
+  cursor: grab;
 }
 
 .mesa-plano.forma-redonda,
@@ -882,19 +890,21 @@ button.secundario {
 }
 
 .mesa-plano.forma-barril {
-  background: #4a3826;
-  border-color: #7d6143;
+  border-color: #a5825a;
 }
 
 .mesa-plano.forma-taburete {
-  background: #3c3833;
+  background: #2f2b27;
+}
+
+.mesa-plano.ocupada {
+  background: rgba(224, 101, 75, 0.3);
+  border-color: var(--marca);
 }
 
 .mesa-plano.seleccionada {
-  border-color: var(--marca);
-  box-shadow:
-    0 0 0 3px rgba(224, 101, 75, 0.3),
-    var(--sombra);
+  border-color: var(--marca-viva);
+  box-shadow: 0 0 0 calc(3px / var(--z, 1)) rgba(224, 101, 75, 0.35);
   z-index: 3;
 }
 
@@ -904,33 +914,28 @@ button.secundario {
   z-index: 4;
 }
 
-/* Etiqueta de nombre arriba a la izquierda y aforo arriba a la derecha: deja
-   el centro libre para el estado de la mesa (tiempo y total) en servicio. */
-.mesa-cabecera {
+/* Nombre centrado. Recorta si no cabe, pero sin tocar el tirador de tamaño,
+   que vive fuera de la mesa. */
+.mesa-centro {
   position: absolute;
-  inset: 0 0 auto 0;
-  /* Recorta el nombre si no cabe, pero sin tocar el tirador de tamaño, que
-     vive fuera de la mesa y quedaba cortado por la mitad. */
+  inset: 0;
   overflow: hidden;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: calc(4px / var(--z, 1));
-  padding: calc(5px / var(--z, 1)) calc(6px / var(--z, 1));
+  justify-content: center;
+  gap: calc(1px / var(--z, 1));
+  padding: 0 calc(2px / var(--z, 1));
   pointer-events: none;
 }
 
 .mesa-etiqueta {
   max-width: 100%;
-  padding: 2px 6px;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 5px;
   /* --z es el zoom del plano: dividir por él deja el texto del mismo tamaño en
      pantalla a cualquier zoom, en vez de encogerse hasta no leerse. */
   font-size: calc(11px / var(--z, 1));
   font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: 0.02em;
+  line-height: 1.15;
   color: var(--tinta);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -941,51 +946,40 @@ button.secundario {
   display: flex;
   align-items: center;
   gap: calc(2px / var(--z, 1));
-  flex-shrink: 0;
-  font-size: calc(11px / var(--z, 1));
+  font-size: calc(9.5px / var(--z, 1));
   font-weight: 600;
-  color: var(--tinta-media);
+  color: var(--tinta-suave);
 }
 
 .mesa-aforo svg {
-  width: calc(11px / var(--z, 1));
-  height: calc(11px / var(--z, 1));
+  width: calc(10px / var(--z, 1));
+  height: calc(10px / var(--z, 1));
   stroke: currentColor;
   fill: none;
   stroke-width: 2;
 }
 
-/* En una mesa redonda la esquina se curva y la etiqueta se salía del círculo:
-   ahí el nombre y el aforo van centrados. */
-.mesa-plano.forma-redonda .mesa-cabecera,
-.mesa-plano.forma-barril .mesa-cabecera,
-.mesa-plano.forma-taburete .mesa-cabecera {
-  inset: 0;
-  flex-direction: column;
-  justify-content: center;
-  padding: calc(4px / var(--z, 1));
+/* Icono de personas en la esquina de una mesa con clientes. */
+.mesa-ocupada-icono {
+  position: absolute;
+  right: calc(2px / var(--z, 1));
+  bottom: calc(1px / var(--z, 1));
+  width: calc(12px / var(--z, 1));
+  height: calc(12px / var(--z, 1));
+  color: var(--marca-viva);
+  pointer-events: none;
 }
 
-/* Las mesas de una sola casilla (barril, taburete) no tienen sitio para la
-   cabecera: solo el nombre, centrado y diminuto. */
-.mesa-plano.mini .mesa-cabecera {
-  inset: 0;
-  padding: 2px;
-  justify-content: center;
-}
-
-.mesa-plano.mini .mesa-etiqueta {
-  background: none;
-  padding: 0;
-  font-size: calc(10px / var(--z, 1));
+.mesa-ocupada-icono svg {
+  width: 100%;
+  height: 100%;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
 }
 
 .plano-scroll {
   scrollbar-width: thin;
-}
-
-.mesa-plano.mini .mesa-aforo {
-  display: none;
 }
 
 /* El tirador también a tamaño de pantalla: con el plano alejado se quedaba
@@ -1084,13 +1078,75 @@ button.secundario {
   color: var(--tinta-suave);
 }
 
+/* ---------- barra sobre el plano: modo (ojo / lápiz) y formas ---------- */
+.barra-plano {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  min-height: 44px;
+}
+
+.selector-modo {
+  flex: 0 0 auto;
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  background: var(--superficie);
+  border: 1px solid var(--borde-suave);
+  border-radius: 11px;
+}
+
+.boton-modo {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 34px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--tinta-suave);
+  cursor: pointer;
+}
+
+.boton-modo svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.boton-modo.activo {
+  background: var(--marca-tenue);
+  color: var(--marca-viva);
+}
+
+.tarjeta-plano {
+  padding: 14px;
+}
+
+.estado-mesa {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--tinta-suave);
+}
+
+.estado-mesa.con-clientes {
+  color: var(--marca-viva);
+  font-weight: 600;
+}
+
 /* ---------- paleta de formas ---------- */
 .paleta-formas {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
-  gap: 8px;
+  gap: 6px;
   overflow-x: auto;
   scrollbar-width: none;
-  padding: 2px 0 10px;
 }
 
 .paleta-formas::-webkit-scrollbar {
@@ -1103,9 +1159,9 @@ button.secundario {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  width: 74px;
-  padding: 10px 6px;
+  gap: 4px;
+  width: 64px;
+  padding: 6px 4px;
   background: var(--superficie);
   border: 1px solid var(--borde-suave);
   border-radius: 12px;
@@ -1447,9 +1503,19 @@ button.secundario.peligro {
   }
 
   .pieza {
-    width: 88px;
-    padding: 14px 8px;
+    width: 78px;
+    padding: 10px 6px;
     font-size: 12px;
+  }
+
+  .boton-modo {
+    width: 50px;
+    height: 44px;
+  }
+
+  .boton-modo svg {
+    width: 24px;
+    height: 24px;
   }
 
   .pestana-zona {

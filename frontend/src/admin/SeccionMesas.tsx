@@ -30,6 +30,13 @@ import { HerramientasPlano } from "./HerramientasPlano";
 import { QrMesa } from "./QrMesa";
 
 type Vista = "plano" | "lista";
+// Como en un TPV: el ojo es el modo de servicio (ver el local y quién está
+// sentado, sin poder mover nada) y el lápiz el de edición (montar el plano).
+type Modo = "servicio" | "edicion";
+
+// Cada cuánto se mira qué mesas tienen clientes. Poco: es un vistazo, no un
+// tiempo real (eso llega con las comandas).
+const REFRESCO_OCUPACION_MS = 8000;
 
 export function SeccionMesas() {
   const [zonas, setZonas] = useState<Zona[] | null>(null);
@@ -44,9 +51,9 @@ export function SeccionMesas() {
   const [ocupado, setOcupado] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
-  // Con el plano bloqueado se puede tocar una mesa para ver sus datos, pero no
-  // moverla sin querer. Es lo normal una vez el plano ya está montado.
-  const [bloqueado, setBloqueado] = useState(false);
+  const [modo, setModo] = useState<Modo>("servicio");
+  const editando = modo === "edicion";
+  const primeraCarga = useRef(true);
   const caja = useRef<HTMLDivElement>(null);
 
   function recargar() {
@@ -54,9 +61,13 @@ export function SeccionMesas() {
       .then(([zonasCargadas, mesasCargadas, datosQr]) => {
         setZonas(zonasCargadas);
         setMesas(mesasCargadas);
-        // El plano se achicó (era de 24x18 casillas): una mesa colocada en la
-        // esquina de entonces caería fuera y no habría forma de tocarla. Se
-        // traen al plano y se guarda la corrección.
+        // Un local sin mesas se abre montándolo; uno ya montado, para verlo.
+        if (primeraCarga.current) {
+          primeraCarga.current = false;
+          setModo(mesasCargadas.length === 0 ? "edicion" : "servicio");
+        }
+        // Una mesa guardada fuera de los límites del plano no se podría tocar:
+        // se trae dentro y se guarda la corrección.
         for (const m of mesasCargadas) {
           const arreglada = corregirSiSeSale(m);
           if (arreglada) void cambiarMesa(m, arreglada);
@@ -71,6 +82,23 @@ export function SeccionMesas() {
   }
 
   useEffect(recargar, []);
+
+  // Las mesas con clientes se ponen en rojo. Solo se actualiza ese dato: lo que
+  // se esté moviendo en el plano no se toca.
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      if (document.hidden || vista !== "plano") return;
+      cargarMesas()
+        .then((nuevas) => {
+          const ocupadas = new Map(nuevas.map((m) => [m.id, m.ocupada === true]));
+          setMesas((actual) =>
+            actual.map((m) => (ocupadas.has(m.id) ? { ...m, ocupada: ocupadas.get(m.id) } : m))
+          );
+        })
+        .catch(() => undefined);
+    }, REFRESCO_OCUPACION_MS);
+    return () => window.clearInterval(id);
+  }, [vista]);
 
   function ajustar() {
     const marco = caja.current?.querySelector(".plano-scroll");
@@ -124,7 +152,10 @@ export function SeccionMesas() {
         return;
       }
       const guardada: Mesa = await resp.json();
-      setMesas((actual) => actual.map((m) => (m.id === guardada.id ? guardada : m)));
+      // La respuesta de guardar no trae la ocupación: se conserva la que había.
+      setMesas((actual) =>
+        actual.map((m) => (m.id === guardada.id ? { ...guardada, ocupada: m.ocupada } : m))
+      );
     } catch {
       deshacer();
       if (cambios.zona_id) setZonaActiva(mesa.zona_id);
@@ -230,7 +261,10 @@ export function SeccionMesas() {
                 }}
               >
                 {z.nombre}
-                <span className="ocupacion">{mesas.filter((m) => m.zona_id === z.id).length}</span>
+                <span className="ocupacion">
+                  {mesas.filter((m) => m.zona_id === z.id && m.ocupada).length}/
+                  {mesas.filter((m) => m.zona_id === z.id).length}
+                </span>
               </button>
             ))}
             </div>
@@ -258,23 +292,62 @@ export function SeccionMesas() {
           )}
 
           <div className="zona-trabajo">
-            <div className="tarjeta">
-              <p className="ayuda">Pulsa una forma para añadirla. Arrástrala para colocarla.</p>
-              <div className="paleta-formas">
-                {FORMAS.map((f) => (
+            <div className="tarjeta tarjeta-plano">
+              <div className="barra-plano">
+                <div className="selector-modo" role="radiogroup" aria-label="Modo del plano">
                   <button
-                    key={f}
                     type="button"
-                    className="pieza"
-                    disabled={ocupado || !zonaId || bloqueado}
-                    onClick={() => anadirMesa(f)}
+                    role="radio"
+                    aria-checked={!editando}
+                    aria-label="Ver el local"
+                    title="Ver el local"
+                    className={"boton-modo" + (!editando ? " activo" : "")}
+                    onClick={() => setModo("servicio")}
                   >
-                    <span className={`icono-forma forma-${f}`} aria-hidden="true">
-                      <i />
-                    </span>
-                    {DISENO[f].etiqueta}
+                    <svg viewBox="0 0 24 24">
+                      <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
                   </button>
-                ))}
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={editando}
+                    aria-label="Editar el plano"
+                    title="Editar el plano"
+                    className={"boton-modo" + (editando ? " activo" : "")}
+                    onClick={() => {
+                      setModo("edicion");
+                      setSeleccionada(null);
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24">
+                      <path d="M4 20h4L19 9a2.1 2.1 0 00-3-3L5 17z" />
+                      <path d="M14 7l3 3" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Solo al editar: las formas para añadir, en una barra pegada al plano. */}
+                {editando && (
+                  <div className="paleta-formas" aria-label="Añadir una mesa">
+                    {FORMAS.map((f) => (
+                      <button
+                        key={f}
+                        type="button"
+                        className="pieza"
+                        title={`Añadir ${DISENO[f].etiqueta.toLowerCase()}`}
+                        disabled={ocupado || !zonaId}
+                        onClick={() => anadirMesa(f)}
+                      >
+                        <span className={`icono-forma forma-${f}`} aria-hidden="true">
+                          <i />
+                        </span>
+                        {DISENO[f].etiqueta}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="lienzo" ref={caja}>
@@ -282,22 +355,22 @@ export function SeccionMesas() {
                   mesas={mesasDeLaZona}
                   seleccionada={seleccionada}
                   zoom={zoom}
-                  bloqueado={bloqueado}
+                  editando={editando}
                   onSeleccionar={setSeleccionada}
                   onCambio={(mesa, cambios) => void cambiarMesa(mesa, cambios)}
                 />
                 <HerramientasPlano
                   zoom={zoom}
-                  bloqueado={bloqueado}
                   onZoom={(z) => setZoom(limitarZoom(z))}
                   onAjustar={ajustar}
-                  onBloquear={() => setBloqueado((b) => !b)}
                 />
               </div>
 
               {mesasDeLaZona.length === 0 && (
                 <p className="cargando">
-                  Esta zona aún no tiene mesas: pulsa una forma para empezar.
+                  {editando
+                    ? "Esta zona aún no tiene mesas: pulsa una forma para añadirla y arrástrala."
+                    : "Esta zona aún no tiene mesas. Pulsa el lápiz para montarla."}
                 </p>
               )}
             </div>
@@ -313,6 +386,7 @@ export function SeccionMesas() {
                 mesa={mesaElegida}
                 zonas={zonas}
                 qr={qr}
+                editando={editando}
                 ocupado={ocupado}
                 onCambio={(cambios) => void cambiarMesa(mesaElegida, cambios)}
                 onEliminar={eliminarElegida}

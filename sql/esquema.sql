@@ -157,6 +157,25 @@ ALTER TABLE mesas ADD COLUMN IF NOT EXISTS alto      REAL    NOT NULL DEFAULT 2;
 ALTER TABLE mesas ADD COLUMN IF NOT EXISTS rotacion  INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE mesas ADD COLUMN IF NOT EXISTS capacidad INTEGER NOT NULL DEFAULT 4;
 
+-- El plano paso de 12 x 9 casillas gordas a 48 x 30 unidades finas (como un
+-- TPV: el local entero a la vista y mesas pequenas). plano_version dice en que
+-- medida esta guardada cada zona: las que siguen en la 1 se convierten una sola
+-- vez (posiciones x4 y x3, tamanos x1,5 redondeados hacia arriba, con lo que
+-- ninguna mesa se sale ni se monta sobre otra) y pasan a la 2. Las zonas
+-- nuevas nacen ya en la 2, asi que este bloque no las toca al reiniciar.
+ALTER TABLE zonas ADD COLUMN IF NOT EXISTS plano_version INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE zonas ALTER COLUMN plano_version SET DEFAULT 2;
+
+WITH pasadas AS (
+    UPDATE zonas SET plano_version = 2 WHERE plano_version = 1
+    RETURNING restaurante_id, id
+)
+UPDATE mesas m
+SET x = m.x * 4, y = m.y * 3,
+    ancho = CEIL(m.ancho * 1.5), alto = CEIL(m.alto * 1.5)
+FROM pasadas p
+WHERE m.restaurante_id = p.restaurante_id AND m.zona_id = p.id;
+
 CREATE TABLE IF NOT EXISTS sesiones_mesa (
     id             TEXT PRIMARY KEY,
     restaurante_id TEXT NOT NULL,
