@@ -27,6 +27,49 @@ export const DISENO: Record<
 
 export const FORMAS = Object.keys(DISENO) as FormaMesa[];
 
+/**
+ * Tipos de mesa ya hechos: forma, tamaño y aforo van juntos y no se retocan a
+ * mano (no hay tirador de tamaño). Es lo que usan los TPV: el gerente elige
+ * "redonda de 2" o "rectangular de 8" y la coloca, sin medir nada.
+ */
+export interface TipoMesa {
+  id: string;
+  etiqueta: string;
+  forma: FormaMesa;
+  ancho: number;
+  alto: number;
+  capacidad: number;
+}
+
+export const TIPOS: TipoMesa[] = [
+  { id: "redonda-2", etiqueta: "Redonda 2", forma: "redonda", ancho: 2, alto: 2, capacidad: 2 },
+  { id: "redonda-4", etiqueta: "Redonda 4", forma: "redonda", ancho: 3, alto: 3, capacidad: 4 },
+  { id: "cuadrada-2", etiqueta: "Cuadrada 2", forma: "cuadrada", ancho: 2, alto: 2, capacidad: 2 },
+  { id: "cuadrada-4", etiqueta: "Cuadrada 4", forma: "cuadrada", ancho: 3, alto: 3, capacidad: 4 },
+  { id: "larga-6", etiqueta: "Larga 6", forma: "rectangular", ancho: 6, alto: 3, capacidad: 6 },
+  { id: "larga-8", etiqueta: "Larga 8", forma: "rectangular", ancho: 8, alto: 3, capacidad: 8 },
+  { id: "barril", etiqueta: "Barril", forma: "barril", ancho: 2, alto: 2, capacidad: 2 },
+  { id: "taburete", etiqueta: "Taburete", forma: "taburete", ancho: 1, alto: 1, capacidad: 1 },
+];
+
+/** El tipo que corresponde a una mesa, o null si se hizo a mano antes de los tipos. */
+export function tipoDe(mesa: {
+  forma: FormaMesa;
+  ancho: number;
+  alto: number;
+  capacidad: number;
+}): TipoMesa | null {
+  return (
+    TIPOS.find(
+      (t) =>
+        t.forma === mesa.forma &&
+        t.ancho === mesa.ancho &&
+        t.alto === mesa.alto &&
+        t.capacidad === mesa.capacidad
+    ) ?? null
+  );
+}
+
 export interface Caja {
   x: number;
   y: number;
@@ -123,6 +166,9 @@ export const ZOOM_MAX = 3;
 // Cada pulsacion de acercar/alejar multiplica: con un rango tan grande, sumar
 // una cantidad fija se quedaria corto al alejar y se pasaria al acercar.
 export const ZOOM_FACTOR = 1.25;
+// En el móvil el plano abre a este zoom como mucho, con las mesas legibles; se
+// ve una parte del local y se recorre con el dedo (o "ver todo").
+export const ZOOM_MOVIL = 0.7;
 
 export function limitarZoom(z: number): number {
   return Math.min(Math.max(z, ZOOM_MIN), ZOOM_MAX);

@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import type { DatosQr } from "../shared/HojaQR";
 import type { CambiosMesa, Mesa, Zona } from "./api";
-import { DISENO, FORMAS, girar, type FormaMesa } from "./planoUtil";
+import { TIPOS, girar, tipoDe } from "./planoUtil";
 import { QrMesa } from "./QrMesa";
 
 interface Props {
@@ -35,7 +35,6 @@ export function PanelMesa({
   onRegenerar,
 }: Props) {
   const [nombre, setNombre] = useState(mesa.nombre);
-  const [capacidad, setCapacidad] = useState(String(mesa.capacidad));
 
   function guardarNombre() {
     const limpio = nombre.trim();
@@ -46,18 +45,18 @@ export function PanelMesa({
     if (limpio !== mesa.nombre) onCambio({ nombre: limpio });
   }
 
-  function guardarCapacidad() {
-    const n = Math.round(Number(capacidad));
-    if (!Number.isFinite(n) || n < 1 || n > 30) {
-      setCapacidad(String(mesa.capacidad));
-      return;
-    }
-    if (n !== mesa.capacidad) onCambio({ capacidad: n });
-  }
+  // El tipo lleva forma, tamaño y aforo juntos: no se retocan por separado.
+  const tipo = tipoDe(mesa);
 
-  function cambiarForma(forma: FormaMesa) {
-    // Al cambiar de forma la mesa toma el tamano tipico de la nueva.
-    onCambio({ forma, ancho: DISENO[forma].ancho, alto: DISENO[forma].alto });
+  function cambiarTipo(id: string) {
+    const nuevo = TIPOS.find((t) => t.id === id);
+    if (!nuevo) return;
+    onCambio({
+      forma: nuevo.forma,
+      ancho: nuevo.ancho,
+      alto: nuevo.alto,
+      capacidad: nuevo.capacidad,
+    });
   }
 
   return (
@@ -88,27 +87,22 @@ export function PanelMesa({
         onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
       />
 
-      <label htmlFor="mesa-capacidad">Personas</label>
-      <input
-        id="mesa-capacidad"
-        type="number"
-        min={1}
-        max={30}
-        value={capacidad}
-        onChange={(e) => setCapacidad(e.target.value)}
-        onBlur={guardarCapacidad}
-        onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-      />
-
-      <label htmlFor="mesa-forma">Forma</label>
+      <label htmlFor="mesa-tipo">Tipo de mesa</label>
       <select
-        id="mesa-forma"
-        value={mesa.forma}
-        onChange={(e) => cambiarForma(e.target.value as FormaMesa)}
+        id="mesa-tipo"
+        value={tipo?.id ?? ""}
+        disabled={ocupado}
+        onChange={(e) => cambiarTipo(e.target.value)}
       >
-        {FORMAS.map((f) => (
-          <option key={f} value={f}>
-            {DISENO[f].etiqueta}
+        {/* Mesas hechas antes de los tipos: se ven, pero al cambiar pasan a uno. */}
+        {!tipo && (
+          <option value="" disabled>
+            Otra ({mesa.capacidad} {mesa.capacidad === 1 ? "persona" : "personas"})
+          </option>
+        )}
+        {TIPOS.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.etiqueta}
           </option>
         ))}
       </select>

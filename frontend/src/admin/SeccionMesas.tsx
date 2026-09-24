@@ -17,14 +17,16 @@ import { OrganizarZonas } from "./OrganizarZonas";
 import { PanelMesa } from "./PanelMesa";
 import { PlanoZona } from "./PlanoZona";
 import {
-  DISENO,
-  FORMAS,
+  CELDA,
+  FILAS,
+  TIPOS,
+  ZOOM_MOVIL,
   corregirSiSeSale,
   huecoLibre,
   limitarZoom,
   nombreParaForma,
   zoomQueCabe,
-  type FormaMesa,
+  type TipoMesa,
 } from "./planoUtil";
 import { HerramientasPlano } from "./HerramientasPlano";
 import { QrMesa } from "./QrMesa";
@@ -105,40 +107,78 @@ export function SeccionMesas() {
     return () => window.clearInterval(id);
   }, [vista]);
 
-  function ajustar() {
+  // Cómo se ajusta el zoom solo (al abrir y al cambiar el tamaño de la
+  // pantalla): "legible" (en el móvil, mesas que se leen y el plano centrado en
+  // ellas; en pantalla grande, el local entero), "todo" (el local entero, tras
+  // pulsar "ver todo") o "manual" (el gerente acercó o alejó: se respeta).
+  const ajuste = useRef<"legible" | "todo" | "manual">("legible");
+  const [centrar, setCentrar] = useState(0);
+  const zoomActual = useRef(zoom);
+  zoomActual.current = zoom;
+  const ultimaMedida = useRef("");
+
+  function ajustar(forzar = false) {
     const marco = caja.current?.querySelector(".plano-scroll");
     if (!(marco instanceof HTMLElement)) return;
     // El alto del hueco lo fija la hoja de estilos (max-height); se lee de ahi
     // para no repetir el valor en dos sitios.
     const alto = parseFloat(getComputedStyle(marco).maxHeight);
-    if (marco.clientWidth && alto) setZoom(zoomQueCabe(marco.clientWidth, alto));
+    const ancho = marco.clientWidth;
+    if (!ancho || !alto) return;
+    // Solo si cambió la pantalla: el lienzo también cambia de alto con el zoom,
+    // y sin esto cada ajuste dispararía otro y el plano volvería al centro.
+    const medida = `${ancho}x${alto}x${ajuste.current}`;
+    if (!forzar && medida === ultimaMedida.current) return;
+    ultimaMedida.current = medida;
+
+    const cabe = zoomQueCabe(ancho, alto);
+    const movil = window.matchMedia("(max-width: 999px)").matches;
+    let nuevo = cabe;
+    if (movil && ajuste.current === "legible") {
+      // Que el plano llene el alto libre, con las mesas legibles; lo que no
+      // quepa a lo ancho se recorre con el dedo.
+      const llenaAlto = Math.floor((alto / (FILAS * CELDA)) * 100) / 100;
+      nuevo = limitarZoom(Math.max(cabe, Math.min(llenaAlto, ZOOM_MOVIL)));
+    }
+    if (forzar || Math.abs(nuevo - zoomActual.current) > 0.001) {
+      setZoom(nuevo);
+      setCentrar((c) => c + 1);
+    }
   }
 
   // En una pantalla grande no hay botones de zoom (como en un TPV: el local
   // cabe siempre), asi que el plano se reajusta solo al cambiar el tamaño de la
-  // ventana. Si el gerente acerca o aleja a mano (movil), se respeta hasta que
-  // pulse "ver el plano entero".
-  const zoomManual = useRef(false);
+  // ventana o al girar el móvil.
   useEffect(() => {
     const lienzo = caja.current;
     if (!lienzo || typeof ResizeObserver === "undefined") return;
-    // Se observa el lienzo y no el marco del plano: el ancho del lienzo no
-    // depende del zoom, asi que no hay bucle.
     const observador = new ResizeObserver(() => {
-      if (!zoomManual.current) ajustar();
+      if (ajuste.current !== "manual") ajustar();
     });
     observador.observe(lienzo);
     return () => observador.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zonas !== null, vista]);
 
-  // Al abrir, el plano entero a la vista: es lo primero que quiere ver el
-  // gerente, y en un móvil a tamaño real solo se vería un tercio.
+  // Al abrir: en pantalla grande el local entero; en el móvil, legible.
   useEffect(() => {
-    if (zonas) ajustar();
-    // Solo al cargar: después manda el zoom que elija el gerente.
+    if (zonas) ajustar(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zonas !== null]);
+
+  function zoomDelGerente(z: number) {
+    ajuste.current = "manual";
+    setZoom(limitarZoom(z));
+  }
+
+  function verTodo() {
+    ajuste.current = "todo";
+    ajustar(true);
+  }
+
+  const herramientas = (
+    <HerramientasPlano zoom={zoom} onZoom={zoomDelGerente} onAjustar={verTodo} />
+  );
 
   if (error) return <section className="seccion">No se pudieron cargar las mesas.</section>;
   if (!zonas || !qr) return <section className="seccion">Cargando…</section>;
@@ -186,20 +226,19 @@ export function SeccionMesas() {
     }
   }
 
-  function anadirMesa(forma: FormaMesa) {
+  function anadirMesa(tipo: TipoMesa) {
     if (!zonaId) return;
-    const d = DISENO[forma];
-    const { x, y } = huecoLibre(mesasDeLaZona, d.ancho, d.alto);
+    const { x, y } = huecoLibre(mesasDeLaZona, tipo.ancho, tipo.alto);
     void ejecutar(async () => {
       const resp = await crearMesa({
-        nombre: nombreParaForma(forma, mesas.map((m) => m.nombre)),
+        nombre: nombreParaForma(tipo.forma, mesas.map((m) => m.nombre)),
         zona_id: zonaId,
-        forma,
+        forma: tipo.forma,
         x,
         y,
-        ancho: d.ancho,
-        alto: d.alto,
-        capacidad: d.capacidad,
+        ancho: tipo.ancho,
+        alto: tipo.alto,
+        capacidad: tipo.capacidad,
       });
       if (resp.status !== 201) {
         setAviso("No se pudo crear la mesa. Inténtalo de nuevo.");
@@ -355,23 +394,27 @@ export function SeccionMesas() {
                 {/* Solo al editar: las formas para añadir, en una barra pegada al plano. */}
                 {editando && (
                   <div className="paleta-formas" aria-label="Añadir una mesa">
-                    {FORMAS.map((f) => (
+                    {TIPOS.map((t) => (
                       <button
-                        key={f}
+                        key={t.id}
                         type="button"
                         className="pieza"
-                        title={`Añadir ${DISENO[f].etiqueta.toLowerCase()}`}
+                        title={`Añadir mesa ${t.etiqueta.toLowerCase()}`}
                         disabled={ocupado || !zonaId}
-                        onClick={() => anadirMesa(f)}
+                        onClick={() => anadirMesa(t)}
                       >
-                        <span className={`icono-forma forma-${f}`} aria-hidden="true">
+                        <span className={`icono-forma forma-${t.forma}`} aria-hidden="true">
                           <i />
                         </span>
-                        {DISENO[f].etiqueta}
+                        {t.etiqueta}
                       </button>
                     ))}
                   </div>
                 )}
+
+                {/* En servicio el zoom va en esta fila, que tiene sitio: sobre el
+                    plano taparía mesas. (En pantalla grande no se muestra.) */}
+                {!editando && herramientas}
               </div>
 
               <div className="lienzo" ref={caja}>
@@ -389,6 +432,8 @@ export function SeccionMesas() {
                   onToque={(_, yaElegida) => {
                     if (yaElegida) setPanelAbierto(true);
                   }}
+                  centrar={centrar}
+                  onZoom={zoomDelGerente}
                   onCambio={(mesa, cambios) => void cambiarMesa(mesa, cambios)}
                 />
                 {editando && mesaElegida && !panelAbierto && (
@@ -400,23 +445,14 @@ export function SeccionMesas() {
                     Datos de «{mesaElegida.nombre}»
                   </button>
                 )}
-                <HerramientasPlano
-                  zoom={zoom}
-                  onZoom={(z) => {
-                    zoomManual.current = true;
-                    setZoom(limitarZoom(z));
-                  }}
-                  onAjustar={() => {
-                    zoomManual.current = false;
-                    ajustar();
-                  }}
-                />
+                {editando && herramientas}
               </div>
+              <p className="aviso-girar">Gira el móvil para ver el local más grande.</p>
 
               {mesasDeLaZona.length === 0 && (
                 <p className="cargando">
                   {editando
-                    ? "Esta zona aún no tiene mesas: pulsa una forma para añadirla y arrástrala."
+                    ? "Esta zona aún no tiene mesas: pulsa un tipo de mesa para añadirla y arrástrala."
                     : "Esta zona aún no tiene mesas. Pulsa el lápiz para montarla."}
                 </p>
               )}

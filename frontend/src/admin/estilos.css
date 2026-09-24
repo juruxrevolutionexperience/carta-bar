@@ -961,9 +961,10 @@ button.secundario {
 
 .plano-scroll {
   overflow: auto;
-  /* El dedo desplaza el plano; sobre una mesa, la arrastra (touch-action en
-     .mesa-plano). Sin esto, mover una mesa haría scroll a la vez. */
-  touch-action: pan-x pan-y;
+  /* Recorrer con un dedo y acercar con dos lo hace el propio plano
+     (PlanoZona.tsx), igual en el móvil y en el TPV. El navegador no interviene:
+     si no, al arrastrar una mesa se movería también la página. */
+  touch-action: none;
   max-height: min(62vh, 560px);
 }
 
@@ -981,9 +982,69 @@ button.secundario {
 /* Pantalla grande (ordenador o TPV): sin botones de zoom, como en Turbopos. El
    local entero cabe siempre y el plano se reajusta solo. En el movil se quedan. */
 @media (min-width: 1000px) {
-  /* Con .lienzo delante para ganar a la regla base, que va mas abajo. */
-  .lienzo .herramientas-plano {
+  /* Con .tarjeta-plano delante para ganar a la regla base, que va mas abajo. */
+  .tarjeta-plano .herramientas-plano {
     display: none;
+  }
+}
+
+.aviso-girar {
+  display: none;
+}
+
+/* ---------- movil: mas aire arriba y el plano llenando el alto ---------- */
+@media (max-width: 999px) {
+  .selector-vista {
+    margin-bottom: 18px;
+  }
+
+  .fila-zonas {
+    margin-bottom: 16px;
+  }
+
+  .fila-zonas .pestanas-zona {
+    gap: 8px;
+  }
+
+  .tarjeta-plano {
+    padding: 16px 14px;
+  }
+
+  .barra-plano {
+    margin-bottom: 14px;
+  }
+
+  /* Todo el alto que queda bajo la cabecera (unos 270 px con barra, zonas y
+     ojo/lápiz). dvh descuenta las barras del navegador del móvil. */
+  .plano-scroll {
+    max-height: max(260px, calc(100vh - 270px));
+    max-height: max(260px, calc(100dvh - 270px));
+  }
+
+  /* En servicio el zoom va en la fila del ojo/lápiz, a la derecha. */
+  .barra-plano .herramientas-plano {
+    margin-left: auto;
+    padding: 0;
+    gap: 2px;
+    background: none;
+    border-top: none;
+  }
+
+  .barra-plano .boton-herramienta {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* En vertical el plano apaisado no se ve entero y grande a la vez: se sugiere
+   girar el móvil, donde sí llena la pantalla como un TPV. */
+@media (max-width: 999px) and (orientation: portrait) {
+  .aviso-girar {
+    display: block;
+    margin: 10px 2px 0;
+    font-size: 12.5px;
+    color: var(--tinta-suave);
+    text-align: center;
   }
 }
 

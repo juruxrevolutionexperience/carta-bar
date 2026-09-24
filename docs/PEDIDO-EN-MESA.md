@@ -187,6 +187,27 @@ pantalla, hacerlo como Turbopos.** Cambios:
   mesas. Pendiente de que el dueño confirme los tipos (y si la barra es elemento o
   mesa grande; recomendado: elemento).
 
+**Quinta vuelta (2026-09-24), y con esto el frontend del plano queda así por
+ahora** (palabras del dueño: "no hay que ser tan perfecto… he visto otras apps y
+son horribles y funcionan"):
+- **Tipos de mesa fijos, sin tirador de tamaño** (`TIPOS` en `planoUtil.ts`):
+  Redonda 2, Redonda 4, Cuadrada 2, Cuadrada 4, Larga 6, Larga 8, Barril y
+  Taburete. Forma, tamaño y aforo van juntos; en el panel de la mesa se cambia
+  el "Tipo de mesa" (ya no hay campos de forma y personas sueltos). Las mesas
+  hechas antes se ven como "Otra (N personas)" hasta que se les pone un tipo.
+  El backend no cambia: sigue guardando forma, tamaño y aforo.
+- **Mover mesas con el dedo o el ratón** (lápiz) igual en PC, móvil y TPV.
+  Recorrer el plano con un dedo y acercar con dos (**pellizco**) lo hace el propio
+  plano (`touch-action: none` en `.plano-scroll`, gestos en `PlanoZona.tsx`); en
+  servicio, un dedo sobre una mesa recorre el plano y el toque sin arrastre la abre.
+- **Móvil:** abre con zoom legible (hasta 70 %) llenando el alto libre y centrado
+  en las mesas; "ver todo" vuelve al local entero. El zoom va en la fila del
+  ojo/lápiz en servicio (flotante solo al editar), más aire en la cabecera y un
+  aviso "Gira el móvil para ver el local más grande" en vertical.
+- Probado en Chromium con un marco de 390 px (el navegador sin cabeza no baja de
+  ~496 px de ventana) y a 1920×1080. **El pellizco y el arrastre con el dedo no se
+  pueden simular ahí: sin probar en un móvil real.**
+
 **Aviso de migración (segunda vuelta, ya superado por la tercera):** el plano
 pasó de 24×18 casillas a 12×9 (más grandes).
 Una mesa guardada con el plano viejo puede caer fuera del nuevo; al cargar la
