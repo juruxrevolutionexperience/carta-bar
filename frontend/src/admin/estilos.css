@@ -1,14 +1,64 @@
-/* Panel de gestion: tema oscuro. Es una herramienta de trabajo que se usa de
-   pie, en un bar, muchas veces con poca luz — nada que ver con la carta que ve
-   el cliente, que sigue clara. El fondo es el mismo tono de tinta calida de la
-   carta (#171310), asi que las dos pantallas son la misma marca del reves. */
+/* Panel de gestion. Dos temas: CLARO (el de por defecto, el mismo blanco calido
+   de la carta del cliente) y OSCURO (para quien lo use de noche o con poca luz
+   en el bar). Se elige con el boton sol/luna de la barra superior y se recuerda
+   en el navegador (ver tema.ts). Todo color vive aqui, en variables: ningun
+   componente debe llevar un color suelto, o no cambiaria con el tema. */
 :root {
+  color-scheme: light;
+
+  --fondo: #f6f3f0;
+  --superficie: #ffffff;
+  --superficie-alta: #f1ece7;
+  --superficie-viva: #e8e1da;
+  --borde: #d6cdc4;
+  --borde-suave: #e6dfd8;
+  --fondo-translucido: rgba(246, 243, 240, 0.92);
+
+  --tinta: #171310;
+  --tinta-media: #6a615b;
+  --tinta-suave: #8f867f;
+
+  --marca: #c94a32;
+  --marca-viva: #b03a2e;
+  --marca-tenue: rgba(201, 74, 50, 0.12);
+  --sobre-marca: #ffffff;
+
+  --verde: #1e7a48;
+  --verde-suave: rgba(30, 122, 72, 0.12);
+  --ambar: #a86b0f;
+  --ambar-suave: rgba(168, 107, 15, 0.14);
+  --rojo: #c0392b;
+  --rojo-suave: rgba(192, 57, 43, 0.12);
+
+  --sombra: 0 2px 8px rgba(23, 19, 16, 0.12);
+  --sombra-alta: 0 12px 32px rgba(23, 19, 16, 0.2);
+
+  /* Plano de mesas */
+  --plano-fondo: #fbfaf8;
+  --plano-guia: rgba(23, 19, 16, 0.07);
+  --mesa-fondo: #ffffff;
+  --mesa-borde: #9c9288;
+  --mesa-taburete: #efeae4;
+  --mesa-barril-borde: #b58a55;
+  --mesa-ocupada: rgba(201, 74, 50, 0.16);
+  --mesa-seleccion: rgba(201, 74, 50, 0.3);
+  --silla: #b8afa5;
+  --silla-barril: #c9a26f;
+
+  --alto-barra: 56px;
+  --ancho-menu: 264px;
+}
+
+:root[data-tema="oscuro"] {
+  color-scheme: dark;
+
   --fondo: #121110;
   --superficie: #1c1b19;
   --superficie-alta: #262421;
   --superficie-viva: #302d29;
   --borde: #3a3630;
   --borde-suave: #292724;
+  --fondo-translucido: rgba(18, 17, 16, 0.92);
 
   --tinta: #f7f2ee;
   --tinta-media: #b5a79d;
@@ -17,6 +67,7 @@
   --marca: #e0654b;
   --marca-viva: #f0785e;
   --marca-tenue: rgba(224, 101, 75, 0.14);
+  --sobre-marca: #1a0f0c;
 
   --verde: #46c98b;
   --verde-suave: rgba(70, 201, 139, 0.14);
@@ -28,8 +79,16 @@
   --sombra: 0 2px 8px rgba(0, 0, 0, 0.35);
   --sombra-alta: 0 12px 32px rgba(0, 0, 0, 0.5);
 
-  --alto-barra: 56px;
-  --ancho-menu: 264px;
+  --plano-fondo: #121110;
+  --plano-guia: rgba(255, 255, 255, 0.05);
+  --mesa-fondo: #25221f;
+  --mesa-borde: #7a7166;
+  --mesa-taburete: #2f2b27;
+  --mesa-barril-borde: #a5825a;
+  --mesa-ocupada: rgba(224, 101, 75, 0.3);
+  --mesa-seleccion: rgba(224, 101, 75, 0.35);
+  --silla: #7d7468;
+  --silla-barril: #9a7a52;
 }
 
 * {
@@ -189,7 +248,7 @@ button.primario {
   margin-top: 16px;
   padding: 11px 16px;
   background: var(--marca);
-  color: #1a0f0c;
+  color: var(--sobre-marca);
   border: none;
   border-radius: 10px;
   font-size: 14px;
@@ -478,7 +537,7 @@ button.secundario {
   gap: 12px;
   height: calc(var(--alto-barra) + env(safe-area-inset-top));
   padding: env(safe-area-inset-top) 12px 0;
-  background: rgba(18, 17, 16, 0.92);
+  background: var(--fondo-translucido);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--borde-suave);
 }
@@ -516,6 +575,35 @@ button.secundario {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Propio y no el del menú: ese se oculta en pantalla ancha y este no. */
+.boton-tema {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  margin-left: 8px;
+  background: none;
+  border: none;
+  border-radius: 10px;
+  color: var(--tinta-media);
+  cursor: pointer;
+}
+
+.boton-tema:active {
+  background: var(--superficie-alta);
+}
+
+.boton-tema svg {
+  width: 21px;
+  height: 21px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .marca-barra {
@@ -810,11 +898,12 @@ button.secundario {
 
 .pestana-zona.activa {
   background: var(--marca);
-  color: #1a0f0c;
+  color: var(--sobre-marca);
 }
 
 .pestana-zona.activa .ocupacion {
-  color: rgba(26, 15, 12, 0.65);
+  color: var(--sobre-marca);
+  opacity: 0.7;
 }
 
 .pestana-zona.gestionar {
@@ -837,7 +926,7 @@ button.secundario {
   position: relative;
   border: 1px solid var(--borde-suave);
   border-radius: 14px;
-  background: #121110;
+  background: var(--plano-fondo);
   overflow: hidden;
 }
 
@@ -858,8 +947,8 @@ button.secundario {
 
 .plano.edicion {
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    linear-gradient(to right, var(--plano-guia) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--plano-guia) 1px, transparent 1px);
 }
 
 /* ---------- una mesa ----------
@@ -867,8 +956,8 @@ button.secundario {
    etiquetas. Las que tienen clientes se tiñen de rojo. */
 .mesa-plano {
   position: absolute;
-  background: #25221f;
-  border: calc(1.5px / var(--z, 1)) solid #7a7166;
+  background: var(--mesa-fondo);
+  border: calc(1.5px / var(--z, 1)) solid var(--mesa-borde);
   border-radius: calc(4px / var(--z, 1));
   box-sizing: border-box;
   cursor: pointer;
@@ -890,21 +979,21 @@ button.secundario {
 }
 
 .mesa-plano.forma-barril {
-  border-color: #a5825a;
+  border-color: var(--mesa-barril-borde);
 }
 
 .mesa-plano.forma-taburete {
-  background: #2f2b27;
+  background: var(--mesa-taburete);
 }
 
 .mesa-plano.ocupada {
-  background: rgba(224, 101, 75, 0.3);
+  background: var(--mesa-ocupada);
   border-color: var(--marca);
 }
 
 .mesa-plano.seleccionada {
   border-color: var(--marca-viva);
-  box-shadow: 0 0 0 calc(3px / var(--z, 1)) rgba(224, 101, 75, 0.35);
+  box-shadow: 0 0 0 calc(3px / var(--z, 1)) var(--mesa-seleccion);
   z-index: 3;
 }
 
@@ -994,12 +1083,12 @@ button.secundario {
 
 .silla {
   position: absolute;
-  background: #7d7468;
+  background: var(--silla);
   border-radius: calc(3px / var(--z, 1));
 }
 
 .mesa-plano.forma-barril .silla {
-  background: #9a7a52;
+  background: var(--silla-barril);
 }
 
 .mesa-plano.seleccionada .silla {
@@ -1479,6 +1568,19 @@ button.secundario.peligro {
 
   .plano-scroll {
     max-height: min(70vh, 640px);
+  }
+}
+
+/* Pantalla grande (ordenador o TPV): el plano manda, como en Turbopos, y ocupa
+   lo que haya en vez de quedarse en una columna con el resto vacío. El zoom que
+   cabe crece con el ancho, así que las mesas también. */
+@media (min-width: 1400px) {
+  .app.app-ancha {
+    max-width: 1760px;
+  }
+
+  .plano-scroll {
+    max-height: min(78vh, 900px);
   }
 }
 

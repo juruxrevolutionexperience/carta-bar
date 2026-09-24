@@ -165,6 +165,17 @@ export function detalleVisible(
 }
 
 /**
+ * Lo que se escribe dentro de la mesa en el plano. Como en un TPV: solo el
+ * numero ("4"), no "Mesa 4". El nombre completo sigue en el panel de la mesa y
+ * en el texto que ve el lector de pantalla; otros nombres ("Terraza 4",
+ * "Barra") se ven tal cual.
+ */
+export function etiquetaPlano(nombre: string): string {
+  const m = /^mesa\s*(\d+)$/i.exec(nombre.trim());
+  return m ? m[1] : nombre;
+}
+
+/**
  * Nombre que se propone al soltar una forma nueva. Un barril o un taburete
  * ocupan una casilla y ahi no cabe "Mesa 6": se quedan en el numero pelado.
  */

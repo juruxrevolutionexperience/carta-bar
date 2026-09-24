@@ -8,6 +8,7 @@ import {
   FILAS,
   alinear,
   detalleVisible,
+  etiquetaPlano,
   limitarPosicion,
   limitarTamano,
   pisaAlguna,
@@ -209,7 +210,7 @@ export function PlanoZona({
                     si hay clientes, el icono de personas en la esquina. */}
                 {detalle !== "minimo" && (
                   <div className="mesa-centro" style={{ transform: `rotate(${-m.rotacion}deg)` }}>
-                    <span className="mesa-etiqueta">{m.nombre}</span>
+                    <span className="mesa-etiqueta">{etiquetaPlano(m.nombre)}</span>
                     {detalle === "completo" && (
                       <span className="mesa-aforo">
                         <IconoPersonas />
