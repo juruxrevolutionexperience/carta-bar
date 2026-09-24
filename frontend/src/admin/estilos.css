@@ -851,6 +851,35 @@ button.secundario {
   }
 }
 
+/* En la pantalla de Mesas el menu se esconde tambien en escritorio y el plano
+   ocupa toda la pantalla, como en un TPV. Se abre con la hamburguesa. */
+@media (min-width: 860px) {
+  body.plano-completo {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  body.plano-completo .menu-lateral {
+    transform: translateX(-100%);
+    box-shadow: var(--sombra-alta);
+  }
+  body.plano-completo .menu-lateral.abierto {
+    transform: translateX(0);
+  }
+  body.plano-completo .velo-menu {
+    display: block;
+  }
+  body.plano-completo .boton-menu {
+    display: grid;
+  }
+  body.plano-completo .barra-superior {
+    left: 0;
+    padding-left: 12px;
+  }
+  body.plano-completo .app.app-ancha {
+    max-width: none;
+  }
+}
+
 /* ==================================================================
    MESAS · plano del local
    ================================================================== */
@@ -1621,8 +1650,10 @@ button.secundario.peligro {
     max-width: 1240px;
   }
 
+  /* Todo el alto que deja el resto de la pantalla, para que el plano quepa sin
+     tener que bajar con la rueda (unos 310 px son barra, pestañas y marcos). */
   .plano-scroll {
-    max-height: min(70vh, 640px);
+    max-height: max(320px, calc(100vh - 310px));
   }
 }
 
@@ -1635,7 +1666,67 @@ button.secundario.peligro {
   }
 
   .plano-scroll {
-    max-height: min(78vh, 900px);
+    max-height: max(320px, calc(100vh - 310px));
+  }
+}
+
+/* ---------- movil: la hoja de datos solo si se abrio a proposito ---------- */
+.boton-datos-mesa {
+  display: none;
+}
+
+@media (max-width: 999px) {
+  .panel-mesa.oculto-movil {
+    display: none;
+  }
+
+  /* Al editar, sale un botón sobre el plano para abrir los datos de la mesa
+     elegida sin tener que tocarla otra vez. */
+  .lienzo .boton-datos-mesa {
+    display: block;
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 5;
+    max-width: calc(100% - 16px);
+    padding: 8px 12px;
+    background: var(--superficie);
+    color: var(--tinta);
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    box-shadow: var(--sombra);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+}
+
+/* ---------- movil: zoom flotando sobre el plano ----------
+   En una fila propia se comian media tarjeta; asi el plano gana esa altura. */
+@media (max-width: 999px) {
+  .lienzo .herramientas-plano {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    padding: 3px;
+    gap: 2px;
+    border: 1px solid var(--borde-suave);
+    border-radius: 12px;
+    background: var(--fondo-translucido);
+    box-shadow: var(--sombra);
+  }
+
+  .lienzo .boton-herramienta {
+    width: 40px;
+    height: 40px;
+  }
+
+  .lienzo .nivel-zoom {
+    min-width: 42px;
   }
 }
 

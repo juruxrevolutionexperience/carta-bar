@@ -46,6 +46,11 @@ export function SeccionMesas() {
   const [vista, setVista] = useState<Vista>("plano");
   const [zonaActiva, setZonaActiva] = useState<string | null>(null);
   const [seleccionada, setSeleccionada] = useState<string | null>(null);
+  // En el móvil los datos de la mesa suben como una hoja que tapa el plano. Solo
+  // se abre a propósito (en servicio, al tocar; al editar, con un segundo toque
+  // o el botón "Datos"): si saltara al tocar, no se podría arrastrar una mesa.
+  // En pantalla grande el panel es una columna fija y esto no influye.
+  const [panelAbierto, setPanelAbierto] = useState(false);
   const [gestionando, setGestionando] = useState(false);
   const [compacta, setCompacta] = useState(true);
   const [ocupado, setOcupado] = useState(false);
@@ -203,6 +208,7 @@ export function SeccionMesas() {
       const creada: Mesa = await resp.json();
       setMesas((actual) => [...actual, creada]);
       setSeleccionada(creada.id);
+      setPanelAbierto(false);
     });
   }
 
@@ -374,9 +380,26 @@ export function SeccionMesas() {
                   seleccionada={seleccionada}
                   zoom={zoom}
                   editando={editando}
-                  onSeleccionar={setSeleccionada}
+                  onSeleccionar={(id) => {
+                    // Otra mesa (o ninguna): la hoja de datos se cierra. En
+                    // servicio, tocar una mesa la abre; al editar, no.
+                    if (id !== seleccionada) setPanelAbierto(id !== null && !editando);
+                    setSeleccionada(id);
+                  }}
+                  onToque={(_, yaElegida) => {
+                    if (yaElegida) setPanelAbierto(true);
+                  }}
                   onCambio={(mesa, cambios) => void cambiarMesa(mesa, cambios)}
                 />
+                {editando && mesaElegida && !panelAbierto && (
+                  <button
+                    type="button"
+                    className="boton-datos-mesa"
+                    onClick={() => setPanelAbierto(true)}
+                  >
+                    Datos de «{mesaElegida.nombre}»
+                  </button>
+                )}
                 <HerramientasPlano
                   zoom={zoom}
                   onZoom={(z) => {
@@ -421,10 +444,14 @@ export function SeccionMesas() {
                 zonas={zonas}
                 qr={qr}
                 editando={editando}
+                abiertoEnMovil={panelAbierto}
                 ocupado={ocupado}
                 onCambio={(cambios) => void cambiarMesa(mesaElegida, cambios)}
                 onEliminar={eliminarElegida}
-                onCerrar={() => setSeleccionada(null)}
+                onCerrar={() => {
+                  setSeleccionada(null);
+                  setPanelAbierto(false);
+                }}
                 onRegenerar={regenerar}
               />
             )}

@@ -29,6 +29,13 @@ export function App() {
       .catch(() => setError(true));
   }, []);
 
+  // El plano de mesas manda: en esa pantalla el menú se esconde también en
+  // escritorio (se abre con la hamburguesa) y el plano usa toda la pantalla.
+  useEffect(() => {
+    document.body.classList.toggle("plano-completo", seccion === "mesas");
+    return () => document.body.classList.remove("plano-completo");
+  }, [seccion]);
+
   const categoriasPorId = Object.fromEntries(categorias.map((c) => [c.id, c.nombre]));
 
   function actualizarPlato(anterior: Plato, nuevo: Plato) {

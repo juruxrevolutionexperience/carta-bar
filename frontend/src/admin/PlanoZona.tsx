@@ -23,6 +23,10 @@ interface Props {
   // ojo, el de servicio) las mesas solo se tocan para ver sus datos.
   editando: boolean;
   onSeleccionar: (id: string | null) => void;
+  // Un toque en una mesa al editar (sin arrastrarla). `yaElegida` dice si ya lo
+  // estaba antes de tocar: así el primer toque solo la elige y el segundo abre
+  // sus datos, y arrastrar no abre nada.
+  onToque: (id: string, yaElegida: boolean) => void;
   // Se llama una sola vez al soltar, con lo que cambió (posición o tamaño).
   onCambio: (mesa: Mesa, cambios: Partial<Caja>) => void;
 }
@@ -35,6 +39,9 @@ interface Gesto {
   origen: Caja;
   actual: Caja;
   movido: boolean;
+  // Ya estaba elegida antes de tocarla: un segundo toque (sin arrastrar) abre
+  // sus datos; el primero solo la elige.
+  yaElegida: boolean;
 }
 
 // Por debajo de estos píxeles de desplazamiento es un toque, no un arrastre.
@@ -56,6 +63,7 @@ export function PlanoZona({
   zoom,
   editando,
   onSeleccionar,
+  onToque,
   onCambio,
 }: Props) {
   const [gesto, setGestoEstado] = useState<Gesto | null>(null);
@@ -77,6 +85,7 @@ export function PlanoZona({
     e.stopPropagation();
     // La captura hace que el arrastre siga aunque el dedo salga de la mesa.
     e.currentTarget.setPointerCapture(e.pointerId);
+    const yaElegida = seleccionada === mesa.id;
     onSeleccionar(mesa.id);
     const origen = { x: mesa.x, y: mesa.y, ancho: mesa.ancho, alto: mesa.alto };
     setGesto({
@@ -87,6 +96,7 @@ export function PlanoZona({
       origen,
       actual: origen,
       movido: false,
+      yaElegida,
     });
   }
 
@@ -131,9 +141,13 @@ export function PlanoZona({
   function soltar() {
     const gesto = gestoRef.current;
     if (!gesto) return;
-    const { id, modo, origen, actual, movido } = gesto;
+    const { id, modo, origen, actual, movido, yaElegida } = gesto;
     setGesto(null);
-    if (!movido) return;
+    if (!movido) {
+      // Un toque, no un arrastre (ni el tirador): aquí se decide si abre datos.
+      if (modo === "mover") onToque(id, yaElegida);
+      return;
+    }
     const mesa = mesas.find((m) => m.id === id);
     if (!mesa) return;
     if (modo === "mover" && (actual.x !== origen.x || actual.y !== origen.y)) {
@@ -151,6 +165,8 @@ export function PlanoZona({
         style={{
           width: COLUMNAS * CELDA * zoom,
           height: FILAS * CELDA * zoom,
+          // Si sobra ancho (pantalla muy apaisada), el plano queda centrado.
+          margin: "0 auto",
         }}
       >
         <div

@@ -11,6 +11,8 @@ interface Props {
   qr: DatosQr;
   // Modo lápiz: se puede cambiar todo. En modo ojo solo se ve el estado y el QR.
   editando: boolean;
+  // En el móvil el panel es una hoja que tapa el plano: solo se ve si se abrió.
+  abiertoEnMovil: boolean;
   ocupado: boolean;
   onCambio: (cambios: CambiosMesa) => void;
   onEliminar: () => void;
@@ -25,6 +27,7 @@ export function PanelMesa({
   zonas,
   qr,
   editando,
+  abiertoEnMovil,
   ocupado,
   onCambio,
   onEliminar,
@@ -58,7 +61,7 @@ export function PanelMesa({
   }
 
   return (
-    <div className="tarjeta panel-mesa">
+    <div className={"tarjeta panel-mesa" + (abiertoEnMovil ? "" : " oculto-movil")}>
       <div className="cabecera-panel">
         <h3>{mesa.nombre}</h3>
         <button type="button" className="cerrar-panel" aria-label="Cerrar" onClick={onCerrar}>

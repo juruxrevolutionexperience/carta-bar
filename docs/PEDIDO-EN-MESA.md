@@ -165,6 +165,28 @@ pantalla, hacerlo como Turbopos.** Cambios:
   rayada, plantas, puertas, baños; necesitan tabla nueva), pellizco para hacer
   zoom en el móvil, líneas guía al alinear, duplicar mesa.
 
+**Cuarta vuelta del plano (2026-09-24), tras probarlo en un móvil y un PC reales:**
+- **Tema claro por defecto** con botón sol/luna en la barra superior (`tema.ts`),
+  guardado en cada navegador. Toda la paleta, incluida la del plano, vive en
+  variables de `:root` / `:root[data-tema="oscuro"]` en `estilos.css`.
+- **PC:** sin botones de zoom (el plano se reajusta solo al cambiar la ventana,
+  `ResizeObserver`), resumen de la zona en la columna derecha mientras no hay mesa
+  elegida, sin texto seleccionable en el plano, **menú escondido** en la pantalla
+  de Mesas (clase `plano-completo` en `body`; se abre con la hamburguesa) y plano
+  a pantalla completa que cabe sin scroll (`max-height` = alto de pantalla − 310).
+- **Móvil:** el zoom flota sobre el plano en vez de ocupar una fila; **tocar una
+  mesa al editar solo la elige** (el panel de datos ya no salta y deja arrastrar),
+  un segundo toque o el botón "Datos de «…»" sobre el plano abre la hoja. En modo
+  ojo, un toque abre los datos como antes.
+- Etiqueta en el plano: solo el número si el nombre es "Mesa N" (`etiquetaPlano`);
+  el nombre completo sigue en el panel.
+- **Pendiente (móvil):** pellizcar para hacer zoom y abrir ya con más zoom.
+- **Decisión en curso, elementos del local:** seis tipos propuestos (barra rayada,
+  pared, puerta, baños, planta, texto libre), manejados igual que una mesa desde el
+  lápiz, solo decoración en modo ojo, tabla nueva `elementos_plano` aparte de las
+  mesas. Pendiente de que el dueño confirme los tipos (y si la barra es elemento o
+  mesa grande; recomendado: elemento).
+
 **Aviso de migración (segunda vuelta, ya superado por la tercera):** el plano
 pasó de 24×18 casillas a 12×9 (más grandes).
 Una mesa guardada con el plano viejo puede caer fuera del nuevo; al cargar la
