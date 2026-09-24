@@ -1766,28 +1766,36 @@ button.secundario.peligro {
   }
 }
 
-/* ---------- movil: zoom flotando sobre el plano ----------
-   En una fila propia se comian media tarjeta; asi el plano gana esa altura. */
+/* ---------- movil: barra en dos filas ----------
+   Fila 1: ojo/lápiz y zoom. Fila 2 (al editar): tipos de mesa como píldoras. */
 @media (max-width: 999px) {
-  .lienzo .herramientas-plano {
-    position: absolute;
-    right: 8px;
-    bottom: 8px;
-    padding: 3px;
-    gap: 2px;
-    border: 1px solid var(--borde-suave);
-    border-radius: 12px;
-    background: var(--fondo-translucido);
-    box-shadow: var(--sombra);
+  .barra-plano {
+    flex-wrap: wrap;
   }
 
-  .lienzo .boton-herramienta {
-    width: 40px;
-    height: 40px;
+  .paleta-formas {
+    order: 3;
+    flex: 1 0 100%;
   }
 
-  .lienzo .nivel-zoom {
+  .pieza,
+  .barra-plano .pieza {
+    flex-direction: row;
+    width: auto;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .barra-plano .nivel-zoom {
     min-width: 42px;
+  }
+
+  .fila-zonas .pestana-zona {
+    padding: 11px 13px;
+    font-size: 14px;
   }
 }
 

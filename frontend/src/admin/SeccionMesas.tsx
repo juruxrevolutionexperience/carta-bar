@@ -122,7 +122,14 @@ export function SeccionMesas() {
     if (!(marco instanceof HTMLElement)) return;
     // El alto del hueco lo fija la hoja de estilos (max-height); se lee de ahi
     // para no repetir el valor en dos sitios.
-    const alto = parseFloat(getComputedStyle(marco).maxHeight);
+    // Se mide en JS: algunos navegadores de móvil no resuelven max() en el
+    // valor calculado.
+    const tope = parseFloat(getComputedStyle(marco).maxHeight);
+    const libre =
+      (window.visualViewport?.height ?? window.innerHeight) -
+      marco.getBoundingClientRect().top -
+      24;
+    const alto = Number.isFinite(tope) ? tope : Math.max(260, Math.floor(libre));
     const ancho = marco.clientWidth;
     if (!ancho || !alto) return;
     // Solo si cambió la pantalla: el lienzo también cambia de alto con el zoom,
@@ -412,9 +419,9 @@ export function SeccionMesas() {
                   </div>
                 )}
 
-                {/* En servicio el zoom va en esta fila, que tiene sitio: sobre el
-                    plano taparía mesas. (En pantalla grande no se muestra.) */}
-                {!editando && herramientas}
+                {/* El zoom va siempre en esta fila: sobre el plano taparía mesas.
+                    (En pantalla grande no se muestra.) */}
+                {herramientas}
               </div>
 
               <div className="lienzo" ref={caja}>
@@ -445,7 +452,6 @@ export function SeccionMesas() {
                     Datos de «{mesaElegida.nombre}»
                   </button>
                 )}
-                {editando && herramientas}
               </div>
               <p className="aviso-girar">Gira el móvil para ver el local más grande.</p>
 
