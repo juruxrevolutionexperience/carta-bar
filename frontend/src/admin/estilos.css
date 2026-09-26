@@ -29,6 +29,8 @@
   --ambar-suave: rgba(168, 107, 15, 0.14);
   --rojo: #c0392b;
   --rojo-suave: rgba(192, 57, 43, 0.12);
+  --azul: #2c62a8;
+  --azul-suave: rgba(44, 98, 168, 0.12);
 
   --sombra: 0 2px 8px rgba(23, 19, 16, 0.12);
   --sombra-alta: 0 12px 32px rgba(23, 19, 16, 0.2);
@@ -75,6 +77,8 @@
   --ambar-suave: rgba(232, 163, 61, 0.14);
   --rojo: #ef6a5e;
   --rojo-suave: rgba(239, 106, 94, 0.14);
+  --azul: #6fa3ec;
+  --azul-suave: rgba(111, 163, 236, 0.14);
 
   --sombra: 0 2px 8px rgba(0, 0, 0, 0.35);
   --sombra-alta: 0 12px 32px rgba(0, 0, 0, 0.5);
@@ -1865,5 +1869,362 @@ button.secundario.peligro {
   .cerrar-panel {
     width: 44px;
     height: 44px;
+  }
+}
+
+/* ==================================================================
+   SERVICIO · las mesas en tarjetas, por zona
+   Las mismas mesas del plano, para el día a día: de un vistazo qué está
+   libre, qué hay que salir a aceptar y qué está abierto. Mismos colores que
+   el plano: abierta en el rojo de la marca, por aceptar en ámbar.
+   ================================================================== */
+
+.resumen-servicio {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.chip-resumen {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--superficie);
+  color: var(--tinta-media);
+  border: 1px solid var(--borde-suave);
+}
+
+.chip-resumen.estado-por_confirmar {
+  background: var(--ambar-suave);
+  color: var(--ambar);
+  border-color: transparent;
+}
+
+.chip-resumen.estado-cuenta_pedida {
+  background: var(--azul-suave);
+  color: var(--azul);
+  border-color: transparent;
+}
+
+.chip-resumen.estado-abierta {
+  color: var(--marca-viva);
+}
+
+.chip-resumen.sin-conexion {
+  background: var(--rojo-suave);
+  color: var(--rojo);
+  border-color: transparent;
+}
+
+.pestana-zona .punto-aviso {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ambar);
+  align-self: center;
+}
+
+.pestana-zona.activa .punto-aviso {
+  background: var(--sobre-marca);
+}
+
+.grupo-servicio + .grupo-servicio {
+  margin-top: 18px;
+}
+
+.titulo-zona-servicio {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tinta-media);
+  margin-bottom: 8px;
+}
+
+.titulo-zona-servicio span {
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--tinta-suave);
+}
+
+.rejilla-mesas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 8px;
+}
+
+.tarjeta-mesa {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-height: 92px;
+  padding: 12px;
+  text-align: left;
+  font-family: inherit;
+  color: var(--tinta);
+  background: var(--superficie);
+  border: 1px solid var(--borde-suave);
+  border-left: 5px solid var(--borde);
+  border-radius: 12px;
+  box-shadow: var(--sombra);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.08s ease;
+}
+
+.tarjeta-mesa:active {
+  transform: scale(0.97);
+}
+
+.tarjeta-mesa.elegida {
+  outline: 2px solid var(--marca);
+  outline-offset: 1px;
+}
+
+/* Hasta dos líneas antes que cortar: "Terraz…" en un móvil no dice qué mesa
+   es (el mismo fallo que tuvo el primer plano). */
+.tarjeta-mesa .nombre-mesa {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tarjeta-mesa .estado-tarjeta {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tarjeta-mesa .detalle-tarjeta {
+  margin-top: auto;
+  font-size: 12.5px;
+  color: var(--tinta-media);
+}
+
+.tarjeta-mesa.estado-libre .estado-tarjeta {
+  color: var(--verde);
+}
+
+.tarjeta-mesa.estado-abierta {
+  background: var(--mesa-ocupada);
+  border-left-color: var(--marca);
+}
+
+.tarjeta-mesa.estado-abierta .estado-tarjeta {
+  color: var(--marca-viva);
+}
+
+.tarjeta-mesa.estado-por_confirmar {
+  background: var(--ambar-suave);
+  border-left-color: var(--ambar);
+  animation: latido-aviso 1.6s ease-in-out infinite;
+}
+
+.tarjeta-mesa.estado-por_confirmar .estado-tarjeta {
+  color: var(--ambar);
+}
+
+.tarjeta-mesa.estado-cuenta_pedida {
+  background: var(--azul-suave);
+  border-left-color: var(--azul);
+}
+
+.tarjeta-mesa.estado-cuenta_pedida .estado-tarjeta {
+  color: var(--azul);
+}
+
+/* Lo que espera al camarero late un poco: se ve desde lejos sin molestar. */
+@keyframes latido-aviso {
+  50% {
+    box-shadow: 0 0 0 4px var(--ambar-suave), var(--sombra);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tarjeta-mesa.estado-por_confirmar {
+    animation: none;
+  }
+}
+
+/* ---------- panel de la mesa en servicio ---------- */
+.estado-servicio {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.estado-servicio.estado-libre {
+  color: var(--verde);
+}
+
+.estado-servicio.estado-abierta {
+  color: var(--marca-viva);
+}
+
+.estado-servicio.estado-por_confirmar {
+  color: var(--ambar);
+}
+
+.estado-servicio.estado-cuenta_pedida {
+  color: var(--azul);
+}
+
+.panel-servicio .explicacion {
+  font-size: 13.5px;
+  color: var(--tinta-media);
+  line-height: 1.5;
+  margin-top: 8px;
+}
+
+.panel-servicio button.boton-servicio {
+  display: block;
+  width: 100%;
+  margin-left: 0;
+  padding: 14px 16px;
+  font-size: 15px;
+}
+
+.contador-comensales {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.contador-comensales button {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--borde);
+  background: var(--superficie-alta);
+  color: var(--tinta);
+  font-size: 22px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.contador-comensales button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.contador-comensales span {
+  min-width: 32px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.titulo-comensales {
+  margin-top: 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tinta-media);
+}
+
+.titulo-comensales span {
+  font-weight: 400;
+  color: var(--tinta-suave);
+}
+
+.lista-comensales {
+  list-style: none;
+  margin-top: 6px;
+}
+
+.lista-comensales li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--borde-suave);
+}
+
+.lista-comensales .nombre-comensal {
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.insignia-anfitrion {
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--marca-tenue);
+  color: var(--marca-viva);
+}
+
+.quitar-comensal {
+  flex: none;
+  margin-left: auto;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--borde);
+  background: none;
+  color: var(--tinta-media);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Dedo (móvil o TPV del bar): tarjetas más grandes y fáciles de acertar. */
+@media (pointer: coarse) {
+  .rejilla-mesas {
+    grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+    gap: 10px;
+  }
+
+  .tarjeta-mesa {
+    min-height: 104px;
+    padding: 14px;
+  }
+
+  .tarjeta-mesa .nombre-mesa {
+    font-size: 20px;
+  }
+
+  .quitar-comensal {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+
+  .contador-comensales button {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+/* Móvil estrecho: dos o tres por fila, nunca una sola columna de tarjetas. */
+@media (max-width: 420px) {
+  .rejilla-mesas {
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  }
+
+  /* Que "Terraza" quepa entera en una línea y el número pase a la siguiente. */
+  .tarjeta-mesa {
+    padding: 12px 10px;
+  }
+
+  .tarjeta-mesa .nombre-mesa {
+    font-size: 17px;
   }
 }

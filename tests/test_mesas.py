@@ -6,6 +6,8 @@ sin FastAPI: es logica de negocio pura (quien es anfitrion, la sesion unica
 por mesa) y no deberia depender de la base de datos para poder probarse.
 """
 
+from typing import Any
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -42,7 +44,9 @@ def test_primera_persona_crea_sesion_y_es_anfitrion(repo: RepositorioMesasMemori
     assert resultado is not None
     sesion, comensal = resultado
     assert sesion.mesa_id == mesa.id
-    assert sesion.estado == "abierta"
+    # La abrio un cliente: queda a la espera de que el camarero la acepte.
+    assert sesion.estado == "por_confirmar"
+    assert sesion.abierta_por == "cliente"
     assert comensal.rol == "anfitrion"
     assert comensal.nombre == "Ana"
 
@@ -84,29 +88,32 @@ def test_dos_mesas_distintas_no_comparten_sesion(repo: RepositorioMesasMemoria) 
 class _RepoConCarrera(RepositorioMesasMemoria):
     """Simula la carrera: dos peticiones ven sesion_abierta_de() == None a la
     vez, y la segunda en llegar a crear_sesion() se encuentra que la primera
-    ya gano — debe unirse a esa como invitado, no fallar."""
+    ya gano — debe unirse a esa, no fallar ni crear otra."""
 
     def __init__(self) -> None:
         super().__init__()
         self.primera_vez = True
 
-    def crear_sesion(self, restaurante_id: str, mesa_id: str) -> SesionMesa:
+    def crear_sesion(self, *args: Any, **kwargs: Any) -> SesionMesa:
         if self.primera_vez:
             self.primera_vez = False
             # Otra peticion "gano" justo aqui: crea la sesion por debajo.
-            super().crear_sesion(restaurante_id, mesa_id)
+            super().crear_sesion(*args, **kwargs)
             raise SesionYaAbiertaError()
-        return super().crear_sesion(restaurante_id, mesa_id)
+        return super().crear_sesion(*args, **kwargs)
 
 
-def test_carrera_al_crear_sesion_se_resuelve_como_invitado() -> None:
+def test_carrera_al_crear_sesion_se_une_a_la_que_gano() -> None:
     repo = _RepoConCarrera()
     mesa = repo.crear_mesa("bar1", "Terraza 7")
     resultado = entrar_por_qr(repo, mesa.token_qr, "Ana", "es")
     assert resultado is not None
     sesion, comensal = resultado
-    assert comensal.rol == "invitado"
     assert sesion.mesa_id == mesa.id
+    assert len(repo.sesiones) == 1
+    # La otra peticion creo la sesion pero aun no habia metido a nadie: el
+    # primero en sentarse es el anfitrion, gane quien gane la carrera.
+    assert comensal.rol == "anfitrion"
 
 
 # -------------------------------------------------------------------- API

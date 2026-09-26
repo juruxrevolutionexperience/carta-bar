@@ -11,7 +11,14 @@ from pathlib import Path
 import pglast
 import pytest
 
-from carta_bar.mesas import _MESAS_OCUPADAS
+from carta_bar.mesas import (
+    _ANADIR_COMENSAL,
+    _CERRAR_CADUCADAS,
+    _COMENSALES_DE_SESION,
+    _CREAR_SESION,
+    _SESION_ABIERTA,
+    _SESIONES_DEL_LOCAL,
+)
 from carta_bar.metricas import (
     _LEER_COSTES,
     _LEER_PREGUNTAS,
@@ -57,17 +64,23 @@ def test_el_esquema_crea_la_tabla_y_su_indice() -> None:
         _LEER_VISITAS,
         _LEER_PREGUNTAS,
         _LEER_COSTES,
-        _MESAS_OCUPADAS,
+        _SESIONES_DEL_LOCAL,
+        _SESION_ABIERTA,
+        _CREAR_SESION,
+        _CERRAR_CADUCADAS,
+        _COMENSALES_DE_SESION,
+        _ANADIR_COMENSAL,
     ],
 )
 def test_las_consultas_son_sql_valido(consulta: str) -> None:
     assert pglast.parse_sql(a_sintaxis_postgres(consulta))
 
 
-def test_el_insert_manda_tantos_valores_como_columnas() -> None:
-    columnas = _INSERTAR.split("(")[1].split(")")[0].count(",") + 1
-    marcadores = _INSERTAR.count("%s")
-    assert columnas == marcadores, f"{columnas} columnas frente a {marcadores} marcadores"
+@pytest.mark.parametrize("insert", [_INSERTAR, _CREAR_SESION, _ANADIR_COMENSAL])
+def test_el_insert_manda_tantos_valores_como_columnas(insert: str) -> None:
+    columnas = insert.split("(")[1].split(")")[0].count(",") + 1
+    valores = insert.split("VALUES")[1].split("(")[1].split(")")[0].count(",") + 1
+    assert columnas == valores, f"{columnas} columnas frente a {valores} valores"
 
 
 def test_el_esquema_usa_numeric_para_el_dinero() -> None:

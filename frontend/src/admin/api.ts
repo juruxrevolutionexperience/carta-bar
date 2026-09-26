@@ -83,6 +83,39 @@ export interface Mesa {
   capacidad: number;
   // Hay clientes sentados. Lo calcula el servidor al listar; no se edita.
   ocupada?: boolean;
+  // Igual que `ocupada`, calculado al listar: estado de su sesión, comensales
+  // dentro y desde cuándo está abierta (ISO). Lo usa la pantalla de Servicio.
+  estado?: EstadoMesa;
+  comensales?: number;
+  abierta_en?: string | null;
+}
+
+// "por_confirmar": la abrió un cliente con el QR y el camarero aún no ha salido
+// a aceptarla. Nada de esa mesa llega a cocina hasta que la acepte.
+export type EstadoMesa = "libre" | "por_confirmar" | "abierta" | "cuenta_pedida";
+
+export interface SesionMesa {
+  id: string;
+  mesa_id: string;
+  estado: Exclude<EstadoMesa, "libre"> | "cerrada";
+  abierta_por: "cliente" | "personal";
+  comensales_declarados: number | null;
+  abierta_en: string | null;
+  confirmada_en: string | null;
+}
+
+export interface Comensal {
+  id: string;
+  nombre: string;
+  rol: "anfitrion" | "invitado";
+  idioma: string;
+  creado_en: string | null;
+  expulsado_en: string | null;
+}
+
+export interface SesionConComensales {
+  sesion: SesionMesa;
+  comensales: Comensal[];
 }
 
 // Lo que se puede cambiar de una mesa desde el plano (el token y el estado no).
@@ -148,6 +181,38 @@ export async function actualizarMesa(id: string, cambios: CambiosMesa): Promise<
 
 export async function eliminarMesa(id: string): Promise<Response> {
   return apiFetch(`/admin/api/mesas/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+// ---- servicio: abrir, aceptar y liberar mesas, y quitar a un comensal
+
+export async function cargarSesionMesa(mesaId: string): Promise<SesionConComensales | null> {
+  const resp = await apiFetch(`/admin/api/mesas/${encodeURIComponent(mesaId)}/sesion`);
+  // 404 = la mesa está libre (o se acaba de liberar): no es un error.
+  if (resp.status === 404) return null;
+  if (!resp.ok) throw new Error(await resp.text());
+  return resp.json();
+}
+
+export async function abrirMesa(mesaId: string, comensales: number | null): Promise<Response> {
+  return apiFetch(`/admin/api/mesas/${encodeURIComponent(mesaId)}/abrir`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ comensales }),
+  });
+}
+
+export async function confirmarMesa(mesaId: string): Promise<Response> {
+  return apiFetch(`/admin/api/mesas/${encodeURIComponent(mesaId)}/confirmar`, { method: "POST" });
+}
+
+export async function liberarMesa(mesaId: string): Promise<Response> {
+  return apiFetch(`/admin/api/mesas/${encodeURIComponent(mesaId)}/liberar`, { method: "POST" });
+}
+
+export async function expulsarComensal(comensalId: string): Promise<Response> {
+  return apiFetch(`/admin/api/comensales/${encodeURIComponent(comensalId)}/expulsar`, {
+    method: "POST",
+  });
 }
 
 export async function regenerarQrMesa(mesaId: string): Promise<Response> {

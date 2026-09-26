@@ -52,12 +52,24 @@ from carta_bar.limites import LIMITE_LOGIN, LIMITE_PREGUNTAR, limite_superado, l
 from carta_bar.llm import MODELO, MODELO_TRADUCCION
 from carta_bar.logging_config import configurar_logging
 from carta_bar.mesas import (
+    Comensal,
+    ComensalExpulsadoError,
     FormaMesa,
     Mesa,
+    MiSesion,
+    SesionCambiadaError,
+    SesionMesa,
     Zona,
     ZonaNoExisteError,
+    abrir_mesa,
+    confirmar_mesa,
     crear_repositorio_mesas,
     entrar_por_qr,
+    expulsar_comensal,
+    liberar_mesa,
+    mesas_del_local,
+    mi_sesion,
+    sesion_de_mesa,
 )
 from carta_bar.metricas import (
     MetricasRestaurante,
@@ -668,7 +680,7 @@ def admin_listar_mesas(
 ) -> list[Mesa] | Response:
     if not _sesion_activa(request, restaurante_id):
         return Response(status_code=401, content="Sesión no válida")
-    return mesas.listar_mesas(restaurante_id)
+    return mesas_del_local(mesas, restaurante_id)
 
 
 class NombrePlanoPeticion(BaseModel):
@@ -872,20 +884,35 @@ class EntrarMesaRespuesta(BaseModel):
     sesion_id: str
     comensal_id: str
     rol: str
+    estado: str
+
+
+def _comensal_de_cookie(request: Request) -> str | None:
+    token = request.cookies.get(COOKIE_COMENSAL)
+    return None if token is None else verificar_token_sesion(token)
 
 
 @app.post("/api/mesa/entrar", response_model=None)
 def api_mesa_entrar(
     peticion: EntrarMesaPeticion, request: Request
 ) -> EntrarMesaRespuesta | Response:
-    resultado = entrar_por_qr(mesas, peticion.token_qr, peticion.nombre, peticion.idioma)
+    try:
+        resultado = entrar_por_qr(
+            mesas,
+            peticion.token_qr,
+            peticion.nombre,
+            peticion.idioma,
+            comensal_actual=_comensal_de_cookie(request),
+        )
+    except ComensalExpulsadoError:
+        return Response(status_code=403, content="El personal te ha quitado de esta mesa")
     if resultado is None:
         return Response(status_code=404, content="Mesa no encontrada")
     sesion, comensal = resultado
 
     respuesta = JSONResponse(
         EntrarMesaRespuesta(
-            sesion_id=sesion.id, comensal_id=comensal.id, rol=comensal.rol
+            sesion_id=sesion.id, comensal_id=comensal.id, rol=comensal.rol, estado=sesion.estado
         ).model_dump()
     )
     respuesta.set_cookie(
@@ -896,6 +923,108 @@ def api_mesa_entrar(
         samesite="lax",
     )
     return respuesta
+
+
+@app.get("/api/mesa/yo", response_model=None)
+def api_mesa_yo(request: Request, restaurante_id: RestauranteActual) -> MiSesion | Response:
+    """Estado de la mesa de quien pregunta. 401 si ya no tiene mesa (se cerro,
+    lo expulsaron o no entro nunca): la carta lo olvida y sigue como carta."""
+    comensal_id = _comensal_de_cookie(request)
+    datos = None if comensal_id is None else mi_sesion(mesas, restaurante_id, comensal_id)
+    if datos is None:
+        respuesta = Response(status_code=401, content="Sin mesa")
+        respuesta.delete_cookie(COOKIE_COMENSAL)
+        return respuesta
+    return datos
+
+
+# -- el personal, desde el panel (hoy la cookie del gerente; con el bloque 3,
+# tambien la del camarero)
+
+
+class AbrirMesaPeticion(BaseModel):
+    comensales: int | None = Field(default=None, ge=1, le=50)
+
+
+class SesionConComensales(BaseModel):
+    sesion: SesionMesa
+    comensales: list[Comensal]
+
+
+def _mesa_cambiada() -> Response:
+    return Response(
+        status_code=409, content="La mesa acaba de cambiar: vuelve a cargarla e inténtalo otra vez"
+    )
+
+
+@app.post("/admin/api/mesas/{mesa_id}/abrir", response_model=None)
+def admin_abrir_mesa(
+    mesa_id: str,
+    request: Request,
+    restaurante_id: RestauranteActual,
+    peticion: AbrirMesaPeticion | None = None,
+) -> SesionMesa | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    comensales = peticion.comensales if peticion is not None else None
+    try:
+        sesion = abrir_mesa(mesas, restaurante_id, mesa_id, comensales)
+    except SesionCambiadaError:
+        return _mesa_cambiada()
+    if sesion is None:
+        return Response(status_code=404, content="Mesa no encontrada")
+    return sesion
+
+
+@app.post("/admin/api/mesas/{mesa_id}/confirmar", response_model=None)
+def admin_confirmar_mesa(
+    mesa_id: str, request: Request, restaurante_id: RestauranteActual
+) -> SesionMesa | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    try:
+        sesion = confirmar_mesa(mesas, restaurante_id, mesa_id)
+    except SesionCambiadaError:
+        return _mesa_cambiada()
+    if sesion is None:
+        return Response(status_code=404, content="Esta mesa no tiene clientes")
+    return sesion
+
+
+@app.post("/admin/api/mesas/{mesa_id}/liberar", response_model=None)
+def admin_liberar_mesa(
+    mesa_id: str, request: Request, restaurante_id: RestauranteActual
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    if not liberar_mesa(mesas, restaurante_id, mesa_id):
+        return Response(status_code=404, content="Esta mesa ya estaba libre")
+    return Response(status_code=204)
+
+
+@app.get("/admin/api/mesas/{mesa_id}/sesion", response_model=None)
+def admin_sesion_mesa(
+    mesa_id: str, request: Request, restaurante_id: RestauranteActual
+) -> SesionConComensales | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    resultado = sesion_de_mesa(mesas, restaurante_id, mesa_id)
+    if resultado is None:
+        return Response(status_code=404, content="Esta mesa está libre")
+    sesion, comensales = resultado
+    return SesionConComensales(sesion=sesion, comensales=comensales)
+
+
+@app.post("/admin/api/comensales/{comensal_id}/expulsar", response_model=None)
+def admin_expulsar_comensal(
+    comensal_id: str, request: Request, restaurante_id: RestauranteActual
+) -> Comensal | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    comensal = expulsar_comensal(mesas, restaurante_id, comensal_id)
+    if comensal is None:
+        return Response(status_code=404, content="Comensal no encontrado")
+    return comensal
 
 
 # Comprimida en el navegador (canvas, JPEG calidad 0.8) antes de llegar aqui:

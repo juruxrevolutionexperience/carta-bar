@@ -19,7 +19,28 @@ empezó saltando su requisito de entrada, en
 
 ---
 
-## DÓNDE LO DEJAMOS (2026-09-24) — LEER PRIMERO
+## DÓNDE LO DEJAMOS (2026-09-26) — LEER PRIMERO
+
+- **Bloque 1 del flujo de mesa: 🔍 hecho en local, falta subir y desplegar.**
+  Estados de mesa, abrir/aceptar/liberar, quitar comensales y cierre
+  automático, más la pantalla **Servicio** (tarjetas por zona). Detalle en
+  `docs/PEDIDO-EN-MESA.md`, "Bloque 1 en detalle".
+- **Decidido con el usuario (2026-09-26):**
+  1. **Sin código de 4 cifras.** Quien escanea entra; la protección es que el
+     camarero sale a la mesa ("¿habéis pedido por la app?") y la acepta.
+  2. Cierre automático: 30 min "por aceptar" y 4 h sin actividad.
+  3. **Panel rápido en tarjetas** (mismas mesas que el plano, separadas por
+     zona) adelantado del bloque 3 al 1: es donde el camarero acepta.
+  4. **Siguiente: productos** (destino cocina/barra, formatos con precio,
+     extras, alcohol), luego bloque 2 (pedidos). Falta preguntar al usuario:
+     ¿extras por plato o grupos reutilizables?
+- Verificación: 433 tests; SQL probado contra un Postgres 16 real (migración
+  sobre datos viejos, carreras de 8 escaneos a la vez); pantalla probada en
+  Chromium real (móvil y escritorio, claro y oscuro, botones pulsados).
+- Entorno de este PC (WSL): Python sí funciona aquí. `uv` instalado en
+  `~/.local/bin`; Postgres de prueba con `uv run --with pgserver`.
+
+## DÓNDE LO DEJAMOS (2026-09-24)
 
 - **Frontend de mesas: CERRADO** por decisión del usuario. Último cambio
   (plano en móvil: alto medido en JS, barra en dos filas, zoom sin flotar)

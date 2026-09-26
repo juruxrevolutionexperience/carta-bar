@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 
-export type Seccion = "mesas" | "platos" | "especiales" | "marca" | "qr" | "cuenta";
+export type Seccion = "servicio" | "mesas" | "platos" | "especiales" | "marca" | "qr" | "cuenta";
 
 interface Entrada {
   id: Seccion;
@@ -13,6 +13,20 @@ interface Entrada {
 // barra superior y el menú lateral leen de aquí, así que no se pueden
 // desincronizar al añadir comandas, cocina o camarero más adelante.
 export const SECCIONES: Entrada[] = [
+  // La primera es la que se abre al entrar: el día a día, no el montaje.
+  {
+    id: "servicio",
+    texto: "Servicio",
+    grupo: "Sala",
+    icono: (
+      <svg viewBox="0 0 24 24">
+        <rect x="3" y="3" width="8" height="8" rx="2" />
+        <rect x="13" y="3" width="8" height="8" rx="2" />
+        <rect x="3" y="13" width="8" height="8" rx="2" />
+        <rect x="13" y="13" width="8" height="8" rx="2" />
+      </svg>
+    ),
+  },
   {
     id: "mesas",
     texto: "Mesas",

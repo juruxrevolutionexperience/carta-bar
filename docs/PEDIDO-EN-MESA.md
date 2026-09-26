@@ -1159,6 +1159,26 @@ Bloques: 1) estados y abrir/unirse/confirmar/liberar, 2) pedidos, rondas y cuent
 
 ### Bloque 1 en detalle: estados, abrir, unirse, confirmar, liberar
 
+**Estado (2026-09-26): 🔍 hecho en local, falta desplegar.** Cambios sobre
+el plan de abajo, decididos con el usuario ese día:
+- **Sin código de 4 cifras** (ni `codigo` en la tabla, ni `nuevo-codigo`).
+  Quien escanea entra: el primero sin anfitrión activo es anfitrión y los
+  demás, invitados. La protección es la aceptación del camarero. Si alguien
+  molesta: quitarlo (expulsar) o "Cambiar el QR de esta mesa".
+- Volver a escanear con la cookie devuelve el mismo comensal (no crea
+  "Comensal 3"). Un expulsado con cookie recibe 403.
+- Si quitan al anfitrión, pasa a serlo el invitado más antiguo.
+- Mirar el estado (`GET /api/mesa/yo`) **no** cuenta como actividad: un
+  móvil olvidado con la carta abierta no mantiene viva la mesa.
+- **Pantalla "Servicio"** en el panel (`SeccionServicio.tsx`,
+  `PanelServicio.tsx`): tarjetas por zona con su estado, filtro por zona y
+  panel para abrir (con comensales), aceptar, quitar y liberar. Refresca
+  cada 5 s. Es la primera sección del menú; el plano sigue en "Mesas".
+- Lógica en `mesas.py` (funciones con `ahora` inyectable), tests en
+  `tests/test_flujo_mesa.py`.
+
+Plan original:
+
 Se apoya en lo que ya existe (`sesiones_mesa`, `comensales`, `/api/mesa/entrar`, el índice único de una sesión abierta por mesa). No se sustituye nada.
 
 Base de datos (ALTER idempotentes en `sql/esquema.sql`):

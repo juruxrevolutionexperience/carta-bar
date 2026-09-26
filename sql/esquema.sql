@@ -202,6 +202,18 @@ CREATE TABLE IF NOT EXISTS comensales (
     creado_en  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Bloque 1 del flujo de mesa (docs/PEDIDO-EN-MESA.md, "Bloque 1 en detalle").
+-- estado admite ademas 'por_confirmar': la abrio un cliente con el QR y el
+-- camarero aun no la ha aceptado (no hace falta tocar nada: estado es TEXT).
+-- ultima_actividad nace en now() para las sesiones que ya existian, asi el
+-- cierre automatico de 4 h empieza a contar desde que se aplica esto.
+ALTER TABLE sesiones_mesa ADD COLUMN IF NOT EXISTS abierta_por           TEXT NOT NULL DEFAULT 'cliente';
+ALTER TABLE sesiones_mesa ADD COLUMN IF NOT EXISTS comensales_declarados INTEGER;
+ALTER TABLE sesiones_mesa ADD COLUMN IF NOT EXISTS confirmada_en         TIMESTAMPTZ;
+ALTER TABLE sesiones_mesa ADD COLUMN IF NOT EXISTS ultima_actividad      TIMESTAMPTZ NOT NULL DEFAULT now();
+ALTER TABLE sesiones_mesa ADD COLUMN IF NOT EXISTS motivo_cierre         TEXT;
+ALTER TABLE comensales    ADD COLUMN IF NOT EXISTS expulsado_en          TIMESTAMPTZ;
+
 -- RLS activada en todas las tablas y SIN politicas: la clave publica (anon) y
 -- las autenticadas de Supabase no pueden leer ni escribir nada. La app entra
 -- con el usuario `postgres`, que se salta RLS (rolbypassrls = true, comprobado

@@ -10,6 +10,7 @@ import { SeccionMarca } from "./SeccionMarca";
 import { SeccionEspeciales } from "./SeccionEspeciales";
 import { SeccionPlatos } from "./SeccionPlatos";
 import { SeccionQr } from "./SeccionQr";
+import { SeccionServicio } from "./SeccionServicio";
 import { SECCIONES, tituloDe, type Seccion } from "./secciones";
 import { CATEGORIA_ESPECIALES, platoVacio, type Categoria, type Plato } from "./types";
 
@@ -67,7 +68,7 @@ export function App() {
         onCerrar={() => setMenuAbierto(false)}
       />
 
-      <div className={"app" + (seccion === "mesas" ? " app-ancha" : "")}>
+      <div className={"app" + (seccion === "mesas" || seccion === "servicio" ? " app-ancha" : "")}>
         {seccion === "platos" && (
           <SeccionPlatos
             platos={normales}
@@ -91,6 +92,7 @@ export function App() {
             onAnadir={anadirEspecial}
           />
         )}
+        {seccion === "servicio" && <SeccionServicio />}
         {seccion === "mesas" && <SeccionMesas />}
         {seccion === "marca" && <SeccionMarca />}
         {seccion === "qr" && <SeccionQr />}
