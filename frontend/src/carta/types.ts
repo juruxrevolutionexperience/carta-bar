@@ -16,6 +16,14 @@ export interface Plato {
   foto: string | null;
   // false = el restaurante aun no ha revisado sus alergenos y su dieta.
   alergenos_confirmados?: boolean;
+  // Tapa, media, racion... con su precio. Vacio = se pide a `precio`. Nunca se
+  // traducen: se piden al camarero por su nombre, como el plato.
+  formatos?: Formato[];
+}
+
+export interface Formato {
+  nombre: string;
+  precio: number;
 }
 
 export interface Categoria {

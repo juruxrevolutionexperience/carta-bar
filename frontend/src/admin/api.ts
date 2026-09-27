@@ -337,3 +337,96 @@ export async function cerrarSesion(): Promise<void> {
   await fetch("/admin/logout", { method: "POST" });
   window.location.href = "/admin/login";
 }
+
+// ---- productos: lo que hace falta para pedir un plato (carta_bar/productos.py)
+
+export type Destino = "cocina" | "barra";
+
+export interface Formato {
+  nombre: string;
+  precio: number;
+}
+
+export interface Opcion {
+  nombre: string;
+  precio: number;
+}
+
+// minimo 0 = opcional ("Extras"); minimo 1 y maximo 1 = elegir uno ("Punto").
+export interface DatosGrupo {
+  nombre: string;
+  minimo: number;
+  maximo: number;
+  opciones: Opcion[];
+}
+
+export interface GrupoOpciones extends DatosGrupo {
+  id: string;
+  orden: number;
+}
+
+export interface DatosPedidoPlato {
+  // null = el de su categoría.
+  destino: Destino | null;
+  alcohol: boolean;
+  formatos: Formato[];
+  grupos: string[];
+}
+
+export interface ConfigProductos {
+  destinos_categoria: Record<string, Destino>;
+  platos: Record<string, DatosPedidoPlato & { plato_id: string }>;
+  grupos: GrupoOpciones[];
+}
+
+export function pedidoVacio(): DatosPedidoPlato {
+  return { destino: null, alcohol: false, formatos: [], grupos: [] };
+}
+
+export async function cargarProductos(): Promise<ConfigProductos> {
+  const resp = await apiFetch("/admin/api/productos");
+  if (!resp.ok) throw new Error(await resp.text());
+  return resp.json();
+}
+
+export async function guardarDestinoCategoria(
+  categoriaId: string,
+  destino: Destino
+): Promise<Response> {
+  return apiFetch(`/admin/api/categorias/${encodeURIComponent(categoriaId)}/destino`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ destino }),
+  });
+}
+
+export async function guardarPedidoPlato(
+  platoId: string,
+  datos: DatosPedidoPlato
+): Promise<Response> {
+  return apiFetch(`/admin/api/platos/${encodeURIComponent(platoId)}/pedido`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(datos),
+  });
+}
+
+export async function crearGrupo(datos: DatosGrupo): Promise<Response> {
+  return apiFetch("/admin/api/grupos-opciones", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(datos),
+  });
+}
+
+export async function actualizarGrupo(id: string, datos: DatosGrupo): Promise<Response> {
+  return apiFetch(`/admin/api/grupos-opciones/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(datos),
+  });
+}
+
+export async function eliminarGrupo(id: string): Promise<Response> {
+  return apiFetch(`/admin/api/grupos-opciones/${encodeURIComponent(id)}`, { method: "DELETE" });
+}

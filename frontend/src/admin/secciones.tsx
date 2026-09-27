@@ -1,6 +1,14 @@
 import type { ReactElement } from "react";
 
-export type Seccion = "servicio" | "mesas" | "platos" | "especiales" | "marca" | "qr" | "cuenta";
+export type Seccion =
+  | "servicio"
+  | "mesas"
+  | "platos"
+  | "especiales"
+  | "extras"
+  | "marca"
+  | "qr"
+  | "cuenta";
 
 interface Entrada {
   id: Seccion;
@@ -55,6 +63,17 @@ export const SECCIONES: Entrada[] = [
     icono: (
       <svg viewBox="0 0 24 24">
         <path d="M12 3l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L12 16.9 6.4 20l1.4-6.2L3 9.5l6.4-.6z" />
+      </svg>
+    ),
+  },
+  {
+    id: "extras",
+    texto: "Extras y opciones",
+    grupo: "Carta",
+    icono: (
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 8v8M8 12h8" />
       </svg>
     ),
   },

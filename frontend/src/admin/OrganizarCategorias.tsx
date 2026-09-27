@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { colorCategoria } from "../carta/iconos";
 import {
+  cargarProductos,
   crearCategoria,
   eliminarCategoria,
+  guardarDestinoCategoria,
   ordenarCategorias,
   renombrarCategoria,
+  type Destino,
 } from "./api";
 import { CATEGORIA_ESPECIALES, type Categoria, type Plato } from "./types";
 import { useArrastreOrden } from "./useArrastreOrden";
@@ -22,6 +25,28 @@ export function OrganizarCategorias({ categorias, platos, onCambio }: Props) {
   const [nombreEditado, setNombreEditado] = useState("");
   const [ocupado, setOcupado] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+  // A qué pantalla van los platos de cada categoría al pedir desde la mesa.
+  // null = aún cargando (o sin conexión): el botón no se enseña.
+  const [destinos, setDestinos] = useState<Record<string, Destino> | null>(null);
+
+  useEffect(() => {
+    cargarProductos()
+      .then((c) => setDestinos(c.destinos_categoria))
+      .catch(() => setDestinos(null));
+  }, []);
+
+  function cambiarDestino(c: Categoria) {
+    if (destinos === null) return;
+    const nuevo: Destino = (destinos[c.id] ?? "cocina") === "cocina" ? "barra" : "cocina";
+    void ejecutar(async () => {
+      const resp = await guardarDestinoCategoria(c.id, nuevo);
+      if (resp.status === 204) {
+        setDestinos((actual) => ({ ...(actual ?? {}), [c.id]: nuevo }));
+      } else {
+        setAviso("No se pudo cambiar dónde se prepara. Inténtalo de nuevo.");
+      }
+    });
+  }
 
   // La del "especial del dia" es interna: se gestiona en su propia seccion.
   const base = categorias.filter((c) => c.id !== CATEGORIA_ESPECIALES);
@@ -107,6 +132,12 @@ export function OrganizarCategorias({ categorias, platos, onCambio }: Props) {
   return (
     <div className="organizar">
         <p className="ayuda">Arrastra con el dedo el icono ⠿ para cambiar el orden de las categorías.</p>
+        {destinos !== null && (
+          <p className="ayuda">
+            «Cocina» o «Barra» dice dónde se preparan sus platos al pedir desde la mesa. Toca para
+            cambiarlo; un plato suelto puede llevar otro en su «Para pedir».
+          </p>
+        )}
         {lista.length === 0 && <p className="cargando">Todavía no hay categorías.</p>}
 
         {lista.map((c) => {
@@ -139,6 +170,17 @@ export function OrganizarCategorias({ categorias, platos, onCambio }: Props) {
                   <span className="nombre-categoria">
                     {c.nombre} <span className="cuenta-categoria">({total})</span>
                   </span>
+                  {destinos !== null && (
+                    <button
+                      type="button"
+                      className={"destino-categoria destino-" + (destinos[c.id] ?? "cocina")}
+                      aria-label={`${c.nombre} se prepara en ${destinos[c.id] ?? "cocina"}. Cambiar`}
+                      disabled={ocupado}
+                      onClick={() => cambiarDestino(c)}
+                    >
+                      {(destinos[c.id] ?? "cocina") === "cocina" ? "Cocina" : "Barra"}
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="asa"

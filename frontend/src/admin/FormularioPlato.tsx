@@ -1,14 +1,21 @@
 import { useEffect, useState } from "react";
 
 import {
+  cargarProductos,
   crearEspecial,
   crearPlato,
   eliminarPlato,
+  guardarPedidoPlato,
   guardarPlatoExistente,
+  pedidoVacio,
   subirFoto,
+  type ConfigProductos,
   type CuerpoPlato,
+  type DatosPedidoPlato,
 } from "./api";
 import { BloqueFoto } from "./BloqueFoto";
+import { BloquePedido, type PedidoEditable } from "./BloquePedido";
+import { filasAValores, valoresAFilas } from "./FilasPrecio";
 import { comprimirImagen } from "./comprimirImagen";
 import { SelectorFotoNueva } from "./SelectorFotoNueva";
 import { VistaPreviaPlato } from "./VistaPreviaPlato";
@@ -52,6 +59,35 @@ export function FormularioPlato({
   const [fotoNueva, setFotoNueva] = useState<File | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+
+  // "Para pedir" (destino, formatos, extras, alcohol) vive aparte del plato:
+  // se carga al abrir el formulario y se guarda justo después del plato.
+  const [productos, setProductos] = useState<ConfigProductos | null>(null);
+  const [errorProductos, setErrorProductos] = useState(false);
+  const [pedido, setPedido] = useState<PedidoEditable | null>(null);
+  const [pedidoInicial, setPedidoInicial] = useState<DatosPedidoPlato>(pedidoVacio());
+
+  useEffect(() => {
+    let vigente = true;
+    cargarProductos()
+      .then((config) => {
+        if (!vigente) return;
+        const actual = (plato.id && config.platos[plato.id]) || pedidoVacio();
+        const inicial: DatosPedidoPlato = {
+          destino: actual.destino,
+          alcohol: actual.alcohol,
+          formatos: actual.formatos,
+          grupos: actual.grupos,
+        };
+        setProductos(config);
+        setPedidoInicial(inicial);
+        setPedido({ ...inicial, formatos: valoresAFilas(inicial.formatos) });
+      })
+      .catch(() => vigente && setErrorProductos(true));
+    return () => {
+      vigente = false;
+    };
+  }, [plato.id]);
 
   function alternarAlergeno(valor: Alergeno) {
     setAlergenos((actual) =>
@@ -110,6 +146,32 @@ export function FormularioPlato({
       setAviso("Confirma que has revisado los alérgenos del plato.");
       return;
     }
+    // Se valida antes de guardar nada: un formato a medias no debe dejar el
+    // plato guardado y su "para pedir" sin guardar.
+    let datosPedido: DatosPedidoPlato | null = null;
+    if (pedido) {
+      const formatos = filasAValores(pedido.formatos, false);
+      if (typeof formatos === "string") {
+        setAviso(`Formatos: ${formatos}`);
+        return;
+      }
+      datosPedido = { ...pedido, formatos };
+    }
+    const cambioPedido =
+      datosPedido !== null && JSON.stringify(datosPedido) !== JSON.stringify(pedidoInicial);
+
+    async function guardarPedido(id: string): Promise<boolean> {
+      if (!cambioPedido || datosPedido === null) return true;
+      try {
+        const resp = await guardarPedidoPlato(id, datosPedido);
+        return resp.ok;
+      } catch {
+        return false;
+      }
+    }
+    const AVISO_PEDIDO =
+      "El plato se guardó, pero no lo de «Para pedir» (formatos, extras…). Ábrelo y guárdalo otra vez.";
+
     setGuardando(true);
 
     const cuerpo: CuerpoPlato = {
@@ -138,11 +200,15 @@ export function FormularioPlato({
         : await guardarPlatoExistente(plato.id as string, cuerpo);
 
       if (resp.status === 204) {
+        if (!(await guardarPedido(plato.id as string))) window.alert(AVISO_PEDIDO);
         onGuardado({ ...plato, ...cuerpo });
         return;
       }
       if (resp.status === 201) {
         let creado: Plato = await resp.json();
+        // Como con la foto: el formulario se cierra enseguida, así que un
+        // fallo aquí se avisa con un alert.
+        if (!(await guardarPedido(creado.id as string))) window.alert(AVISO_PEDIDO);
         if (fotoNueva) {
           try {
             const blob = await comprimirImagen(fotoNueva);
@@ -294,6 +360,26 @@ export function FormularioPlato({
           ))}
         </div>
       </div>
+
+      {pedido && productos ? (
+        <BloquePedido
+          valor={pedido}
+          onCambio={setPedido}
+          grupos={productos.grupos}
+          destinoCategoria={
+            productos.destinos_categoria[
+              plato.id || categoriasElegibles === undefined ? plato.categoria : categoria
+            ] ?? "cocina"
+          }
+        />
+      ) : (
+        errorProductos && (
+          <p className="ayuda-campo">
+            No se pudo cargar «Para pedir» (formatos, extras…). El resto del plato se guarda
+            igual.
+          </p>
+        )
+      )}
 
       <VistaPreviaPlato plato={platoPrevio} />
 

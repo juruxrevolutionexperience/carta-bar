@@ -26,6 +26,12 @@ from carta_bar.metricas import (
     _SUMAR_PREGUNTA,
     _SUMAR_VISITA,
 )
+from carta_bar.productos import (
+    _CREAR_GRUPO,
+    _GUARDAR_DESTINO_CATEGORIA,
+    _GUARDAR_PEDIDO_PLATO,
+    _QUITAR_GRUPO_DE_PLATOS,
+)
 from carta_bar.uso import _GASTO_DEL_DIA, _INSERTAR
 
 
@@ -70,13 +76,19 @@ def test_el_esquema_crea_la_tabla_y_su_indice() -> None:
         _CERRAR_CADUCADAS,
         _COMENSALES_DE_SESION,
         _ANADIR_COMENSAL,
+        _GUARDAR_DESTINO_CATEGORIA,
+        _GUARDAR_PEDIDO_PLATO,
+        _CREAR_GRUPO,
     ],
 )
 def test_las_consultas_son_sql_valido(consulta: str) -> None:
     assert pglast.parse_sql(a_sintaxis_postgres(consulta))
 
 
-@pytest.mark.parametrize("insert", [_INSERTAR, _CREAR_SESION, _ANADIR_COMENSAL])
+@pytest.mark.parametrize(
+    "insert",
+    [_INSERTAR, _CREAR_SESION, _ANADIR_COMENSAL, _GUARDAR_PEDIDO_PLATO, _GUARDAR_DESTINO_CATEGORIA],
+)
 def test_el_insert_manda_tantos_valores_como_columnas(insert: str) -> None:
     columnas = insert.split("(")[1].split(")")[0].count(",") + 1
     valores = insert.split("VALUES")[1].split("(")[1].split(")")[0].count(",") + 1
@@ -110,3 +122,8 @@ def test_la_conversion_del_plano_se_hace_una_sola_vez() -> None:
     assert anade < default_nuevo < convierte
     # Marca la zona como convertida en el mismo statement que mueve sus mesas.
     assert "UPDATE zonas SET plano_version = 2" in sql
+
+
+def test_quitar_un_grupo_de_los_platos_es_sql_valido() -> None:
+    # "?" es el operador JSONB "contiene la clave"; psycopg solo mira "%s".
+    assert pglast.parse_sql(a_sintaxis_postgres(_QUITAR_GRUPO_DE_PLATOS))

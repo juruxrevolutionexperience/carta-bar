@@ -1157,6 +1157,30 @@ Estados de mesa: libre, por confirmar (la abrió un cliente), abierta, pidiendo 
 
 Bloques: 1) estados y abrir/unirse/confirmar/liberar, 2) pedidos, rondas y cuenta, 3) rol camarero y acceso rápido.
 
+### Productos: lo que le falta a un plato para pedirlo
+
+**Estado (2026-09-27): 🔍 hecho en local, falta desplegar.** Decidido con el
+usuario ese día:
+- **Destino (cocina/barra) por categoría**, en "Organizar categorías" (se
+  toca el botón Cocina/Barra). Un plato puede cambiarlo en su «Para pedir».
+  Sin nada, cocina. `destino_de()` en `productos.py`.
+- **Formatos** con su precio (Tapa, Media, Ración, Caña, Jarra…). **No se
+  traducen**, igual que el nombre. Se ven ya en la carta del cliente, en
+  lugar del precio único.
+- **Grupos de extras y opciones reutilizables** (sección "Extras y
+  opciones"): nombre, opciones con precio (vacío = gratis), obligatorio o no
+  y cuántas se pueden elegir. Se marcan en cada plato. Borrar un grupo lo
+  quita de sus platos. Aún no se ven en la carta: llegan con el pedido.
+- **Lleva alcohol**, por plato.
+- Todo en tablas aparte (`destinos_categoria`, `pedido_platos`,
+  `grupos_opciones`): la carta del restaurante no se toca.
+- Precios en el panel como texto con teclado decimal: un `type="number"`
+  descarta "1,50" escrito con coma en un móvil en español.
+
+Tests en `tests/test_productos.py`; SQL probado contra un Postgres 16 real y
+la interfaz en Chromium (crear grupos, destino de categoría, formatos, extras,
+alcohol, formato a medias rechazado, carta en español e inglés).
+
 ### Bloque 1 en detalle: estados, abrir, unirse, confirmar, liberar
 
 **Estado (2026-09-26): 🔍 hecho en local, falta desplegar.** Cambios sobre

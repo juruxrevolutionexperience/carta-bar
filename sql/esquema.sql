@@ -214,6 +214,39 @@ ALTER TABLE sesiones_mesa ADD COLUMN IF NOT EXISTS ultima_actividad      TIMESTA
 ALTER TABLE sesiones_mesa ADD COLUMN IF NOT EXISTS motivo_cierre         TEXT;
 ALTER TABLE comensales    ADD COLUMN IF NOT EXISTS expulsado_en          TIMESTAMPTZ;
 
+-- Productos: lo que le falta a un plato para poder pedirlo (ver
+-- carta_bar/productos.py). Tablas aparte de categorias/platos: la carta es del
+-- restaurante y esto solo se cuelga de sus ids, sin tocarla. formatos y
+-- opciones son listas JSON de {nombre, precio}; grupos, lista de ids.
+CREATE TABLE IF NOT EXISTS destinos_categoria (
+    restaurante_id TEXT NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
+    categoria_id   TEXT NOT NULL,
+    destino        TEXT NOT NULL,
+    PRIMARY KEY (restaurante_id, categoria_id)
+);
+
+CREATE TABLE IF NOT EXISTS pedido_platos (
+    restaurante_id TEXT NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
+    plato_id       TEXT NOT NULL,
+    -- NULL = el de su categoria.
+    destino        TEXT,
+    alcohol        BOOLEAN NOT NULL DEFAULT false,
+    formatos       JSONB NOT NULL DEFAULT '[]',
+    grupos         JSONB NOT NULL DEFAULT '[]',
+    PRIMARY KEY (restaurante_id, plato_id)
+);
+
+CREATE TABLE IF NOT EXISTS grupos_opciones (
+    restaurante_id TEXT NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
+    id             TEXT NOT NULL,
+    nombre         TEXT NOT NULL,
+    minimo         INTEGER NOT NULL DEFAULT 0,
+    maximo         INTEGER NOT NULL DEFAULT 1,
+    opciones       JSONB NOT NULL DEFAULT '[]',
+    orden          INTEGER NOT NULL,
+    PRIMARY KEY (restaurante_id, id)
+);
+
 -- RLS activada en todas las tablas y SIN politicas: la clave publica (anon) y
 -- las autenticadas de Supabase no pueden leer ni escribir nada. La app entra
 -- con el usuario `postgres`, que se salta RLS (rolbypassrls = true, comprobado
@@ -229,3 +262,6 @@ ALTER TABLE zonas                ENABLE ROW LEVEL SECURITY;
 ALTER TABLE mesas                ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sesiones_mesa        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comensales           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE destinos_categoria   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pedido_platos        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE grupos_opciones      ENABLE ROW LEVEL SECURITY;

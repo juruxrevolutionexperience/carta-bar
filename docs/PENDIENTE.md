@@ -19,7 +19,23 @@ empezó saltando su requisito de entrada, en
 
 ---
 
-## DÓNDE LO DEJAMOS (2026-09-26) — LEER PRIMERO
+## DÓNDE LO DEJAMOS (2026-09-27) — LEER PRIMERO
+
+- **Bloque 1 (estados de mesa + pantalla Servicio):** commiteado y subido
+  (`32c7125`). Falta confirmar que está desplegado.
+- **Productos: 🔍 hecho en local, falta subir y desplegar.** Detalle en
+  `docs/PEDIDO-EN-MESA.md`, sección "Productos".
+- **Decidido con el usuario (2026-09-27):** extras en grupos reutilizables;
+  destino cocina/barra por categoría con excepción por plato; los formatos
+  no se traducen (como el nombre del plato); los formatos se ven ya en la
+  carta, los extras solo al pedir.
+- **Siguiente: bloque 2** (pedidos, rondas, pedir la cuenta), que ya puede
+  apoyarse en formatos, extras y destino.
+- Aviso para el negocio, no tocado: algunas descripciones llevan precios
+  escritos a mano (croquetas: "Media ración: 5,95 €"). Si el restaurante pone
+  formatos, conviene que quite ese texto para no tener dos precios.
+
+## DÓNDE LO DEJAMOS (2026-09-26)
 
 - **Bloque 1 del flujo de mesa: 🔍 hecho en local, falta subir y desplegar.**
   Estados de mesa, abrir/aceptar/liberar, quitar comensales y cierre

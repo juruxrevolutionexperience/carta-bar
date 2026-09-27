@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { useCartaContext } from "./CartaContext";
 import { degradado, iconoPlato } from "./iconos";
+import { textoPrecio } from "./precios";
 import { urlSegura } from "./seguridad";
 import type { Plato } from "./types";
 
@@ -87,9 +88,7 @@ export function VisorFoto({ platoId, platos, onNavegar, onCerrar }: Props) {
           <h3>{actual.nombre}</h3>
           <div className="visor-linea">
             <span className="visor-precio">
-              {actual.precio == null
-                ? t("precio_consultar")
-                : Number(actual.precio).toFixed(2).replace(".", ",") + " " + moneda}
+              {textoPrecio(actual, moneda, t("precio_consultar"))}
             </span>
           </div>
           {descripcion && <p className="visor-desc">{descripcion}</p>}

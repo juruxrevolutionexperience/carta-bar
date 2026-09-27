@@ -30,7 +30,7 @@ def test_un_subdominio_conocido_resuelve_a_su_restaurante(
     )
     r = TestClient(app).get("/carta", headers={"Host": "bar2.jurux.app"})
     assert r.status_code == 200
-    assert r.json() == [{"restaurante": "bar2"}]
+    assert r.json() == [{"restaurante": "bar2", "formatos": []}]
 
 
 def test_el_alias_historico_de_cartia_resuelve_a_la_catedral(

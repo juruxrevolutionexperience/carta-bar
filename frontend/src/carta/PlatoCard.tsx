@@ -1,6 +1,7 @@
 import "./tarjetaPlato.css";
 import { useCartaContext } from "./CartaContext";
 import { degradado, iconoPlato, ICONO_ETQ } from "./iconos";
+import { importe, textoPrecio } from "./precios";
 import { urlSegura } from "./seguridad";
 import type { Plato } from "./types";
 
@@ -36,6 +37,7 @@ export function PlatoCard({ plato: p, onAbrirFoto, onAnadirALista }: Props) {
   ].filter((d): d is string => Boolean(d));
 
   const foto = urlSegura(p.foto);
+  const conFormatos = (p.formatos?.length ?? 0) > 0;
   const descripcion = p.descripcion_i18n?.[idioma] || p.descripcion;
 
   return (
@@ -56,11 +58,9 @@ export function PlatoCard({ plato: p, onAbrirFoto, onAnadirALista }: Props) {
         )}
         <div className="plato-top">
           <h3 className="nombre">{p.nombre}</h3>
-          <span className="precio">
-            {p.precio == null
-              ? t("precio_consultar")
-              : Number(p.precio).toFixed(2).replace(".", ",") + " " + moneda}
-          </span>
+          {!conFormatos && (
+            <span className="precio">{textoPrecio(p, moneda, t("precio_consultar"))}</span>
+          )}
           <button
             type="button"
             className="anadir-lista"
@@ -70,6 +70,16 @@ export function PlatoCard({ plato: p, onAbrirFoto, onAnadirALista }: Props) {
             +
           </button>
         </div>
+        {conFormatos && (
+          <ul className="formatos">
+            {p.formatos?.map((f) => (
+              <li key={f.nombre}>
+                <span className="formato-nombre">{f.nombre}</span>
+                <span className="formato-precio">{importe(f.precio, moneda)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
         <p className={"desc" + (pendiente ? " pendiente" : "")}>{descripcion}</p>
         <div className="chips">
           {!sinConfirmar && dietas.map((d) => (

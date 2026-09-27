@@ -8,6 +8,7 @@ import { SeccionCuenta } from "./SeccionCuenta";
 import { SeccionMesas } from "./SeccionMesas";
 import { SeccionMarca } from "./SeccionMarca";
 import { SeccionEspeciales } from "./SeccionEspeciales";
+import { SeccionExtras } from "./SeccionExtras";
 import { SeccionPlatos } from "./SeccionPlatos";
 import { SeccionQr } from "./SeccionQr";
 import { SeccionServicio } from "./SeccionServicio";
@@ -92,6 +93,7 @@ export function App() {
             onAnadir={anadirEspecial}
           />
         )}
+        {seccion === "extras" && <SeccionExtras />}
         {seccion === "servicio" && <SeccionServicio />}
         {seccion === "mesas" && <SeccionMesas />}
         {seccion === "marca" && <SeccionMarca />}

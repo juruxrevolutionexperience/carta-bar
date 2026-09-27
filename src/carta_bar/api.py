@@ -27,6 +27,7 @@ from carta_bar.datos import (
     actualizar_imagen_marca,
     actualizar_nombre_restaurante,
     actualizar_plato_editable,
+    cargar_carta,
     cargar_carta_traducida,
     cargar_categorias,
     cargar_config,
@@ -80,6 +81,18 @@ from carta_bar.metricas import (
 )
 from carta_bar.modelos import Alergeno, Categoria, Etiqueta, MensajeChat, Plato, ResumenRestaurante
 from carta_bar.presupuesto import AVISO_SIN_PRESUPUESTO, ControlGasto
+from carta_bar.productos import (
+    ConfigProductos,
+    DatosGrupo,
+    DatosPedidoPlato,
+    Destino,
+    GrupoNoExisteError,
+    GrupoOpciones,
+    PedidoPlato,
+    con_formatos,
+    config_productos,
+    crear_repositorio_productos,
+)
 from carta_bar.seguridad import CabecerasSeguridad
 from carta_bar.traductor import traducir_restaurante
 from carta_bar.uso import crear_repositorio
@@ -162,6 +175,7 @@ _repositorio_uso = crear_repositorio()
 control = ControlGasto(_repositorio_uso)
 metricas = crear_repositorio_metricas(_repositorio_uso)
 mesas = crear_repositorio_mesas()
+productos = crear_repositorio_productos()
 
 # Indice de busqueda del chat: uno por restaurante, calculado la primera vez
 # que se le pregunta algo (no todos de golpe al arrancar). Se vacia para un
@@ -194,7 +208,7 @@ class Pregunta(BaseModel):
 def obtener_carta(
     restaurante_id: RestauranteActual, idioma: Idioma = "es"
 ) -> list[dict[str, object]]:
-    return cargar_carta_traducida(restaurante_id, idioma)
+    return con_formatos(productos, restaurante_id, cargar_carta_traducida(restaurante_id, idioma))
 
 
 @app.get("/categorias")
@@ -663,6 +677,89 @@ def admin_eliminar_categoria(
             status_code=409,
             content="La categoría tiene platos: muévelos o elimínalos antes de borrarla",
         )
+    return Response(status_code=204)
+
+
+# ------------------------------------------------ productos: lo que hace falta para pedir
+#
+# carta_bar/productos.py. Destino (cocina/barra) por categoria, y por plato:
+# formatos con precio, grupos de extras/opciones y si lleva alcohol.
+
+
+@app.get("/admin/api/productos", response_model=None)
+def admin_config_productos(
+    request: Request, restaurante_id: RestauranteActual
+) -> ConfigProductos | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    return config_productos(productos, restaurante_id)
+
+
+class DestinoPeticion(BaseModel):
+    destino: Destino
+
+
+@app.put("/admin/api/categorias/{categoria_id}/destino")
+def admin_destino_categoria(
+    categoria_id: str,
+    peticion: DestinoPeticion,
+    request: Request,
+    restaurante_id: RestauranteActual,
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    if categoria_id not in {c.id for c in cargar_categorias(restaurante_id)}:
+        return Response(status_code=404, content="Categoría no encontrada")
+    productos.fijar_destino_categoria(restaurante_id, categoria_id, peticion.destino)
+    return Response(status_code=204)
+
+
+@app.put("/admin/api/platos/{plato_id}/pedido", response_model=None)
+def admin_pedido_plato(
+    plato_id: str,
+    peticion: DatosPedidoPlato,
+    request: Request,
+    restaurante_id: RestauranteActual,
+) -> PedidoPlato | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    if plato_id not in {p.id for p in cargar_carta(restaurante_id)}:
+        return Response(status_code=404, content="Plato no encontrado")
+    try:
+        return productos.guardar_pedido_plato(restaurante_id, plato_id, peticion)
+    except GrupoNoExisteError:
+        return Response(status_code=400, content="Uno de los grupos de extras ya no existe")
+
+
+@app.post("/admin/api/grupos-opciones", status_code=201, response_model=None)
+def admin_crear_grupo(
+    peticion: DatosGrupo, request: Request, restaurante_id: RestauranteActual
+) -> GrupoOpciones | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    return productos.crear_grupo(restaurante_id, peticion)
+
+
+@app.put("/admin/api/grupos-opciones/{grupo_id}", response_model=None)
+def admin_actualizar_grupo(
+    grupo_id: str, peticion: DatosGrupo, request: Request, restaurante_id: RestauranteActual
+) -> GrupoOpciones | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    grupo = productos.actualizar_grupo(restaurante_id, grupo_id, peticion)
+    if grupo is None:
+        return Response(status_code=404, content="Grupo no encontrado")
+    return grupo
+
+
+@app.delete("/admin/api/grupos-opciones/{grupo_id}")
+def admin_eliminar_grupo(
+    grupo_id: str, request: Request, restaurante_id: RestauranteActual
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    if not productos.eliminar_grupo(restaurante_id, grupo_id):
+        return Response(status_code=404, content="Grupo no encontrado")
     return Response(status_code=204)
 
 
