@@ -1249,6 +1249,7 @@ class MiSesion(BaseModel):
     mesa: str
     estado: EstadoSesion
     rol: RolComensal
+    comensal_id: str
     nombre: str
     comensales: list[str]
 
@@ -1281,6 +1282,7 @@ def mi_sesion(
         mesa=mesa.nombre,
         estado=sesion.estado,
         rol=comensal.rol,
+        comensal_id=comensal.id,
         nombre=comensal.nombre,
         comensales=dentro,
     )

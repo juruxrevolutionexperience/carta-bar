@@ -159,6 +159,24 @@
   transform: scale(0.9);
 }
 
+/* Solo aparece con una mesa abierta (ver PlatoCard.tsx, useMesaContext). */
+.boton-pedir {
+  align-self: flex-start;
+  margin: 2px 0 4px;
+  padding: 6px 16px;
+  border-radius: 100px;
+  border: 0;
+  background: var(--marca);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.boton-pedir:active {
+  transform: scale(0.97);
+}
+
 .desc {
   font-size: 13.5px;
   color: var(--tinta-media);

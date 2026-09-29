@@ -101,6 +101,46 @@ export interface MiMesa {
   mesa: string;
   estado: EstadoSesionMesa;
   rol: RolComensal;
+  comensal_id: string;
   nombre: string;
   comensales: string[];
+}
+
+// Coincide con productos.py: Opcion y GrupoOpciones.
+export interface Opcion {
+  nombre: string;
+  precio: number;
+}
+
+export interface Grupo {
+  id: string;
+  nombre: string;
+  minimo: number;
+  maximo: number;
+  opciones: Opcion[];
+}
+
+// Coincide con propuestas.py: OpcionElegida y Propuesta.
+export type EstadoPropuesta = "pendiente" | "confirmada" | "retirada";
+
+export interface OpcionElegida {
+  nombre: string;
+  precio: number;
+}
+
+export interface Propuesta {
+  id: string;
+  sesion_id: string;
+  comensal_id: string;
+  comensal_nombre: string;
+  plato_id: string;
+  nombre_plato: string;
+  formato: string | null;
+  precio_unitario: number;
+  cantidad: number;
+  opciones: OpcionElegida[];
+  nota: string | null;
+  total: number;
+  estado: EstadoPropuesta;
+  creada_en: string;
 }

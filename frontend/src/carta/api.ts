@@ -1,4 +1,13 @@
-import type { Categoria, Config, Idiomas, MiMesa, Plato, TurnoHistorial } from "./types";
+import type {
+  Categoria,
+  Config,
+  Grupo,
+  Idiomas,
+  MiMesa,
+  Plato,
+  Propuesta,
+  TurnoHistorial,
+} from "./types";
 
 async function pedir<T>(url: string): Promise<T | null> {
   try {
@@ -52,6 +61,61 @@ export async function miMesa(): Promise<MiMesa | null> {
   } catch {
     return null;
   }
+}
+
+// Aparte de /carta a proposito (ver api.py): solo hace falta al pulsar
+// "Pedir" en un plato concreto.
+export async function cargarGruposDePlato(platoId: string): Promise<Grupo[]> {
+  return (await pedir<Grupo[]>(`/platos/${encodeURIComponent(platoId)}/grupos`)) ?? [];
+}
+
+export interface NuevaPropuesta {
+  plato_id: string;
+  formato?: string | null;
+  opciones?: string[];
+  cantidad?: number;
+  nota?: string | null;
+}
+
+async function conCookie<T>(
+  metodo: string,
+  url: string,
+  cuerpo?: unknown
+): Promise<{ ok: boolean; status: number; datos: T | null }> {
+  try {
+    const r = await fetch(url, {
+      method: metodo,
+      credentials: "same-origin",
+      headers: cuerpo === undefined ? undefined : { "Content-Type": "application/json" },
+      body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+    });
+    const datos = r.status === 204 ? null : ((await r.json().catch(() => null)) as T | null);
+    return { ok: r.ok, status: r.status, datos };
+  } catch {
+    return { ok: false, status: 0, datos: null };
+  }
+}
+
+export async function crearPropuesta(
+  datos: NuevaPropuesta
+): Promise<{ ok: boolean; status: number; propuesta: Propuesta | null }> {
+  const r = await conCookie<Propuesta>("POST", "/api/mesa/propuestas", datos);
+  return { ok: r.ok, status: r.status, propuesta: r.datos };
+}
+
+export async function listarPropuestas(): Promise<Propuesta[]> {
+  const r = await conCookie<Propuesta[]>("GET", "/api/mesa/propuestas");
+  return r.datos ?? [];
+}
+
+export async function quitarPropuesta(id: string): Promise<boolean> {
+  const r = await conCookie("DELETE", `/api/mesa/propuestas/${encodeURIComponent(id)}`);
+  return r.ok;
+}
+
+export async function confirmarPropuestas(): Promise<boolean> {
+  const r = await conCookie("POST", "/api/mesa/propuestas/confirmar");
+  return r.ok;
 }
 
 export async function preguntar(

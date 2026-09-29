@@ -425,6 +425,19 @@ def config_productos(repo: RepositorioProductos, restaurante_id: str) -> ConfigP
     )
 
 
+def grupos_de_plato(
+    repo: RepositorioProductos, restaurante_id: str, plato_id: str
+) -> list[GrupoOpciones]:
+    """Los grupos de extras de un plato, con sus opciones y precios. Aparte de
+    con_formatos: los extras solo se piden al proponer un plato concreto, no
+    se cargan con la carta entera (ver el modulo docstring)."""
+    pedido = repo.listar_pedido_platos(restaurante_id).get(plato_id)
+    if pedido is None or not pedido.grupos:
+        return []
+    todos = {g.id: g for g in repo.listar_grupos(restaurante_id)}
+    return [todos[g] for g in pedido.grupos if g in todos]
+
+
 def con_formatos(
     repo: RepositorioProductos, restaurante_id: str, carta: list[dict[str, object]]
 ) -> list[dict[str, object]]:

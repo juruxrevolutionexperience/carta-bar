@@ -247,6 +247,29 @@ CREATE TABLE IF NOT EXISTS grupos_opciones (
     PRIMARY KEY (restaurante_id, id)
 );
 
+-- Bloque 2 del flujo de mesa: propuestas (docs/PEDIDO-EN-MESA.md, "Bloque 2 en
+-- detalle"). Copia nombre_plato, precio_unitario y total: si el gerente
+-- cambia el precio a media tarde, lo ya propuesto no debe cambiar de valor
+-- (mismo motivo que las lineas de comanda del diseno original, seccion 6.2).
+CREATE TABLE IF NOT EXISTS propuestas (
+    id               TEXT PRIMARY KEY,
+    sesion_id        TEXT NOT NULL REFERENCES sesiones_mesa(id) ON DELETE CASCADE,
+    comensal_id      TEXT NOT NULL REFERENCES comensales(id),
+    comensal_nombre  TEXT NOT NULL,
+    plato_id         TEXT NOT NULL,
+    nombre_plato     TEXT NOT NULL,
+    formato          TEXT,
+    precio_unitario  NUMERIC(10,2) NOT NULL,
+    cantidad         INTEGER NOT NULL CHECK (cantidad >= 1),
+    opciones         JSONB NOT NULL DEFAULT '[]',
+    nota             TEXT,
+    total            NUMERIC(10,2) NOT NULL,
+    estado           TEXT NOT NULL DEFAULT 'pendiente',
+    creada_en        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_propuestas_sesion ON propuestas (sesion_id, estado);
+
 -- RLS activada en todas las tablas y SIN politicas: la clave publica (anon) y
 -- las autenticadas de Supabase no pueden leer ni escribir nada. La app entra
 -- con el usuario `postgres`, que se salta RLS (rolbypassrls = true, comprobado
@@ -265,3 +288,4 @@ ALTER TABLE comensales           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE destinos_categoria   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pedido_platos        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE grupos_opciones      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE propuestas           ENABLE ROW LEVEL SECURITY;

@@ -852,6 +852,112 @@ main {
   line-height: 1;
 }
 
+/* ---------- formulario de proponer un plato ---------- */
+
+.caja-propuesta {
+  background: var(--fondo);
+  border-radius: 22px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 86vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(23, 19, 16, 0.35);
+}
+.caja-propuesta .panel-top {
+  padding: 18px 22px 12px;
+}
+.grupo-propuesta {
+  padding: 6px 22px;
+}
+.grupo-propuesta h3 {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--tinta-media);
+  margin-bottom: 6px;
+}
+.grupo-propuesta .obligatorio {
+  color: var(--marca);
+  font-weight: 500;
+}
+.opcion-propuesta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: 14.5px;
+  cursor: pointer;
+}
+.opcion-precio {
+  margin-left: auto;
+  color: var(--tinta-media);
+  font-size: 13px;
+}
+.cantidad-propuesta .fila-lista-cantidad {
+  justify-content: flex-start;
+}
+.nota-propuesta {
+  display: block;
+  width: calc(100% - 44px);
+  margin: 10px 22px 4px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--borde);
+  background: var(--fondo-alt);
+  font-family: inherit;
+  font-size: 13.5px;
+  color: var(--tinta);
+}
+.aviso-propuesta {
+  margin: 0 22px 8px;
+  font-size: 12.5px;
+  color: #c0392b;
+}
+.boton-proponer {
+  display: block;
+  width: calc(100% - 44px);
+  margin: 12px 22px calc(20px + env(safe-area-inset-bottom));
+  padding: 13px 16px;
+  border-radius: 100px;
+  border: 0;
+  background: var(--marca);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.boton-proponer:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---------- pedido de la mesa (panel del anfitrion y de todos) ---------- */
+
+.estado-mesa {
+  padding: 10px 22px 0;
+  font-size: 12.5px;
+  color: var(--tinta-suave);
+}
+.fila-lista-quien {
+  font-size: 12px;
+  color: var(--tinta-suave);
+  margin-top: 1px;
+}
+.chip-confirmada {
+  color: var(--marca);
+  font-weight: 500;
+}
+.quitar-propuesta {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--borde);
+  color: var(--tinta-media);
+  border-radius: 100px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
 .btn-idioma {
   position: absolute;
   top: 14px;

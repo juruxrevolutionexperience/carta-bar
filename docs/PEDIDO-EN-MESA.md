@@ -1230,3 +1230,53 @@ Cierre automático (se aplica al leer, sin procesos aparte): `por_confirmar` sin
 Tests: cada transición, la fusión cliente/camarero, código correcto/erróneo, expulsado sin acceso, liberar, cierres automáticos (con reloj inyectado), y que un restaurante no pueda tocar mesas de otro.
 
 Fuera del bloque 1: pedidos y cuenta (bloque 2), rol camarero y acceso rápido (bloque 3), colores nuevos en el plano (con el bloque 3).
+
+### Bloque 2 en detalle: propuestas y confirmacion del anfitrion (implementado 2026-09-29)
+
+Backend completo (`src/carta_bar/propuestas.py` + endpoints en `api.py`), con la logica de
+permisos probada en memoria y el recorrido completo por la API (`tests/test_propuestas.py`,
+19 tests). Falta la pantalla: la carta aun no tiene boton de proponer ni panel del anfitrion
+(ver "Pendiente" mas abajo).
+
+**Decidido con el usuario (2026-09-29):** las propuestas llevan ya formato y extras (grupos
+de `productos.py`), no una version simplificada; el aviso al anfitrion es en tiempo real
+por SSE, no solo con el refresco de 5 s.
+
+**Modelo:** tabla `propuestas` (sesion, comensal, plato, formato, precio_unitario, cantidad,
+opciones elegidas, nota, total, estado). Copia nombre/precio en el momento de proponer, igual
+que el diseño original (seccion 6.2): un cambio de precio a media tarde no debe alterar lo ya
+propuesto. `total = (precio_unitario + suma de opciones) * cantidad`.
+
+**Endpoints** (todos con la cookie de comensal del bloque 1):
+- `POST /api/mesa/propuestas` — valida que el plato existe y esta disponible, el formato (si
+  se pide) existe para ese plato, y las opciones elegidas respetan el minimo/maximo de cada
+  grupo asignado. 404/400 segun el fallo.
+- `GET /api/mesa/propuestas` — todas las de la sesion (incluidas las retiradas: la carta las
+  tacha, no las oculta).
+- `DELETE /api/mesa/propuestas/{id}` — un invitado solo quita las suyas; el anfitrion,
+  cualquiera. Solo mientras siga "pendiente".
+- `POST /api/mesa/propuestas/confirmar` — solo el anfitrion (403 si no lo es). Marca todas
+  las pendientes de la sesion como "confirmada". No genera comanda ni sale a cocina: eso es
+  el bloque 3.
+- `GET /api/mesa/propuestas/eventos` — SSE, sondea cada 1,5 s y solo envia cuando cambia; se
+  corta a los 15 min y el navegador reconecta solo (seccion 10 de este documento). La logica
+  del generador vive en `_eventos_propuestas()` (api.py), aparte de la ruta, para poder
+  probarla llamandola directamente sin abrir un stream HTTP de verdad.
+
+**Camarero:** de momento solo el anfitrion desatasca una mesa desde la propia carta (quitar
+cualquiera, confirmar). El camarero podra hacer lo mismo cuando exista su rol (bloque 3).
+
+**Pantalla (implementada el mismo dia):** boton "Pedir" en cada plato (solo visible con una
+mesa abierta, `PlatoCard.tsx`); al pulsarlo, `FormularioPropuesta.tsx` pide el formato de la
+carta y los grupos de extras del plato (`GET /platos/{id}/grupos`, publico y aparte de
+`/carta` a proposito: no se cargan con toda la carta, solo al pedir uno concreto), respetando
+el minimo/maximo de cada grupo con radios o checkboxes segun su `maximo`. `PanelPedidoMesa.tsx`
+sustituye a "Mi lista" mientras hay una mesa abierta: propuestas de todos con quien pidio que,
+quitar (la propia, o cualquiera si eres anfitrion) y "Confirmar pedido" (solo el anfitrion).
+Todo esto se actualiza solo por SSE (`usePropuestas.ts`, `MesaContext.tsx`), sin recargar.
+
+**Verificado:** 493 tests (`uv run pytest -q`), `ruff` limpio, `tsc -b` y `npm run build` sin
+errores, y una comprobacion visual con Edge headless (sin datos reales, con `fetch`
+simulado): la barra de mesa, el boton "Pedir", el formulario con formato/extras y el listado
+del pedido se ven bien. **No probado en un movil ni navegador real**: falta que el usuario lo
+compruebe en `demo.jurux.app` una vez desplegado.

@@ -21,6 +21,7 @@ from carta_bar.productos import (
     con_formatos,
     config_productos,
     destino_de,
+    grupos_de_plato,
 )
 
 
@@ -120,6 +121,21 @@ def test_un_grupo_se_crea_y_se_asigna_a_varios_platos(repo: RepositorioProductos
         repo.guardar_pedido_plato("bar1", plato, DatosPedidoPlato(grupos=[extras.id]))
     asignados = repo.listar_pedido_platos("bar1")
     assert all(asignados[p].grupos == [extras.id] for p in ("clasica", "pollo", "vegana"))
+
+
+def test_grupos_de_plato_sin_nada_asignado(repo: RepositorioProductosMemoria) -> None:
+    assert grupos_de_plato(repo, "bar1", "plato-sin-config") == []
+
+
+def test_grupos_de_plato_devuelve_las_definiciones_completas(
+    repo: RepositorioProductosMemoria,
+) -> None:
+    extras = repo.crear_grupo("bar1", _extras())
+    punto = repo.crear_grupo("bar1", _punto())
+    repo.guardar_pedido_plato("bar1", "clasica", DatosPedidoPlato(grupos=[extras.id, punto.id]))
+    grupos = grupos_de_plato(repo, "bar1", "clasica")
+    assert [g.id for g in grupos] == [extras.id, punto.id]
+    assert grupos[0].opciones[0].nombre == "Queso"
 
 
 def test_cambiar_un_grupo_vale_para_todos_sus_platos(repo: RepositorioProductosMemoria) -> None:
@@ -323,3 +339,22 @@ def test_el_gerente_de_otro_restaurante_no_ve_ni_toca_estos_grupos(gerente: Test
 
     app.dependency_overrides[_resolver_restaurante] = lambda: RESTAURANTE_ID
     assert gerente.delete(f"/admin/api/grupos-opciones/{creado['id']}").status_code == 204
+
+
+def test_endpoint_publico_de_grupos_de_un_plato(gerente: TestClient) -> None:
+    """Publico y aparte de /carta a proposito: solo hace falta al pulsar
+    "Pedir" en un plato concreto, no al cargar toda la carta."""
+    assert TestClient(app).get(f"/platos/{PLATO}/grupos").json() == []
+
+    grupo = gerente.post(
+        "/admin/api/grupos-opciones",
+        json={"nombre": "Punto", "minimo": 1, "maximo": 1, "opciones": [{"nombre": "Al punto"}]},
+    ).json()
+    gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={"grupos": [grupo["id"]]})
+
+    r = TestClient(app).get(f"/platos/{PLATO}/grupos")
+    assert r.status_code == 200
+    assert [g["id"] for g in r.json()] == [grupo["id"]]
+
+    gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={})
+    gerente.delete(f"/admin/api/grupos-opciones/{grupo['id']}")

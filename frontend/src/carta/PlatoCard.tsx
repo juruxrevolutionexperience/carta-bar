@@ -1,7 +1,11 @@
+import { useState } from "react";
+
 import "./tarjetaPlato.css";
 import { useCartaContext } from "./CartaContext";
+import { FormularioPropuesta } from "./FormularioPropuesta";
 import { degradado, iconoPlato, ICONO_ETQ } from "./iconos";
 import { importe, textoPrecio } from "./precios";
+import { useMesaContext } from "./MesaContext";
 import { urlSegura } from "./seguridad";
 import type { Plato } from "./types";
 
@@ -13,7 +17,10 @@ interface Props {
 
 export function PlatoCard({ plato: p, onAbrirFoto, onAnadirALista }: Props) {
   const { idioma, config, textos, t } = useCartaContext();
+  const { mesa } = useMesaContext();
+  const [pidiendo, setPidiendo] = useState(false);
   const moneda = config.moneda || "€";
+  const enMesa = mesa !== null && mesa.estado !== "cerrada";
 
   function txtAlergeno(a: string): string {
     return textos.alergenos?.[a] || a;
@@ -70,6 +77,11 @@ export function PlatoCard({ plato: p, onAbrirFoto, onAnadirALista }: Props) {
             +
           </button>
         </div>
+        {enMesa && p.disponible && (
+          <button type="button" className="boton-pedir" onClick={() => setPidiendo(true)}>
+            Pedir
+          </button>
+        )}
         {conFormatos && (
           <ul className="formatos">
             {p.formatos?.map((f) => (
@@ -97,6 +109,7 @@ export function PlatoCard({ plato: p, onAbrirFoto, onAnadirALista }: Props) {
           )}
         </div>
       </div>
+      {pidiendo && <FormularioPropuesta plato={p} onCerrar={() => setPidiendo(false)} />}
     </article>
   );
 }

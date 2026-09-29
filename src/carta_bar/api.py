@@ -2,6 +2,8 @@ import json
 import os
 import re
 import time
+from collections.abc import Iterator
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Literal
 
@@ -9,7 +11,13 @@ import numpy as np
 import psycopg
 import structlog
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import (
+    HTMLResponse,
+    JSONResponse,
+    RedirectResponse,
+    Response,
+    StreamingResponse,
+)
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator, model_validator
 from slowapi.errors import RateLimitExceeded
@@ -92,6 +100,15 @@ from carta_bar.productos import (
     con_formatos,
     config_productos,
     crear_repositorio_productos,
+    grupos_de_plato,
+)
+from carta_bar.propuestas import (
+    OpcionElegida,
+    Propuesta,
+    confirmar_pendientes,
+    crear_repositorio_propuestas,
+    proponer,
+    retirar,
 )
 from carta_bar.seguridad import CabecerasSeguridad
 from carta_bar.traductor import traducir_restaurante
@@ -176,6 +193,7 @@ control = ControlGasto(_repositorio_uso)
 metricas = crear_repositorio_metricas(_repositorio_uso)
 mesas = crear_repositorio_mesas()
 productos = crear_repositorio_productos()
+propuestas = crear_repositorio_propuestas()
 
 # Indice de busqueda del chat: uno por restaurante, calculado la primera vez
 # que se le pregunta algo (no todos de golpe al arrancar). Se vacia para un
@@ -214,6 +232,15 @@ def obtener_carta(
 @app.get("/categorias")
 def obtener_categorias(restaurante_id: RestauranteActual) -> list[Categoria]:
     return cargar_categorias(restaurante_id)
+
+
+# Aparte de /carta a proposito: los extras solo se piden al proponer un plato
+# concreto (boton "Pedir"), no se cargan con toda la carta.
+@app.get("/platos/{plato_id}/grupos")
+def obtener_grupos_de_plato(
+    plato_id: str, restaurante_id: RestauranteActual
+) -> list[GrupoOpciones]:
+    return grupos_de_plato(productos, restaurante_id, plato_id)
 
 
 # Lista blanca de lo que la carta publica puede ver. El fichero de configuracion
@@ -1033,6 +1060,189 @@ def api_mesa_yo(request: Request, restaurante_id: RestauranteActual) -> MiSesion
         respuesta.delete_cookie(COOKIE_COMENSAL)
         return respuesta
     return datos
+
+
+# -- propuestas (bloque 2): lo que un comensal quiere, antes de que exista
+# comanda. Requieren la cookie de comensal, igual que entrar/yo.
+
+
+def _comensal_en_sesion(
+    request: Request, restaurante_id: str
+) -> tuple[Comensal, SesionMesa] | None:
+    """El comensal de la cookie y su sesion, solo si sigue abierta y es de este
+    restaurante. None en cualquier otro caso: la carta debe olvidar la mesa."""
+    comensal_id = _comensal_de_cookie(request)
+    if comensal_id is None:
+        return None
+    encontrado = mesas.comensal_con_sesion(comensal_id)
+    if encontrado is None:
+        return None
+    comensal, sesion = encontrado
+    if sesion.restaurante_id != restaurante_id or sesion.estado == "cerrada":
+        return None
+    if comensal.expulsado_en is not None:
+        return None
+    return comensal, sesion
+
+
+def _sin_mesa() -> Response:
+    respuesta = Response(status_code=401, content="Sin mesa")
+    respuesta.delete_cookie(COOKIE_COMENSAL)
+    return respuesta
+
+
+class NuevaPropuestaPeticion(BaseModel):
+    plato_id: str = Field(min_length=1, max_length=200)
+    formato: str | None = Field(default=None, max_length=40)
+    # Nombres de opciones elegidas, de cualquiera de los grupos del plato.
+    opciones: list[str] = Field(default_factory=list, max_length=30)
+    cantidad: int = Field(default=1, ge=1, le=20)
+    nota: str | None = Field(default=None, max_length=200)
+
+
+def _opciones_elegidas(
+    grupos_del_plato: list[GrupoOpciones], nombres: list[str]
+) -> list[OpcionElegida] | str:
+    """Copia nombre y precio de cada opcion elegida. Devuelve un mensaje de
+    error (str) si se pide una opcion que no existe o no se respeta el minimo
+    o el maximo de algun grupo."""
+    disponibles = {o.nombre: o for g in grupos_del_plato for o in g.opciones}
+    for nombre in nombres:
+        if nombre not in disponibles:
+            return f'"{nombre}" no es una opcion de este plato'
+    for grupo in grupos_del_plato:
+        elegidas_del_grupo = [n for n in nombres if n in {o.nombre for o in grupo.opciones}]
+        if len(elegidas_del_grupo) < grupo.minimo:
+            return f'"{grupo.nombre}" necesita elegir al menos {grupo.minimo}'
+        if len(elegidas_del_grupo) > grupo.maximo:
+            return f'"{grupo.nombre}" admite como mucho {grupo.maximo}'
+    return [OpcionElegida(nombre=n, precio=disponibles[n].precio) for n in nombres]
+
+
+@app.post("/api/mesa/propuestas", status_code=201, response_model=None)
+def api_crear_propuesta(
+    peticion: NuevaPropuestaPeticion, request: Request, restaurante_id: RestauranteActual
+) -> Propuesta | Response:
+    encontrado = _comensal_en_sesion(request, restaurante_id)
+    if encontrado is None:
+        return _sin_mesa()
+    comensal, sesion = encontrado
+
+    plato = next(
+        (p for p in cargar_carta(restaurante_id) if p.id == peticion.plato_id and p.disponible),
+        None,
+    )
+    if plato is None:
+        return Response(status_code=404, content="Este plato ya no esta disponible")
+
+    pedido = productos.listar_pedido_platos(restaurante_id).get(plato.id)
+    precio_unitario: float | None = plato.precio
+    if peticion.formato is not None:
+        formato_elegido = next(
+            (f for f in (pedido.formatos if pedido else []) if f.nombre == peticion.formato), None
+        )
+        if formato_elegido is None:
+            return Response(status_code=400, content="Ese formato no existe para este plato")
+        precio_unitario = formato_elegido.precio
+    if precio_unitario is None:
+        return Response(
+            status_code=400, content="Este plato no tiene precio: hay que elegir un formato"
+        )
+
+    grupos_del_plato = grupos_de_plato(productos, restaurante_id, plato.id)
+    opciones = _opciones_elegidas(grupos_del_plato, peticion.opciones)
+    if isinstance(opciones, str):
+        return Response(status_code=400, content=opciones)
+
+    propuesta = proponer(
+        propuestas,
+        sesion.id,
+        comensal.id,
+        comensal.nombre,
+        plato.id,
+        plato.nombre,
+        precio_unitario,
+        peticion.formato,
+        peticion.cantidad,
+        opciones,
+        peticion.nota,
+    )
+    mesas.actualizar_sesion(sesion.id, {"ultima_actividad": datetime.now(UTC)})
+    return propuesta
+
+
+@app.get("/api/mesa/propuestas", response_model=None)
+def api_listar_propuestas(
+    request: Request, restaurante_id: RestauranteActual
+) -> list[Propuesta] | Response:
+    encontrado = _comensal_en_sesion(request, restaurante_id)
+    if encontrado is None:
+        return _sin_mesa()
+    _, sesion = encontrado
+    return propuestas.listar_de_sesion(sesion.id)
+
+
+@app.delete("/api/mesa/propuestas/{propuesta_id}", response_model=None)
+def api_quitar_propuesta(
+    propuesta_id: str, request: Request, restaurante_id: RestauranteActual
+) -> Response:
+    encontrado = _comensal_en_sesion(request, restaurante_id)
+    if encontrado is None:
+        return _sin_mesa()
+    comensal, _ = encontrado
+    resultado = retirar(propuestas, propuesta_id, comensal.id, comensal.rol == "anfitrion")
+    if resultado == "no_existe":
+        return Response(status_code=404, content="Esa propuesta ya no esta pendiente")
+    if resultado == "sin_permiso":
+        return Response(status_code=403, content="Solo puedes quitar tus propias propuestas")
+    return Response(status_code=204)
+
+
+@app.post("/api/mesa/propuestas/confirmar", response_model=None)
+def api_confirmar_propuestas(request: Request, restaurante_id: RestauranteActual) -> Response:
+    encontrado = _comensal_en_sesion(request, restaurante_id)
+    if encontrado is None:
+        return _sin_mesa()
+    comensal, sesion = encontrado
+    if comensal.rol != "anfitrion":
+        return Response(status_code=403, content="Solo el anfitrion puede confirmar el pedido")
+    n = confirmar_pendientes(propuestas, sesion.id)
+    return JSONResponse({"confirmadas": n})
+
+
+# Aparte de la ruta para poder probarla llamandola directamente, sin abrir un
+# stream HTTP de verdad (fragil de probar con TestClient: un generador que
+# duerme entre yields puede dejar un hilo colgado del lado del test).
+def _eventos_propuestas(comensal_id: str) -> Iterator[str]:
+    """SSE (docs/PEDIDO-EN-MESA.md, seccion 10): sondea el estado cada 1,5 s y
+    solo envia cuando cambia. Se corta a los 15 min; el navegador reconecta
+    solo, asi no se queda un hilo ocupado toda la tarde en una mesa quieta."""
+    anterior: str | None = None
+    limite = time.monotonic() + 900
+    while time.monotonic() < limite:
+        encontrado = mesas.comensal_con_sesion(comensal_id)
+        if encontrado is None or encontrado[1].estado == "cerrada":
+            yield f"data: {json.dumps({'cerrada': True})}\n\n"
+            return
+        _, sesion = encontrado
+        lista = [p.model_dump(mode="json") for p in propuestas.listar_de_sesion(sesion.id)]
+        actual = json.dumps(lista, sort_keys=True, ensure_ascii=False)
+        if actual != anterior:
+            yield f"data: {actual}\n\n"
+            anterior = actual
+        else:
+            yield ": \n\n"
+        time.sleep(1.5)
+
+
+@app.get("/api/mesa/propuestas/eventos", response_model=None)
+def api_propuestas_eventos(
+    request: Request, restaurante_id: RestauranteActual
+) -> StreamingResponse | Response:
+    encontrado = _comensal_en_sesion(request, restaurante_id)
+    if encontrado is None:
+        return _sin_mesa()
+    return StreamingResponse(_eventos_propuestas(encontrado[0].id), media_type="text/event-stream")
 
 
 # -- el personal, desde el panel (hoy la cookie del gerente; con el bloque 3,

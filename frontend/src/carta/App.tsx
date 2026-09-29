@@ -5,18 +5,16 @@ import { Carrusel } from "./Carrusel";
 import { CartaProvider, useCartaContext } from "./CartaContext";
 import { Chat } from "./Chat";
 import { ListaPlatos } from "./ListaPlatos";
+import { MesaProvider, useMesaContext } from "./MesaContext";
 import { MiLista } from "./MiLista";
+import { PanelPedidoMesa } from "./PanelPedidoMesa";
 import { Portada } from "./Portada";
 import { colorSeguro } from "./seguridad";
 import { SelectorIdioma } from "./SelectorIdioma";
 import { useListaCliente } from "./useListaCliente";
-import { useMesa } from "./useMesa";
 import { useVisorFoto } from "./useVisorFoto";
 import { VisorFoto } from "./VisorFoto";
 
-// Provisional, solo para probar el enganche con el backend de mesas: la
-// pantalla de verdad (barra de pedido, propuestas...) es la Fase B/C de
-// docs/PEDIDO-EN-MESA.md.
 const TEXTO_ESTADO: Record<string, string> = {
   por_confirmar: "esperando a que os acepten",
   abierta: "mesa abierta",
@@ -24,7 +22,7 @@ const TEXTO_ESTADO: Record<string, string> = {
 };
 
 function BarraMesa() {
-  const mesa = useMesa();
+  const { mesa } = useMesaContext();
   if (!mesa || mesa.estado === "cerrada") return null;
   return (
     <div className="barra-mesa">
@@ -35,9 +33,11 @@ function BarraMesa() {
 
 function CartaApp() {
   const { carta, config, idioma, categoriasVisibles, cargando, t } = useCartaContext();
+  const { mesa } = useMesaContext();
   const [categoriaId, setCategoriaId] = useState<string | null>(null);
   const visor = useVisorFoto();
   const lista = useListaCliente();
+  const enMesa = mesa !== null && mesa.estado !== "cerrada";
 
   // Orden del "escaparate" del visor: todos los platos disponibles, categoria
   // a categoria en el mismo orden que la carta, para que las flechas naveguen
@@ -110,7 +110,7 @@ function CartaApp() {
         onNavegar={visor.abrir}
         onCerrar={() => visor.cerrar(false)}
       />
-      <MiLista lista={lista} />
+      {enMesa ? <PanelPedidoMesa /> : <MiLista lista={lista} />}
       <SelectorIdioma />
     </>
   );
@@ -119,7 +119,9 @@ function CartaApp() {
 export function App() {
   return (
     <CartaProvider>
-      <CartaApp />
+      <MesaProvider>
+        <CartaApp />
+      </MesaProvider>
     </CartaProvider>
   );
 }

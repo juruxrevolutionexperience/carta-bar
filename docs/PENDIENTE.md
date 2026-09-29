@@ -19,6 +19,31 @@ empezó saltando su requisito de entrada, en
 
 ---
 
+## DÓNDE LO DEJAMOS (2026-09-29) — LEER PRIMERO
+
+- **Bloque 1 probado de punta a punta por el usuario**, en el móvil de
+  verdad contra `demo.jurux.app`: escanear el QR, aceptar en Servicio,
+  refresco automático a los 5 s en ambas pantallas. Confirmado con el
+  usuario, sin fallos pendientes.
+- **La carta ya se une a la mesa al escanear el QR** (antes solo abría la
+  carta normal, sin llamar al backend): `useMesa.ts`, barra provisional de
+  estado, refresco cada 5 s en el cliente igual que en Servicio.
+- **Bloque 2 (propuestas), completo: backend + pantalla, sin desplegar.**
+  Endpoints, modelo de datos, botón "Pedir" en cada plato con selector de
+  formato/extras, panel del pedido de la mesa (quitar, confirmar), todo en
+  tiempo real por SSE. 493 tests (`uv run pytest -q`), `ruff`, `tsc -b` y
+  `npm run build` limpios. Detalle completo en `docs/PEDIDO-EN-MESA.md`,
+  "Bloque 2 en detalle". **Solo comprobado con Edge headless y datos
+  simulados: falta que el usuario lo pruebe en un móvil real.**
+- `mypy` sigue bloqueado en este PC (política de Control de aplicaciones,
+  os error 4551); `ruff check`/`format`, `pytest`, `tsc` y `npm run build`
+  sí funcionan aquí.
+- Nada de esto está commiteado todavía: falta dar los comandos de
+  `git add/commit/push` y desplegar (incluye la migración SQL nueva, tabla
+  `propuestas`, que se aplica sola al arrancar).
+- **Siguiente paso tras probarlo:** bloque 3 (comandas de verdad: cocina/
+  barra, tickets, rol camarero con acceso rápido).
+
 ## DÓNDE LO DEJAMOS (2026-09-27) — LEER PRIMERO
 
 - **Bloque 1 (estados de mesa + pantalla Servicio):** commiteado y subido
