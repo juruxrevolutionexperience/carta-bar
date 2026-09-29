@@ -40,6 +40,9 @@ export interface Plato {
   // El restaurante ha revisado los alergenos y la dieta. Sin esto la carta
   // muestra "consultar alergenos" y el chat no lo recomienda ante una alergia.
   alergenos_confirmados: boolean;
+  // Solo lo manda /carta (con_formatos en productos.py): tapa, media,
+  // racion... Se usa en el selector tipo TPV (SelectorTPV.tsx).
+  formatos?: { nombre: string; precio: number }[];
 }
 
 export interface Categoria {

@@ -9,6 +9,7 @@ import {
   type Mesa,
   type SesionConComensales,
 } from "./api";
+import { PanelComandaMesa } from "./PanelComandaMesa";
 import { TEXTO_ESTADO, estadoDe, personas, tiempoDesde } from "./servicioUtil";
 
 interface Props {
@@ -181,6 +182,8 @@ export function PanelServicio({ mesa, ahora, onCambio, onCerrar }: Props) {
               ))}
             </ul>
           )}
+
+          <PanelComandaMesa mesaId={mesa.id} />
 
           <button
             type="button"

@@ -70,6 +70,14 @@ class RepositorioPropuestas(Protocol):
         """Marca como 'confirmada' las pendientes de la sesion. Devuelve cuantas."""
         ...
 
+    def actualizar_precio(
+        self, propuesta_id: str, precio_unitario: float, total: float
+    ) -> Propuesta | None:
+        """Ajuste manual del personal (docs/PEDIDO-EN-MESA.md, "Gestion de la
+        comanda desde la mesa"): cambia el precio solo de esta linea, sin
+        tocar el precio de la carta. None si no existe."""
+        ...
+
 
 def _id(prefijo: str) -> str:
     return f"{prefijo}-{secrets.token_hex(6)}"
@@ -141,6 +149,43 @@ def confirmar_pendientes(
     return [p.model_copy(update={"estado": "confirmada"}) for p in pendientes]
 
 
+def ajustar_precio(
+    repo: RepositorioPropuestas, propuesta_id: str, precio_unitario: float
+) -> Propuesta | None:
+    """El personal cambia el precio de una linea concreta (un descuento, un
+    error a corregir...), sin tocar el precio de la carta. None si no existe."""
+    actual = repo.obtener(propuesta_id)
+    if actual is None:
+        return None
+    total = _total(precio_unitario, actual.opciones, actual.cantidad)
+    return repo.actualizar_precio(propuesta_id, precio_unitario, total)
+
+
+class ResumenPorPersona(BaseModel):
+    nombre: str
+    total: float
+
+
+class ComandaMesa(BaseModel):
+    """Lo que ve el personal al entrar en una mesa ocupada: todo lo pedido,
+    quien pidio que, el total y cuanto le toca a cada uno (solo informativo
+    por ahora: se cobra junto, ver docs/PEDIDO-EN-MESA.md)."""
+
+    propuestas: list[Propuesta]
+    total: float
+    por_persona: list[ResumenPorPersona]
+
+
+def resumen_mesa(lista: list[Propuesta]) -> ComandaMesa:
+    activas = [p for p in lista if p.estado != "retirada"]
+    total = round(sum(p.total for p in activas), 2)
+    acumulado: dict[str, float] = {}
+    for p in activas:
+        acumulado[p.comensal_nombre] = acumulado.get(p.comensal_nombre, 0) + p.total
+    por_persona = [ResumenPorPersona(nombre=n, total=round(t, 2)) for n, t in acumulado.items()]
+    return ComandaMesa(propuestas=lista, total=total, por_persona=por_persona)
+
+
 class RepositorioPropuestasMemoria:
     """Para tests y para arrancar sin base de datos."""
 
@@ -177,6 +222,16 @@ class RepositorioPropuestasMemoria:
                 n += 1
         return n
 
+    def actualizar_precio(
+        self, propuesta_id: str, precio_unitario: float, total: float
+    ) -> Propuesta | None:
+        actual = self.propuestas.get(propuesta_id)
+        if actual is None:
+            return None
+        nueva = actual.model_copy(update={"precio_unitario": precio_unitario, "total": total})
+        self.propuestas[propuesta_id] = nueva
+        return nueva
+
 
 _COLUMNAS = (
     "id, sesion_id, comensal_id, comensal_nombre, plato_id, nombre_plato, formato, "
@@ -198,6 +253,10 @@ UPDATE propuestas SET estado = %s WHERE id = %s RETURNING {_COLUMNAS}
 _CONFIRMAR_PENDIENTES = """
 UPDATE propuestas SET estado = 'confirmada'
 WHERE sesion_id = %s AND estado = 'pendiente'
+"""
+
+_ACTUALIZAR_PRECIO = f"""
+UPDATE propuestas SET precio_unitario = %s, total = %s WHERE id = %s RETURNING {_COLUMNAS}
 """
 
 
@@ -267,6 +326,14 @@ class RepositorioPropuestasPostgres:
         with self.pool.connection() as conn, conn.cursor() as cur:
             cur.execute(_CONFIRMAR_PENDIENTES, (sesion_id,))
             return cur.rowcount
+
+    def actualizar_precio(
+        self, propuesta_id: str, precio_unitario: float, total: float
+    ) -> Propuesta | None:
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(_ACTUALIZAR_PRECIO, (precio_unitario, total, propuesta_id))
+            fila = cur.fetchone()
+        return None if fila is None else _propuesta_de_fila(fila)
 
 
 def crear_repositorio_propuestas() -> RepositorioPropuestas:

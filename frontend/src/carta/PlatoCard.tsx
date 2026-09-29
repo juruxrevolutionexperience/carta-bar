@@ -68,14 +68,16 @@ export function PlatoCard({ plato: p, onAbrirFoto, onAnadirALista }: Props) {
           {!conFormatos && (
             <span className="precio">{textoPrecio(p, moneda, t("precio_consultar"))}</span>
           )}
-          <button
-            type="button"
-            className="anadir-lista"
-            aria-label={`${t("mi_lista")}: ${p.nombre}`}
-            onClick={() => onAnadirALista(p.id)}
-          >
-            +
-          </button>
+          {!enMesa && (
+            <button
+              type="button"
+              className="anadir-lista"
+              aria-label={`${t("mi_lista")}: ${p.nombre}`}
+              onClick={() => onAnadirALista(p.id)}
+            >
+              +
+            </button>
+          )}
         </div>
         {enMesa && p.disponible && (
           <button type="button" className="boton-pedir" onClick={() => setPidiendo(true)}>

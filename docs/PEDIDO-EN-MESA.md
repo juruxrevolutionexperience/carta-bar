@@ -1407,3 +1407,39 @@ manos del camarero o gerente sin tocar nada técnico.
 Guardado en `localStorage` (aparato local, no en el servidor): esto es historial de esa
 pantalla de impresión en concreto, no del pedido en general — para eso está la mesa "Servicio"
 del panel.
+
+### Gestión de la comanda desde la mesa (construido 2026-09-29)
+
+Al entrar en una mesa ocupada desde **Servicio** (funciona igual entrando desde Mesas: es la
+misma mesa, mismo backend), el gerente/camarero ve ahora, debajo de quién está sentado:
+
+- Todo lo pedido, con cantidad, formato/extras, quién lo pidió y su precio.
+- El **total** y, si hay más de un comensal, **cuánto le toca a cada uno** (solo informativo:
+  de momento se cobra junto, como se decidió).
+- **"Añadir a la mesa"**: abre un selector estilo TPV (pestañas de categoría + botones grandes
+  por plato, con foto/precio) para que el personal pida en nombre de la mesa. No hace falta
+  que nadie haya escaneado el QR — si la mesa no tiene a nadie todavía, se crea un comensal
+  "Camarero" para poder colgar ahí lo que añada.
+- **Ajustar el precio de una línea** (tocando el propio precio en la lista): cambia el precio
+  de esa comanda en concreto, sin tocar el precio de la carta. Pensado para descuentos
+  puntuales, con permiso de gerente; hoy lo tiene cualquiera que entre al panel, porque el
+  rol camarero limitado aún no existe.
+- **Confirmar comanda**, igual que hace el anfitrión desde el móvil: manda lo pendiente a
+  cocina/barra.
+
+**Backend:** `resumen_mesa()` y `ajustar_precio()` en `propuestas.py`; endpoints nuevos bajo
+`/admin/api/mesas/{id}/comanda` (GET, POST añadir, DELETE quitar, PUT precio, POST confirmar).
+Reutilizan toda la lógica de propuestas/comandas ya construida, sin tocarla.
+
+**Frontend:** `PanelComandaMesa.tsx` (el listado, refresco cada 5 s) y `SelectorTPV.tsx` (la
+parrilla de categorías/platos, con un paso extra si el plato tiene formato o extras
+obligatorios, igual que en la carta del cliente).
+
+**Verificado:** 551 tests (13 nuevos), `ruff`, `tsc -b`, `npm run build` limpios, comprobación
+visual del selector TPV con Edge headless (pestañas, tiles, cambio de categoría).
+
+**Pendiente de resolver aparte:** el propio código dejó un fallo detectado en la revisión
+inicial de esta sesión (el "+" de Mi lista duplicado con "Pedir" en la carta del cliente, ya
+corregido) y queda por confirmar en el bar si el problema de "no se añade nada / lista en
+blanco" que describió el usuario es el buffering de SSE en nginx (pendiente de ver la
+configuración del servidor).

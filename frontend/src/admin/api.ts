@@ -496,3 +496,95 @@ export async function cambiarEstadoTicket(id: string, estado: EstadoTicket): Pro
     body: JSON.stringify({ estado }),
   });
 }
+
+// ---------------------------------------- gestion de la comanda desde la mesa
+
+export type EstadoPropuesta = "pendiente" | "confirmada" | "retirada";
+
+export interface Propuesta {
+  id: string;
+  sesion_id: string;
+  comensal_id: string;
+  comensal_nombre: string;
+  plato_id: string;
+  nombre_plato: string;
+  formato: string | null;
+  precio_unitario: number;
+  cantidad: number;
+  opciones: OpcionElegida[];
+  nota: string | null;
+  total: number;
+  estado: EstadoPropuesta;
+  creada_en: string;
+}
+
+export interface ResumenPorPersona {
+  nombre: string;
+  total: number;
+}
+
+export interface ComandaMesa {
+  propuestas: Propuesta[];
+  total: number;
+  por_persona: ResumenPorPersona[];
+}
+
+export async function cargarComandaMesa(mesaId: string): Promise<ComandaMesa | null> {
+  const resp = await apiFetch(`/admin/api/mesas/${encodeURIComponent(mesaId)}/comanda`);
+  return resp.ok ? ((await resp.json()) as ComandaMesa) : null;
+}
+
+export interface NuevaLineaComanda {
+  plato_id: string;
+  formato?: string | null;
+  opciones?: string[];
+  cantidad?: number;
+  nota?: string | null;
+}
+
+export async function anadirAComanda(
+  mesaId: string,
+  datos: NuevaLineaComanda
+): Promise<{ ok: boolean; status: number; mensaje: string | null }> {
+  const resp = await apiFetch(`/admin/api/mesas/${encodeURIComponent(mesaId)}/comanda`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(datos),
+  });
+  return { ok: resp.ok, status: resp.status, mensaje: resp.ok ? null : await resp.text() };
+}
+
+export async function quitarDeComanda(mesaId: string, propuestaId: string): Promise<Response> {
+  return apiFetch(
+    `/admin/api/mesas/${encodeURIComponent(mesaId)}/comanda/${encodeURIComponent(propuestaId)}`,
+    { method: "DELETE" }
+  );
+}
+
+export async function ajustarPrecioLinea(
+  mesaId: string,
+  propuestaId: string,
+  precioUnitario: number
+): Promise<Response> {
+  return apiFetch(
+    `/admin/api/mesas/${encodeURIComponent(mesaId)}/comanda/${encodeURIComponent(propuestaId)}/precio`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ precio_unitario: precioUnitario }),
+    }
+  );
+}
+
+export async function confirmarComandaMesa(mesaId: string): Promise<Response> {
+  return apiFetch(`/admin/api/mesas/${encodeURIComponent(mesaId)}/comanda/confirmar`, {
+    method: "POST",
+  });
+}
+
+// Publico y aparte de /carta a proposito (ver api.py): solo hace falta al
+// pulsar un plato en el selector tipo TPV, no al cargar toda la carta.
+export async function cargarGruposDePlato(platoId: string): Promise<GrupoOpciones[]> {
+  const resp = await fetch(`/platos/${encodeURIComponent(platoId)}/grupos`);
+  return resp.ok ? ((await resp.json()) as GrupoOpciones[]) : [];
+}

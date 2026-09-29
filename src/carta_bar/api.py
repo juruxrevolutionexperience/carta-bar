@@ -118,11 +118,14 @@ from carta_bar.productos import (
     grupos_de_plato,
 )
 from carta_bar.propuestas import (
+    ComandaMesa,
     OpcionElegida,
     Propuesta,
+    ajustar_precio,
     confirmar_pendientes,
     crear_repositorio_propuestas,
     proponer,
+    resumen_mesa,
     retirar,
 )
 from carta_bar.seguridad import CabecerasSeguridad
@@ -1170,27 +1173,23 @@ def _opciones_elegidas(
     return [OpcionElegida(nombre=n, precio=disponibles[n].precio) for n in nombres]
 
 
-@app.post("/api/mesa/propuestas", status_code=201, response_model=None)
-def api_crear_propuesta(
-    peticion: NuevaPropuestaPeticion, request: Request, restaurante_id: RestauranteActual
-) -> Propuesta | Response:
-    encontrado = _comensal_en_sesion(request, restaurante_id)
-    if encontrado is None:
-        return _sin_mesa()
-    comensal, sesion = encontrado
-
+# Comun a quien proponga (el cliente desde la carta o el personal en nombre
+# de la mesa, ver mas abajo): valida el plato, el formato y las opciones, y
+# devuelve ya el precio que toca. Un Response es el error a devolver tal cual.
+def _validar_pedido(
+    restaurante_id: str, plato_id: str, formato: str | None, nombres_opciones: list[str]
+) -> tuple[Plato, float, list[OpcionElegida]] | Response:
     plato = next(
-        (p for p in cargar_carta(restaurante_id) if p.id == peticion.plato_id and p.disponible),
-        None,
+        (p for p in cargar_carta(restaurante_id) if p.id == plato_id and p.disponible), None
     )
     if plato is None:
         return Response(status_code=404, content="Este plato ya no esta disponible")
 
     pedido = productos.listar_pedido_platos(restaurante_id).get(plato.id)
     precio_unitario: float | None = plato.precio
-    if peticion.formato is not None:
+    if formato is not None:
         formato_elegido = next(
-            (f for f in (pedido.formatos if pedido else []) if f.nombre == peticion.formato), None
+            (f for f in (pedido.formatos if pedido else []) if f.nombre == formato), None
         )
         if formato_elegido is None:
             return Response(status_code=400, content="Ese formato no existe para este plato")
@@ -1201,9 +1200,28 @@ def api_crear_propuesta(
         )
 
     grupos_del_plato = grupos_de_plato(productos, restaurante_id, plato.id)
-    opciones = _opciones_elegidas(grupos_del_plato, peticion.opciones)
+    opciones = _opciones_elegidas(grupos_del_plato, nombres_opciones)
     if isinstance(opciones, str):
         return Response(status_code=400, content=opciones)
+
+    return plato, precio_unitario, opciones
+
+
+@app.post("/api/mesa/propuestas", status_code=201, response_model=None)
+def api_crear_propuesta(
+    peticion: NuevaPropuestaPeticion, request: Request, restaurante_id: RestauranteActual
+) -> Propuesta | Response:
+    encontrado = _comensal_en_sesion(request, restaurante_id)
+    if encontrado is None:
+        return _sin_mesa()
+    comensal, sesion = encontrado
+
+    validado = _validar_pedido(
+        restaurante_id, peticion.plato_id, peticion.formato, peticion.opciones
+    )
+    if isinstance(validado, Response):
+        return validado
+    plato, precio_unitario, opciones = validado
 
     propuesta = proponer(
         propuestas,
@@ -1287,13 +1305,21 @@ def api_confirmar_propuestas(request: Request, restaurante_id: RestauranteActual
     comensal, sesion = encontrado
     if comensal.rol != "anfitrion":
         return Response(status_code=403, content="Solo el anfitrion puede confirmar el pedido")
+    n = _confirmar_y_generar_comanda(restaurante_id, sesion)
+    return JSONResponse({"confirmadas": n})
+
+
+# Comun al cliente (arriba) y al personal (mas abajo, "gestion de la comanda
+# desde la mesa"): confirma lo pendiente y, si hay algo, arma la comanda y
+# reparte los tickets por destino.
+def _confirmar_y_generar_comanda(restaurante_id: str, sesion: SesionMesa) -> int:
     confirmadas = confirmar_pendientes(propuestas, sesion.id)
     if confirmadas:
         mesa = mesas.obtener_mesa(restaurante_id, sesion.mesa_id)
         mesa_nombre = mesa.nombre if mesa else sesion.mesa_id
         lineas = _lineas_por_destino(restaurante_id, confirmadas)
         crear_comanda(comandas, restaurante_id, sesion.id, mesa_nombre, lineas)
-    return JSONResponse({"confirmadas": len(confirmadas)})
+    return len(confirmadas)
 
 
 # Aparte de la ruta para poder probarla llamandola directamente, sin abrir un
@@ -1460,6 +1486,166 @@ def admin_expulsar_comensal(
     if comensal is None:
         return Response(status_code=404, content="Comensal no encontrado")
     return comensal
+
+
+# -------------------------------------------- gestion de la comanda desde la mesa
+#
+# Para cuando el camarero entra en una mesa ocupada (desde Servicio o Mesas):
+# ve todo lo pedido, puede anadir algo el mismo (con un selector tipo TPV en
+# el panel), ajustar el precio de una linea y confirmar. No hace falta que
+# nadie haya escaneado el QR: "no todos lo usan desde el movil".
+
+
+def _sesion_de_mesa_o_404(restaurante_id: str, mesa_id: str) -> tuple[SesionMesa, str] | Response:
+    resultado = sesion_de_mesa(mesas, restaurante_id, mesa_id)
+    if resultado is None:
+        return Response(status_code=404, content="Esta mesa está libre")
+    sesion, _ = resultado
+    mesa = mesas.obtener_mesa(restaurante_id, mesa_id)
+    return sesion, (mesa.nombre if mesa else mesa_id)
+
+
+@app.get("/admin/api/mesas/{mesa_id}/comanda", response_model=None)
+def admin_comanda_mesa(
+    mesa_id: str, request: Request, restaurante_id: RestauranteActual
+) -> ComandaMesa | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    resultado = _sesion_de_mesa_o_404(restaurante_id, mesa_id)
+    if isinstance(resultado, Response):
+        return resultado
+    sesion, _ = resultado
+    return resumen_mesa(propuestas.listar_de_sesion(sesion.id))
+
+
+class AnadirComoPersonalPeticion(BaseModel):
+    plato_id: str = Field(min_length=1, max_length=200)
+    formato: str | None = Field(default=None, max_length=40)
+    opciones: list[str] = Field(default_factory=list, max_length=30)
+    cantidad: int = Field(default=1, ge=1, le=20)
+    nota: str | None = Field(default=None, max_length=200)
+
+
+# Nombre fijo para lo que anade el personal: no hace falta que exista ya un
+# comensal (el camarero puede montar la comanda entera sin que nadie haya
+# escaneado el QR), y deja claro en el pedido quien lo puso.
+NOMBRE_PERSONAL = "Camarero"
+
+
+def _comensal_para_personal(sesion_id: str, ahora: datetime) -> Comensal:
+    """El anfitrion si ya hay uno; si la mesa no tiene a nadie todavia (la
+    abrio el personal y nadie ha escaneado), se crea un comensal para poder
+    colgar las propuestas de ahi (hace falta uno por la clave foranea)."""
+    presentes = [c for c in mesas.listar_comensales(sesion_id) if c.expulsado_en is None]
+    anfitrion = next((c for c in presentes if c.rol == "anfitrion"), None)
+    if anfitrion is not None:
+        return anfitrion
+    if presentes:
+        return presentes[0]
+    return mesas.anadir_comensal(sesion_id, NOMBRE_PERSONAL, "es", ahora)
+
+
+@app.post("/admin/api/mesas/{mesa_id}/comanda", status_code=201, response_model=None)
+def admin_anadir_a_comanda(
+    mesa_id: str,
+    peticion: AnadirComoPersonalPeticion,
+    request: Request,
+    restaurante_id: RestauranteActual,
+) -> Propuesta | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    resultado = _sesion_de_mesa_o_404(restaurante_id, mesa_id)
+    if isinstance(resultado, Response):
+        return resultado
+    sesion, _ = resultado
+
+    validado = _validar_pedido(
+        restaurante_id, peticion.plato_id, peticion.formato, peticion.opciones
+    )
+    if isinstance(validado, Response):
+        return validado
+    plato, precio_unitario, opciones = validado
+
+    ahora = datetime.now(UTC)
+    comensal = _comensal_para_personal(sesion.id, ahora)
+    propuesta = proponer(
+        propuestas,
+        sesion.id,
+        comensal.id,
+        NOMBRE_PERSONAL,
+        plato.id,
+        plato.nombre,
+        precio_unitario,
+        peticion.formato,
+        peticion.cantidad,
+        opciones,
+        peticion.nota,
+        ahora,
+    )
+    mesas.actualizar_sesion(sesion.id, {"ultima_actividad": ahora})
+    return propuesta
+
+
+@app.delete("/admin/api/mesas/{mesa_id}/comanda/{propuesta_id}", response_model=None)
+def admin_quitar_de_comanda(
+    mesa_id: str, propuesta_id: str, request: Request, restaurante_id: RestauranteActual
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    resultado = _sesion_de_mesa_o_404(restaurante_id, mesa_id)
+    if isinstance(resultado, Response):
+        return resultado
+    sesion, _ = resultado
+    propuesta = propuestas.obtener(propuesta_id)
+    if propuesta is None or propuesta.sesion_id != sesion.id:
+        return Response(status_code=404, content="Esa propuesta no es de esta mesa")
+    # El personal puede quitar cualquier linea, la haya puesto quien la haya
+    # puesto: por eso "quien_es_anfitrion=True" siempre aqui.
+    resultado_retirar = retirar(propuestas, propuesta_id, "", True)
+    if resultado_retirar == "no_existe":
+        return Response(status_code=404, content="Esa propuesta ya no está pendiente")
+    return Response(status_code=204)
+
+
+class AjustarPrecioPeticion(BaseModel):
+    precio_unitario: float = Field(ge=0, le=10_000)
+
+
+@app.put("/admin/api/mesas/{mesa_id}/comanda/{propuesta_id}/precio", response_model=None)
+def admin_ajustar_precio(
+    mesa_id: str,
+    propuesta_id: str,
+    peticion: AjustarPrecioPeticion,
+    request: Request,
+    restaurante_id: RestauranteActual,
+) -> Propuesta | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    resultado = _sesion_de_mesa_o_404(restaurante_id, mesa_id)
+    if isinstance(resultado, Response):
+        return resultado
+    sesion, _ = resultado
+    propuesta = propuestas.obtener(propuesta_id)
+    if propuesta is None or propuesta.sesion_id != sesion.id:
+        return Response(status_code=404, content="Esa propuesta no es de esta mesa")
+    actualizada = ajustar_precio(propuestas, propuesta_id, peticion.precio_unitario)
+    if actualizada is None:  # pragma: no cover - ya se comprobo que existe
+        return Response(status_code=404, content="Propuesta no encontrada")
+    return actualizada
+
+
+@app.post("/admin/api/mesas/{mesa_id}/comanda/confirmar", response_model=None)
+def admin_confirmar_comanda(
+    mesa_id: str, request: Request, restaurante_id: RestauranteActual
+) -> Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    resultado = _sesion_de_mesa_o_404(restaurante_id, mesa_id)
+    if isinstance(resultado, Response):
+        return resultado
+    sesion, _ = resultado
+    n = _confirmar_y_generar_comanda(restaurante_id, sesion)
+    return JSONResponse({"confirmadas": n})
 
 
 # ------------------------------------------------------------ bloque 3: cocina y barra
