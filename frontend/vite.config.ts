@@ -14,6 +14,7 @@ export default defineConfig({
       input: {
         "admin-login": fileURLToPath(new URL("./admin-login.html", import.meta.url)),
         admin: fileURLToPath(new URL("./admin.html", import.meta.url)),
+        impresion: fileURLToPath(new URL("./impresion.html", import.meta.url)),
         index: fileURLToPath(new URL("./index.html", import.meta.url)),
         "superadmin-login": fileURLToPath(new URL("./superadmin-login.html", import.meta.url)),
         superadmin: fileURLToPath(new URL("./superadmin.html", import.meta.url)),

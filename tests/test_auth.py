@@ -130,6 +130,24 @@ def test_admin_con_sesion_valida_sirve_el_panel(
     assert "panel" in r.text.lower()
 
 
+def test_impresion_sin_sesion_redirige_al_login(cliente: TestClient) -> None:
+    r = cliente.get("/admin/impresion", follow_redirects=False)
+    assert r.status_code == 303
+    assert r.headers["location"] == "/admin/login"
+
+
+def test_impresion_con_sesion_valida_sirve_la_pantalla(
+    cliente: TestClient, monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    (tmp_path / "impresion.html").write_text("<h1>Impresión</h1>", encoding="utf-8")
+    monkeypatch.setattr("carta_bar.api.DIR_FRONTEND", tmp_path)
+
+    cliente.cookies.set(COOKIE_SESION, auth.crear_token_sesion(RESTAURANTE_ID))
+    r = cliente.get("/admin/impresion", follow_redirects=False)
+    assert r.status_code == 200
+    assert "impresión" in r.text.lower()
+
+
 def test_admin_con_cookie_de_otro_restaurante_no_entra(cliente: TestClient) -> None:
     cliente.cookies.set(COOKIE_SESION, auth.crear_token_sesion("otro-restaurante"))
     r = cliente.get("/admin", follow_redirects=False)

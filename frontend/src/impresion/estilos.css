@@ -1,0 +1,167 @@
+/* Pantalla (no impresa): grande y simple, se mira de refilon desde lejos. */
+body {
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  background: #14161a;
+  color: #e8e8e8;
+}
+
+.elegir-destino,
+.pantalla-impresion {
+  min-height: 100vh;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.elegir-destino button,
+.cambiar-destino {
+  font-size: 20px;
+  padding: 18px 32px;
+  border-radius: 14px;
+  border: 0;
+  background: #b8391f;
+  color: #fff;
+  cursor: pointer;
+}
+
+.cambiar-destino {
+  margin-top: 24px;
+  font-size: 14px;
+  padding: 10px 18px;
+  background: #333;
+}
+
+.estado {
+  font-weight: 700;
+}
+.estado.ok {
+  color: #4ade80;
+}
+.estado.sin-conexion {
+  color: #f87171;
+}
+
+/* El recibo vive siempre en el DOM (oculto en pantalla) para poder
+   imprimirlo al instante; en @media print es lo unico que queda visible. */
+#recibo {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  /* Sin esto el fondo oscuro de la pantalla se queda detras del recibo: el
+     texto en negro sobre negro no se veria en el papel. */
+  body {
+    background: #fff;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #recibo,
+  #recibo * {
+    visibility: visible;
+  }
+
+  #recibo {
+    display: block;
+    background: #fff;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 76mm;
+    padding: 2mm;
+    font-family: "Courier New", monospace;
+    color: #000;
+  }
+
+  #recibo h1 {
+    font-size: 16px;
+    margin: 0 0 2px;
+  }
+
+  #recibo .numero {
+    font-size: 13px;
+    font-weight: bold;
+    margin: 0;
+  }
+
+  #recibo .destino {
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin: 2px 0;
+  }
+
+  #recibo hr {
+    border: none;
+    border-top: 1px dashed #000;
+    margin: 4px 0;
+  }
+
+  #recibo ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  #recibo li {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  #recibo li.alcohol {
+    font-weight: bold;
+  }
+
+  #recibo .cantidad {
+    font-weight: bold;
+  }
+
+  #recibo .nota {
+    font-style: italic;
+  }
+
+  #recibo .quien {
+    font-size: 11px;
+    color: #333;
+  }
+}
+
+.historial-impresion {
+  width: 100%;
+  max-width: 420px;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 14px;
+}
+.historial-impresion th,
+.historial-impresion td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #333;
+  text-align: left;
+}
+.historial-impresion th {
+  color: #999;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+.historial-impresion button {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 0;
+  background: #3a3f47;
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}

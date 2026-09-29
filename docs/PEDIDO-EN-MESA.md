@@ -1336,3 +1336,74 @@ misma comanda (si tiene cocina y barra, solo se ve "servido" cuando los dos lo e
   encima del listado de propuestas. `useComandas.ts` en el cliente.
 
 6 tests nuevos (535 en total).
+
+### Impresión en cocina/barra (planteado y construido 2026-09-29)
+
+**El problema real, dicho por el usuario:** los cocineros no van a tocar una pantalla — hoy
+trabajan con el ticket de papel que imprime la comanda, como en cualquier TPV. Su Turbopos
+(el TPV de la barra) es además la máquina crítica donde los camareros cierran mesas, y tiene
+un sistema de terceros (Comandator) que ya la hace ir lenta: **no se toca ese aparato para
+nada de esto**, ni para imprimir ni para nada.
+
+**Decisión:** la impresión sale de un aparato aparte y dedicado (mini PC barato o una tablet
+vieja), nunca del Turbopos. Ese aparato tiene un navegador con la nueva pantalla
+`/admin/impresion` abierta todo el servicio, una por destino (una para cocina, otra para
+barra si hace falta), y en cuanto llega un ticket nuevo lo imprime solo, sin que nadie toque
+nada. Nuestro servidor está en la nube (Hetzner) y las impresoras en la red del bar: por eso
+hace falta ese aparato intermedio, dentro de la propia red, y no se puede imprimir
+directamente desde el servidor.
+
+Según cómo estén conectadas esas dos impresoras (pendiente de comprobar en el bar):
+- **Por red (IP):** el aparato aparte imprime ahí sin más, en la misma wifi.
+- **Por USB al Turbopos:** hace falta un adaptador de impresora en red (15-20€) para no
+  depender del Turbopos ni para eso.
+
+**Construido:**
+- `frontend/impresion.html` + `src/impresion/` (App.tsx, ReciboTicket.tsx, estilos.css):
+  página aparte y ligera (no tira del bundle grande del panel), pensada para un aparato
+  modesto. Al abrirla por primera vez pregunta "¿cocina o barra?" (se recuerda en
+  `localStorage`); a partir de ahí escucha `/admin/api/tickets/eventos?destino=X` (SSE) e
+  imprime cada ticket nuevo con `window.print()`, formateado a 80 mm (`@media print`, con
+  `@page { size: 80mm auto }`). Guarda en `localStorage` los ids ya impresos para no repetir
+  un ticket si se recarga la página.
+- Ruta `GET /admin/impresion` en el backend (misma sesión de gerente que el resto del panel).
+- El SSE de tickets ahora admite `?destino=` para que cada pantalla escuche solo lo suyo.
+- Enlace "Pantalla de impresión" desde la sección Cocina del panel, con el aviso de que nunca
+  va en el TPV principal.
+- **Para impresión silenciosa de verdad** (sin que salga el cuadro de diálogo de Windows),
+  el navegador de ese aparato dedicado debe abrirse con `--kiosk-printing`; sin ese flag,
+  `window.print()` abre el diálogo normal y hay que confirmar a mano. Esto se configura en
+  el aparato, no en el código.
+
+**Verificado:** 538 tests (3 nuevos: la ruta exige sesión, el filtro por destino del SSE),
+`ruff`, `tsc -b`, `npm run build` limpios. Comprobación visual con Edge headless: la lógica
+de cola/impresión funciona (recibe el ticket, lo marca impreso, actualiza el contador), y el
+recibo en sí se generó y se revisó con `--print-to-pdf` (formato correcto: mesa, comanda,
+destino, cantidad en negrita, nota en cursiva, alcohol destacado). Se encontró y se corrigió
+ahí mismo un fallo real: sin fondo blanco explícito en el área impresa, el texto salía negro
+sobre el fondo oscuro de la pantalla, invisible en el papel.
+
+**Pendiente de comprobar en el bar (no depende de más código):** si las impresoras son de
+red o USB, qué aparato dedicar, y probar la impresión de verdad con `--kiosk-printing`.
+
+**Aparcado como su propio proyecto, sin fecha:** sustituir Comandator por Carta Bar
+directamente en el Turbopos (el "rol camarero" llevado al TPV físico del bar). Es un salto
+grande — depende de qué tipo de aparato es el Turbopos por dentro y si permite instalar o
+abrir algo propio — que merece su propia sesión de planteamiento, no mezclarlo con esto.
+
+### Historial y reimpresión (revisión de código, 2026-09-29)
+
+Una revisión encontró un fallo real: si el navegador aún no está en modo silencioso
+(`--kiosk-printing`), cada ticket saca el diálogo de imprimir de Windows, y si alguien le da a
+Cancelar por error, el código lo marcaba como impreso igualmente — la comanda desaparecía de
+la cola sin dejar rastro ni forma de recuperarla salvo tocando el `localStorage` a mano.
+
+`window.print()` no permite saber por JS si el usuario imprimió o canceló (limitación real del
+navegador, no del código), así que la solución no es "detectarlo" sino no depender de
+detectarlo: la pantalla de impresión guarda ahora un pequeño historial (mesa, comanda, hora)
+de las últimas 50 impresiones, con un botón "Reimprimir" en cada una. Así el control queda en
+manos del camarero o gerente sin tocar nada técnico.
+
+Guardado en `localStorage` (aparato local, no en el servidor): esto es historial de esa
+pantalla de impresión en concreto, no del pedido en general — para eso está la mesa "Servicio"
+del panel.

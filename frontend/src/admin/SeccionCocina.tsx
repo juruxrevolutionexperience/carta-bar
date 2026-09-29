@@ -81,7 +81,15 @@ export function SeccionCocina() {
           </button>
         ))}
         {error && <span className="chip-resumen sin-conexion">Sin conexión</span>}
+        <a href="/admin/impresion" target="_blank" rel="noreferrer" className="enlace-impresion">
+          Pantalla de impresión ↗
+        </a>
       </div>
+
+      <p className="ayuda-campo">
+        Para imprimir solas en cocina y barra, hace falta un aparato aparte dedicado a esto —
+        nunca el TPV principal del bar. Ver "Pantalla de impresión" arriba.
+      </p>
 
       {visibles.length === 0 && <p className="cargando">Sin comandas pendientes.</p>}
 

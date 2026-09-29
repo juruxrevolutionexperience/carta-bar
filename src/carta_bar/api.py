@@ -430,6 +430,16 @@ def admin_panel(request: Request, restaurante_id: RestauranteActual) -> Response
     return HTMLResponse((DIR_FRONTEND / "admin.html").read_text(encoding="utf-8"))
 
 
+@app.get("/admin/impresion")
+def admin_impresion(request: Request, restaurante_id: RestauranteActual) -> Response:
+    """Pantalla aparte para el aparato dedicado a imprimir en cocina/barra
+    (docs/PEDIDO-EN-MESA.md, "Impresion en cocina/barra"): nunca en el TPV
+    principal del bar. Misma sesion de gerente que el resto del panel."""
+    if not _sesion_activa(request, restaurante_id):
+        return RedirectResponse("/admin/login", status_code=303)
+    return HTMLResponse((DIR_FRONTEND / "impresion.html").read_text(encoding="utf-8"))
+
+
 @app.post("/admin/cambiar-clave")
 def admin_cambiar_clave(
     request: Request, peticion: CambiarClavePeticion, restaurante_id: RestauranteActual
@@ -1490,12 +1500,16 @@ def admin_cambiar_estado_ticket(
 
 
 # Aparte de la ruta, igual que _eventos_propuestas: para poder llamarla
-# directamente en los tests sin abrir un stream HTTP de verdad.
-def _eventos_tickets(restaurante_id: str) -> Iterator[str]:
+# directamente en los tests sin abrir un stream HTTP de verdad. `destino` es
+# para la pantalla de impresion (SeccionImpresion): cada una escucha solo lo
+# suyo, cocina o barra, no las dos.
+def _eventos_tickets(restaurante_id: str, destino: Destino | None = None) -> Iterator[str]:
     anterior: str | None = None
     limite = time.monotonic() + 900
     while time.monotonic() < limite:
-        lista = [t.model_dump(mode="json") for t in comandas.listar_pendientes(restaurante_id)]
+        lista = [
+            t.model_dump(mode="json") for t in comandas.listar_pendientes(restaurante_id, destino)
+        ]
         actual = json.dumps(lista, sort_keys=True, ensure_ascii=False)
         if actual != anterior:
             yield f"data: {actual}\n\n"
@@ -1506,10 +1520,14 @@ def _eventos_tickets(restaurante_id: str) -> Iterator[str]:
 
 
 @app.get("/admin/api/tickets/eventos", response_model=None)
-def admin_eventos_tickets(request: Request, restaurante_id: RestauranteActual) -> Response:
+def admin_eventos_tickets(
+    request: Request, restaurante_id: RestauranteActual, destino: Destino | None = None
+) -> Response:
     if not _sesion_activa(request, restaurante_id):
         return Response(status_code=401, content="Sesión no válida")
-    return StreamingResponse(_eventos_tickets(restaurante_id), media_type="text/event-stream")
+    return StreamingResponse(
+        _eventos_tickets(restaurante_id, destino), media_type="text/event-stream"
+    )
 
 
 # Comprimida en el navegador (canvas, JPEG calidad 0.8) antes de llegar aqui:

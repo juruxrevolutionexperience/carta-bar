@@ -68,6 +68,24 @@ empezó saltando su requisito de entrada, en
     pantalla de cocina/barra que lo reciba. Eso es el bloque 3, pendiente de
     plantear a fondo la próxima vez.
 
+## DÓNDE LO DEJAMOS (2026-09-29, madrugada) — LEER PRIMERO
+
+- **Impresión en cocina/barra: construida, pendiente de probar en el bar.**
+  Nueva pantalla `/admin/impresion` para un aparato APARTE y dedicado — el
+  usuario dejó clarísimo que el TPV Turbopos de la barra NUNCA se toca para
+  esto: es la máquina crítica donde cierran mesas y ya va lenta con
+  Comandator instalado. Detalle completo en `docs/PEDIDO-EN-MESA.md`,
+  "Impresión en cocina/barra". 538 tests, todo limpio.
+- **Pendiente de comprobar en el bar (no es cosa de código):** si las
+  impresoras de cocina/barra son de red o USB al Turbopos, y qué aparato se
+  dedica a la impresión. Según eso, puede hacer falta un adaptador de
+  impresora en red (15-20€) si son USB.
+- **Aparcado como proyecto propio:** sustituir Comandator por Carta Bar
+  directamente en el Turbopos (rol camarero en el TPV físico). Es un salto
+  grande, con su propia sesión de planteamiento — no se ha tocado nada de
+  esto todavía, ni se debe mezclar con lo de imprimir.
+- Sigue sin desplegar nada de hoy (bloques 2 y 3 completos + esto).
+
 ## DÓNDE LO DEJAMOS (2026-09-29, noche) — LEER PRIMERO
 
 - **Aclarado con el usuario (sin cambios de código):** el destino cocina/

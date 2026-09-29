@@ -302,6 +302,25 @@ def test_eventos_sse_manda_los_tickets_pendientes(gerente: TestClient) -> None:
     gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={})
 
 
+def test_eventos_sse_filtra_por_destino(gerente: TestClient) -> None:
+    # La pantalla de impresion de cocina no debe recibir los de barra, ni al
+    # reves (SeccionImpresion escucha solo su destino).
+    gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={"destino": "cocina"})
+    gerente.put(f"/admin/api/platos/{PLATO_2}/pedido", json={"destino": "barra"})
+    anfitrion = _mesa_con_anfitrion(gerente, "Terraza Comandas 11")
+    anfitrion.post("/api/mesa/propuestas", json={"plato_id": PLATO})
+    anfitrion.post("/api/mesa/propuestas", json={"plato_id": PLATO_2})
+    anfitrion.post("/api/mesa/propuestas/confirmar")
+
+    de_cocina = next(_eventos_tickets(RESTAURANTE_ID, "cocina"))
+    de_barra = next(_eventos_tickets(RESTAURANTE_ID, "barra"))
+    assert "Terraza Comandas 11" in de_cocina and '"destino": "barra"' not in de_cocina
+    assert "Terraza Comandas 11" in de_barra and '"destino": "cocina"' not in de_barra
+
+    gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={})
+    gerente.put(f"/admin/api/platos/{PLATO_2}/pedido", json={})
+
+
 # ------------------------------------------------------ lo que ve el cliente
 
 
