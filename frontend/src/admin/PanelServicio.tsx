@@ -18,14 +18,26 @@ interface Props {
   // Tras cada acción: la pantalla vuelve a pedir las mesas para pintar el estado.
   onCambio: () => void;
   onCerrar: () => void;
+  // Solo lo usa Mesas (el plano), donde el panel es una hoja que tapa la
+  // pantalla en móvil y solo se ve si se abrió a propósito. Sin este prop
+  // (SeccionServicio, que no tiene plano) el panel se ve siempre.
+  abiertoEnMovil?: boolean;
 }
 
 const MAX_COMENSALES = 50;
 
 // Lo que el camarero hace con una mesa durante el servicio: abrirla, aceptar la
-// que abrió un cliente, liberarla y quitar a alguien que no debería estar. Se
-// monta con key={mesa.id}: al tocar otra mesa arranca limpio.
-export function PanelServicio({ mesa, ahora, onCambio, onCerrar }: Props) {
+// que abrió un cliente, gestionar su comanda, liberarla y quitar a alguien que
+// no debería estar. Es el mismo panel en Servicio y en Mesas (modo ojo): la
+// mesa es la misma, no hay dos gestiones distintas. Se monta con
+// key={mesa.id}: al tocar otra mesa arranca limpio.
+export function PanelServicio({
+  mesa,
+  ahora,
+  onCambio,
+  onCerrar,
+  abiertoEnMovil = true,
+}: Props) {
   const estado = estadoDe(mesa);
   const [datos, setDatos] = useState<SesionConComensales | null>(null);
   const [comensales, setComensales] = useState(Math.min(mesa.capacidad, MAX_COMENSALES));
@@ -85,7 +97,9 @@ export function PanelServicio({ mesa, ahora, onCambio, onCerrar }: Props) {
   const tiempo = tiempoDesde(mesa.abierta_en, ahora);
 
   return (
-    <div className="tarjeta panel-mesa panel-servicio">
+    <div
+      className={"tarjeta panel-mesa panel-servicio" + (abiertoEnMovil ? "" : " oculto-movil")}
+    >
       <div className="cabecera-panel">
         <h3>{mesa.nombre}</h3>
         <button type="button" className="cerrar-panel" aria-label="Cerrar" onClick={onCerrar}>

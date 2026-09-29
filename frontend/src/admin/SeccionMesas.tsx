@@ -15,6 +15,7 @@ import {
 } from "./api";
 import { OrganizarZonas } from "./OrganizarZonas";
 import { PanelMesa } from "./PanelMesa";
+import { PanelServicio } from "./PanelServicio";
 import { PlanoZona } from "./PlanoZona";
 import {
   CELDA,
@@ -60,6 +61,7 @@ export function SeccionMesas() {
   const [zoom, setZoom] = useState(1);
   const [modo, setModo] = useState<Modo>("servicio");
   const editando = modo === "edicion";
+  const [ahora, setAhora] = useState(() => Date.now());
   const primeraCarga = useRef(true);
   const caja = useRef<HTMLDivElement>(null);
 
@@ -68,6 +70,7 @@ export function SeccionMesas() {
       .then(([zonasCargadas, mesasCargadas, datosQr]) => {
         setZonas(zonasCargadas);
         setMesas(mesasCargadas);
+        setAhora(Date.now());
         // Un local sin mesas se abre montándolo; uno ya montado, para verlo.
         if (primeraCarga.current) {
           primeraCarga.current = false;
@@ -479,7 +482,23 @@ export function SeccionMesas() {
                 <p>Toca una mesa del plano para ver sus datos y su QR.</p>
               </div>
             )}
-            {mesaElegida && (
+            {/* En servicio (ojo), el mismo panel que en Servicio: abrir,
+                aceptar, gestionar la comanda, liberar. La edición del plano
+                (nombre, tipo, zona, girar, QR) sigue siendo cosa aparte. */}
+            {mesaElegida && !editando && (
+              <PanelServicio
+                key={mesaElegida.id}
+                mesa={mesaElegida}
+                ahora={ahora}
+                abiertoEnMovil={panelAbierto}
+                onCambio={recargar}
+                onCerrar={() => {
+                  setSeleccionada(null);
+                  setPanelAbierto(false);
+                }}
+              />
+            )}
+            {mesaElegida && editando && (
               <PanelMesa
                 key={mesaElegida.id}
                 mesa={mesaElegida}

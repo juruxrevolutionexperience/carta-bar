@@ -2,7 +2,6 @@ import { useState } from "react";
 
 import type { DatosQr } from "../shared/HojaQR";
 import type { CambiosMesa, Mesa, Zona } from "./api";
-import { PanelComandaMesa } from "./PanelComandaMesa";
 import { TIPOS, girar, tipoDe } from "./planoUtil";
 import { QrMesa } from "./QrMesa";
 
@@ -75,10 +74,6 @@ export function PanelMesa({
         {mesa.ocupada ? "Con clientes" : "Libre"} · {mesa.capacidad}{" "}
         {mesa.capacidad === 1 ? "persona" : "personas"}
       </p>
-
-      {/* La misma comanda que en Servicio: es la misma mesa, no una vista
-          aparte. Solo en modo servicio (ojo) y con la mesa ocupada. */}
-      {!editando && mesa.ocupada && <PanelComandaMesa mesaId={mesa.id} />}
 
       {editando && (
         <>
