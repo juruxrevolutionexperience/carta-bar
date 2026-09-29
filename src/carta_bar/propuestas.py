@@ -133,8 +133,12 @@ def retirar(
 
 def confirmar_pendientes(
     repo: RepositorioPropuestas, sesion_id: str, ahora: datetime | None = None
-) -> int:
-    return repo.confirmar_pendientes(sesion_id, _ahora(ahora))
+) -> list[Propuesta]:
+    """Las que estaban pendientes justo antes de confirmar (para poder armar
+    la comanda con ellas, ver comandas.py), ya con estado "confirmada"."""
+    pendientes = [p for p in repo.listar_de_sesion(sesion_id) if p.estado == "pendiente"]
+    repo.confirmar_pendientes(sesion_id, _ahora(ahora))
+    return [p.model_copy(update={"estado": "confirmada"}) for p in pendientes]
 
 
 class RepositorioPropuestasMemoria:

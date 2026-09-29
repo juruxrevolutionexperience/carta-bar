@@ -90,8 +90,9 @@ def test_confirmar_pendientes_no_toca_las_retiradas_ni_otra_sesion(
     retirar(repo, retirada.id, "luis", quien_es_anfitrion=False)
     de_otra = proponer(repo, "s2", "eva", "Eva", PLATO, "X", 10, None, 1, [], None)
 
-    n = confirmar_pendientes(repo, "s1")
-    assert n == 1
+    confirmadas = confirmar_pendientes(repo, "s1")
+    assert [p.id for p in confirmadas] == [de_esta.id]
+    assert confirmadas[0].estado == "confirmada"
     assert repo.obtener(de_esta.id).estado == "confirmada"  # type: ignore[union-attr]
     assert repo.obtener(retirada.id).estado == "retirada"  # type: ignore[union-attr]
     assert repo.obtener(de_otra.id).estado == "pendiente"  # type: ignore[union-attr]
@@ -140,6 +141,16 @@ def test_proponer_un_plato_disponible(gerente: TestClient) -> None:
     assert p["total"] == 38.0
     assert p["estado"] == "pendiente"
     assert p["comensal_nombre"] == "Ana"
+
+
+def test_se_puede_proponer_mientras_la_mesa_esta_por_confirmar(gerente: TestClient) -> None:
+    """El cliente no pierde lo que va pidiendo mientras espera a que el
+    camarero acepte la mesa (decidido con el usuario, 2026-09-29): puede ir
+    llenando la cesta desde el primer momento."""
+    anfitrion = _mesa_con_anfitrion(gerente, "Terraza Propuestas 10")
+    assert anfitrion.get("/api/mesa/yo").json()["estado"] == "por_confirmar"
+    r = anfitrion.post("/api/mesa/propuestas", json={"plato_id": PLATO})
+    assert r.status_code == 201
 
 
 def test_plato_inexistente_o_no_disponible_da_404(gerente: TestClient) -> None:

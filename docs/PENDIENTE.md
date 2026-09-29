@@ -68,6 +68,26 @@ empezó saltando su requisito de entrada, en
     pantalla de cocina/barra que lo reciba. Eso es el bloque 3, pendiente de
     plantear a fondo la próxima vez.
 
+## DÓNDE LO DEJAMOS (2026-09-29, tarde) — LEER PRIMERO
+
+- **Bloque 3 (comandas de verdad) construido: backend + pantalla, sin desplegar.**
+  Al confirmar el pedido, ahora se arma una comanda de verdad y se reparte en
+  tickets de cocina/barra; nueva sección "Cocina" en el panel del gerente con
+  tarjetas grandes por ticket. Detalle completo en `docs/PEDIDO-EN-MESA.md`,
+  "Bloque 3 en detalle". 527 tests, `ruff`, `tsc -b`, `npm run build` limpios.
+  **Solo comprobado con Edge headless y datos simulados: falta probarlo en
+  un móvil/PC real.**
+- **Decidido con el usuario (2026-09-29):** confirmar manda al instante, sin
+  ventana de agrupación; la pantalla de cocina vive en el `/admin` del
+  gerente por ahora (no hay rol camarero todavía); el alcohol solo se marca
+  visualmente en la tarjeta, sin confirmación expresa al servirlo.
+- **Pendiente para más adelante:** rol camarero con su propio acceso, aviso
+  sonoro en la pantalla de cocina, SSE ahí en vez de refresco cada 5 s,
+  confirmación expresa del alcohol al servir, anular una línea con motivo.
+- Nada de esto está commiteado: falta `git add/commit/push` y desplegar
+  (la migración SQL trae 3 tablas nuevas: `comandas`, `tickets`,
+  `lineas_ticket`, se aplican solas al arrancar).
+
 ## DÓNDE LO DEJAMOS (2026-09-27) — LEER PRIMERO
 
 - **Bloque 1 (estados de mesa + pantalla Servicio):** commiteado y subido

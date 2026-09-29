@@ -445,3 +445,54 @@ export async function asignarGrupoAPlatos(
   const config = resp.ok ? ((await resp.json()) as ConfigProductos) : null;
   return { ok: resp.ok, status: resp.status, config };
 }
+
+// -------------------------------------------------------------- bloque 3: comandas
+
+export type EstadoTicket = "recibida" | "en_preparacion" | "servida";
+
+export interface OpcionElegida {
+  nombre: string;
+  precio: number;
+}
+
+export interface LineaTicket {
+  id: string;
+  propuesta_id: string;
+  nombre_plato: string;
+  formato: string | null;
+  precio_unitario: number;
+  cantidad: number;
+  opciones: OpcionElegida[];
+  nota: string | null;
+  alcohol: boolean;
+  pedido_por_nombre: string;
+}
+
+export interface Ticket {
+  id: string;
+  comanda_id: string;
+  sesion_id: string;
+  mesa_nombre: string;
+  numero_comanda: number;
+  destino: Destino;
+  lineas: LineaTicket[];
+  estado: EstadoTicket;
+  creado_en: string;
+  actualizado_en: string;
+}
+
+export async function cargarTickets(destino?: Destino): Promise<Ticket[]> {
+  const resp = await apiFetch(
+    destino ? `/admin/api/tickets?destino=${destino}` : "/admin/api/tickets"
+  );
+  if (!resp.ok) throw new Error(await resp.text());
+  return resp.json();
+}
+
+export async function cambiarEstadoTicket(id: string, estado: EstadoTicket): Promise<Response> {
+  return apiFetch(`/admin/api/tickets/${encodeURIComponent(id)}/estado`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ estado }),
+  });
+}

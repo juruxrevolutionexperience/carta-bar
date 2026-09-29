@@ -2407,3 +2407,129 @@ button.secundario.peligro {
     padding: 11px 14px;
   }
 }
+
+/* ---------- bloque 3: cocina y barra (SeccionCocina.tsx) ----------
+   Tarjetas grandes, para leerlas de pie y con prisa (docs/PEDIDO-EN-MESA.md,
+   seccion 11.2). */
+.cocina {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.columnas-cocina {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .columnas-cocina {
+    grid-template-columns: 1fr;
+  }
+}
+
+.columna-cocina h2 {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tinta-media);
+  margin-bottom: 10px;
+}
+
+.tarjeta-ticket {
+  background: var(--superficie);
+  border: 1px solid var(--borde-suave);
+  border-left: 5px solid var(--tinta-suave);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.tarjeta-ticket.destino-cocina {
+  border-left-color: var(--ambar);
+}
+
+.tarjeta-ticket.destino-barra {
+  border-left-color: var(--azul);
+}
+
+.cabecera-ticket {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+
+.mesa-ticket {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+}
+
+.numero-ticket {
+  font-size: 12.5px;
+  color: var(--tinta-suave);
+}
+
+.lineas-ticket {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.lineas-ticket li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 15px;
+}
+
+.lineas-ticket li.con-alcohol {
+  background: var(--rojo-suave);
+  border-radius: 8px;
+  padding: 4px 8px;
+  margin: -4px -8px;
+}
+
+.cantidad-linea {
+  font-weight: 700;
+}
+
+.texto-linea {
+  flex: 1;
+  min-width: 0;
+}
+
+.chip-alcohol {
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--rojo);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.nota-linea {
+  width: 100%;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--tinta-media);
+}
+
+.quien-linea {
+  width: 100%;
+  font-size: 12px;
+  color: var(--tinta-suave);
+}
+
+.boton-avanzar {
+  width: 100%;
+}

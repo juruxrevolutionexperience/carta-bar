@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 
 export type Seccion =
   | "servicio"
+  | "cocina"
   | "mesas"
   | "platos"
   | "especiales"
@@ -32,6 +33,16 @@ export const SECCIONES: Entrada[] = [
         <rect x="13" y="3" width="8" height="8" rx="2" />
         <rect x="3" y="13" width="8" height="8" rx="2" />
         <rect x="13" y="13" width="8" height="8" rx="2" />
+      </svg>
+    ),
+  },
+  {
+    id: "cocina",
+    texto: "Cocina",
+    grupo: "Sala",
+    icono: (
+      <svg viewBox="0 0 24 24">
+        <path d="M6 3v7a3 3 0 003 3v8M6 3v6M9 3v6M12 3v10a3 3 0 003 3v5M18 3c-2 2-2 5-2 8s0 5 2 5" />
       </svg>
     ),
   },

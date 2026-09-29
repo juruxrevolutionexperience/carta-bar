@@ -26,6 +26,17 @@ from slowapi.middleware import SlowAPIMiddleware
 from carta_bar.agente import responder_cliente
 from carta_bar.auth import crear_token_sesion, hash_clave, verificar_clave, verificar_token_sesion
 from carta_bar.busqueda import indexar
+from carta_bar.comandas import (
+    Linea as LineaTicket,
+)
+from carta_bar.comandas import (
+    OpcionElegida as OpcionElegidaTicket,
+)
+from carta_bar.comandas import (
+    Ticket,
+    crear_comanda,
+    crear_repositorio_comandas,
+)
 from carta_bar.costes import ConsumoTotal
 from carta_bar.datos import (
     CampoImagenMarca,
@@ -101,6 +112,7 @@ from carta_bar.productos import (
     con_formatos,
     config_productos,
     crear_repositorio_productos,
+    destino_de,
     grupos_de_plato,
 )
 from carta_bar.propuestas import (
@@ -195,6 +207,7 @@ metricas = crear_repositorio_metricas(_repositorio_uso)
 mesas = crear_repositorio_mesas()
 productos = crear_repositorio_productos()
 propuestas = crear_repositorio_propuestas()
+comandas = crear_repositorio_comandas()
 
 # Indice de busqueda del chat: uno por restaurante, calculado la primera vez
 # que se le pregunta algo (no todos de golpe al arrancar). Se vacia para un
@@ -1224,6 +1237,36 @@ def api_quitar_propuesta(
     return Response(status_code=204)
 
 
+def _lineas_por_destino(
+    restaurante_id: str, confirmadas: list[Propuesta]
+) -> dict[Destino, list[LineaTicket]]:
+    """De cada propuesta confirmada, la linea de ticket que le corresponde,
+    agrupadas por a donde va (cocina o barra). El destino y el alcohol salen
+    de "Para pedir" (productos.py), no de la propuesta: pueden haber cambiado
+    desde que se propuso, y es la carta de hoy la que manda."""
+    categoria_de = {p.id: p.categoria for p in cargar_carta(restaurante_id)}
+    pedido_platos = productos.listar_pedido_platos(restaurante_id)
+    destinos_categoria = productos.destinos_categoria(restaurante_id)
+
+    resultado: dict[Destino, list[LineaTicket]] = {}
+    for p in confirmadas:
+        pedido = pedido_platos.get(p.plato_id)
+        destino = destino_de(categoria_de.get(p.plato_id, ""), pedido, destinos_categoria)
+        linea = LineaTicket(
+            propuesta_id=p.id,
+            nombre_plato=p.nombre_plato,
+            formato=p.formato,
+            precio_unitario=p.precio_unitario,
+            cantidad=p.cantidad,
+            opciones=[OpcionElegidaTicket(nombre=o.nombre, precio=o.precio) for o in p.opciones],
+            nota=p.nota,
+            alcohol=pedido.alcohol if pedido else False,
+            pedido_por_nombre=p.comensal_nombre,
+        )
+        resultado.setdefault(destino, []).append(linea)
+    return resultado
+
+
 @app.post("/api/mesa/propuestas/confirmar", response_model=None)
 def api_confirmar_propuestas(request: Request, restaurante_id: RestauranteActual) -> Response:
     encontrado = _comensal_en_sesion(request, restaurante_id)
@@ -1232,8 +1275,13 @@ def api_confirmar_propuestas(request: Request, restaurante_id: RestauranteActual
     comensal, sesion = encontrado
     if comensal.rol != "anfitrion":
         return Response(status_code=403, content="Solo el anfitrion puede confirmar el pedido")
-    n = confirmar_pendientes(propuestas, sesion.id)
-    return JSONResponse({"confirmadas": n})
+    confirmadas = confirmar_pendientes(propuestas, sesion.id)
+    if confirmadas:
+        mesa = mesas.obtener_mesa(restaurante_id, sesion.mesa_id)
+        mesa_nombre = mesa.nombre if mesa else sesion.mesa_id
+        lineas = _lineas_por_destino(restaurante_id, confirmadas)
+        crear_comanda(comandas, restaurante_id, sesion.id, mesa_nombre, lineas)
+    return JSONResponse({"confirmadas": len(confirmadas)})
 
 
 # Aparte de la ruta para poder probarla llamandola directamente, sin abrir un
@@ -1358,6 +1406,66 @@ def admin_expulsar_comensal(
     if comensal is None:
         return Response(status_code=404, content="Comensal no encontrado")
     return comensal
+
+
+# ------------------------------------------------------------ bloque 3: cocina y barra
+#
+# De momento en el propio /admin del gerente (decidido con el usuario el
+# 2026-09-29): el rol de camarero, con su propio acceso, llega despues sin
+# tener que rehacer esto.
+
+
+class CambiarEstadoTicketPeticion(BaseModel):
+    estado: Literal["en_preparacion", "servida"]
+
+
+@app.get("/admin/api/tickets", response_model=None)
+def admin_listar_tickets(
+    request: Request, restaurante_id: RestauranteActual, destino: Destino | None = None
+) -> list[Ticket] | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    return comandas.listar_pendientes(restaurante_id, destino)
+
+
+@app.post("/admin/api/tickets/{ticket_id}/estado", response_model=None)
+def admin_cambiar_estado_ticket(
+    ticket_id: str,
+    peticion: CambiarEstadoTicketPeticion,
+    request: Request,
+    restaurante_id: RestauranteActual,
+) -> Ticket | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    ticket = comandas.actualizar_estado(
+        restaurante_id, ticket_id, peticion.estado, datetime.now(UTC)
+    )
+    if ticket is None:
+        return Response(status_code=404, content="Ticket no encontrado")
+    return ticket
+
+
+# Aparte de la ruta, igual que _eventos_propuestas: para poder llamarla
+# directamente en los tests sin abrir un stream HTTP de verdad.
+def _eventos_tickets(restaurante_id: str) -> Iterator[str]:
+    anterior: str | None = None
+    limite = time.monotonic() + 900
+    while time.monotonic() < limite:
+        lista = [t.model_dump(mode="json") for t in comandas.listar_pendientes(restaurante_id)]
+        actual = json.dumps(lista, sort_keys=True, ensure_ascii=False)
+        if actual != anterior:
+            yield f"data: {actual}\n\n"
+            anterior = actual
+        else:
+            yield ": \n\n"
+        time.sleep(1.5)
+
+
+@app.get("/admin/api/tickets/eventos", response_model=None)
+def admin_eventos_tickets(request: Request, restaurante_id: RestauranteActual) -> Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    return StreamingResponse(_eventos_tickets(restaurante_id), media_type="text/event-stream")
 
 
 # Comprimida en el navegador (canvas, JPEG calidad 0.8) antes de llegar aqui:

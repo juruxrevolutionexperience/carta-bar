@@ -270,6 +270,50 @@ CREATE TABLE IF NOT EXISTS propuestas (
 
 CREATE INDEX IF NOT EXISTS idx_propuestas_sesion ON propuestas (sesion_id, estado);
 
+-- Bloque 3: comandas y tickets (docs/PEDIDO-EN-MESA.md, "Bloque 3 en
+-- detalle"). Nacen siempre de propuestas ya confirmadas, al instante, sin
+-- ventana de agrupacion (decidido con el usuario el 2026-09-29). mesa_nombre
+-- y numero_comanda se copian en el ticket para no tener que hacer join en la
+-- pantalla de cocina/barra, que se consulta sin parar.
+CREATE TABLE IF NOT EXISTS comandas (
+    id             TEXT PRIMARY KEY,
+    restaurante_id TEXT NOT NULL,
+    sesion_id      TEXT NOT NULL REFERENCES sesiones_mesa(id) ON DELETE CASCADE,
+    numero         INTEGER NOT NULL,
+    creada_en      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS tickets (
+    id              TEXT PRIMARY KEY,
+    comanda_id      TEXT NOT NULL REFERENCES comandas(id) ON DELETE CASCADE,
+    restaurante_id  TEXT NOT NULL,
+    sesion_id       TEXT NOT NULL,
+    mesa_nombre     TEXT NOT NULL,
+    numero_comanda  INTEGER NOT NULL,
+    destino         TEXT NOT NULL,
+    estado          TEXT NOT NULL DEFAULT 'recibida',
+    creado_en       TIMESTAMPTZ NOT NULL DEFAULT now(),
+    actualizado_en  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS lineas_ticket (
+    id                TEXT PRIMARY KEY,
+    ticket_id         TEXT NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+    propuesta_id      TEXT,
+    nombre_plato      TEXT NOT NULL,
+    formato           TEXT,
+    precio_unitario   NUMERIC(10,2) NOT NULL,
+    cantidad          INTEGER NOT NULL CHECK (cantidad >= 1),
+    opciones          JSONB NOT NULL DEFAULT '[]',
+    nota              TEXT,
+    alcohol           BOOLEAN NOT NULL DEFAULT false,
+    pedido_por_nombre TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_tickets_pendientes
+    ON tickets (restaurante_id, estado) WHERE estado != 'servida';
+CREATE INDEX IF NOT EXISTS idx_comandas_dia ON comandas (restaurante_id, creada_en);
+
 -- RLS activada en todas las tablas y SIN politicas: la clave publica (anon) y
 -- las autenticadas de Supabase no pueden leer ni escribir nada. La app entra
 -- con el usuario `postgres`, que se salta RLS (rolbypassrls = true, comprobado
@@ -289,3 +333,6 @@ ALTER TABLE destinos_categoria   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pedido_platos        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE grupos_opciones      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE propuestas           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE comandas              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tickets               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lineas_ticket         ENABLE ROW LEVEL SECURITY;

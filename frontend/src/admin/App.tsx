@@ -4,6 +4,7 @@ import "./estilos.css";
 import { cargarCarta, cargarCategorias } from "./api";
 import { BarraSuperior } from "./BarraSuperior";
 import { MenuLateral } from "./MenuLateral";
+import { SeccionCocina } from "./SeccionCocina";
 import { SeccionCuenta } from "./SeccionCuenta";
 import { SeccionMesas } from "./SeccionMesas";
 import { SeccionMarca } from "./SeccionMarca";
@@ -69,7 +70,14 @@ export function App() {
         onCerrar={() => setMenuAbierto(false)}
       />
 
-      <div className={"app" + (seccion === "mesas" || seccion === "servicio" ? " app-ancha" : "")}>
+      <div
+        className={
+          "app" +
+          (seccion === "mesas" || seccion === "servicio" || seccion === "cocina"
+            ? " app-ancha"
+            : "")
+        }
+      >
         {seccion === "platos" && (
           <SeccionPlatos
             platos={normales}
@@ -95,6 +103,7 @@ export function App() {
         )}
         {seccion === "extras" && <SeccionExtras />}
         {seccion === "servicio" && <SeccionServicio />}
+        {seccion === "cocina" && <SeccionCocina />}
         {seccion === "mesas" && <SeccionMesas />}
         {seccion === "marca" && <SeccionMarca />}
         {seccion === "qr" && <SeccionQr />}

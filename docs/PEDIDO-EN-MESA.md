@@ -1280,3 +1280,44 @@ errores, y una comprobacion visual con Edge headless (sin datos reales, con `fet
 simulado): la barra de mesa, el boton "Pedir", el formulario con formato/extras y el listado
 del pedido se ven bien. **No probado en un movil ni navegador real**: falta que el usuario lo
 compruebe en `demo.jurux.app` una vez desplegado.
+
+### Bloque 3 en detalle: la comanda llega a cocina/barra (implementado 2026-09-29)
+
+Backend + pantalla completos. Decidido con el usuario: sin ventana de agrupación (confirmar
+manda al instante); la pantalla vive por ahora dentro del `/admin` del gerente, no del rol
+camarero (que llega después, sin tener que rehacer esto); el alcohol solo se marca en la
+tarjeta, sin pedir confirmación expresa al servirlo.
+
+**Qué pasa al confirmar.** `POST /api/mesa/propuestas/confirmar` ahora, además de marcar las
+propuestas como "confirmada", arma una **comanda** (con numeración correlativa por
+restaurante y por día) y reparte sus líneas en **tickets** por destino (cocina/barra). El
+destino y el alcohol de cada línea salen de "Para pedir" (`productos.py`) en el momento de
+confirmar, no de lo que hubiera cuando se propuso: si el gerente cambia el destino de un
+plato a media tarde, manda el de ahora.
+
+**Modelo** (`src/carta_bar/comandas.py`): `comandas` (id, sesion, número del día),
+`tickets` (destino, estado: recibida/en_preparación/servida, con mesa y número de comanda
+copiados para no hacer join en la pantalla), `lineas_ticket` (copia congelada: nombre,
+precio, opciones, nota, alcohol, quién lo pidió).
+
+**Endpoints** (con la sesión del gerente, `/admin`):
+- `GET /admin/api/tickets?destino=cocina|barra` — los pendientes (no servidos).
+- `POST /admin/api/tickets/{id}/estado` — `en_preparacion` o `servida`.
+- `GET /admin/api/tickets/eventos` — SSE, mismo patrón que las propuestas (sondea cada 1,5 s,
+  solo envía si cambia); la pantalla de cocina de momento usa refresco cada 5 s como
+  Servicio, no este SSE — queda ahí para una vuelta futura si hace falta más rapidez.
+
+**Pantalla** (`SeccionCocina.tsx`, nueva sección "Cocina" en el panel): tarjetas grandes por
+ticket, en dos columnas (nuevas / en preparación), con pestañas para filtrar por destino.
+Cada línea muestra cantidad, plato con su formato/extras, nota, quién la pidió, y un aviso
+rojo si lleva alcohol. Un botón avanza el ticket de estado; al llegar a "servida" desaparece
+del tablero.
+
+**Verificado:** 527 tests (27 nuevos: lógica de reparto y numeración en memoria, recorrido
+completo por la API, multi-tenant, SSE), `ruff`, `tsc -b`, `npm run build` limpios, y una
+comprobación visual con Edge headless (datos simulados). **No probado en un dispositivo
+real**: falta que el usuario lo pruebe con La CatedRal o `demo.jurux.app`.
+
+**Pendiente para más adelante (fuera de este bloque):** rol camarero con su propio acceso;
+aviso sonoro al entrar un ticket nuevo; SSE en la pantalla de cocina en vez de refresco cada
+5 s; confirmación expresa al servir alcohol; anular una línea con motivo.

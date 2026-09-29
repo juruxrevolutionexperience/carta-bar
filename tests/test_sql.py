@@ -11,6 +11,15 @@ from pathlib import Path
 import pglast
 import pytest
 
+from carta_bar.comandas import (
+    _ACTUALIZAR_ESTADO_TICKET,
+    _CREAR_COMANDA,
+    _CREAR_LINEA,
+    _CREAR_TICKET,
+    _LINEAS_DE_TICKET,
+    _TICKET_POR_ID,
+    _TICKETS_PENDIENTES,
+)
 from carta_bar.mesas import (
     _ANADIR_COMENSAL,
     _CERRAR_CADUCADAS,
@@ -79,6 +88,13 @@ def test_el_esquema_crea_la_tabla_y_su_indice() -> None:
         _GUARDAR_DESTINO_CATEGORIA,
         _GUARDAR_PEDIDO_PLATO,
         _CREAR_GRUPO,
+        _CREAR_COMANDA,
+        _CREAR_TICKET,
+        _CREAR_LINEA,
+        _TICKETS_PENDIENTES,
+        _TICKET_POR_ID,
+        _ACTUALIZAR_ESTADO_TICKET,
+        _LINEAS_DE_TICKET,
     ],
 )
 def test_las_consultas_son_sql_valido(consulta: str) -> None:
@@ -87,7 +103,16 @@ def test_las_consultas_son_sql_valido(consulta: str) -> None:
 
 @pytest.mark.parametrize(
     "insert",
-    [_INSERTAR, _CREAR_SESION, _ANADIR_COMENSAL, _GUARDAR_PEDIDO_PLATO, _GUARDAR_DESTINO_CATEGORIA],
+    [
+        _INSERTAR,
+        _CREAR_SESION,
+        _ANADIR_COMENSAL,
+        _GUARDAR_PEDIDO_PLATO,
+        _GUARDAR_DESTINO_CATEGORIA,
+        _CREAR_COMANDA,
+        _CREAR_TICKET,
+        _CREAR_LINEA,
+    ],
 )
 def test_el_insert_manda_tantos_valores_como_columnas(insert: str) -> None:
     columnas = insert.split("(")[1].split(")")[0].count(",") + 1
