@@ -15,7 +15,7 @@ interface Props {
 // Los extras se piden aqui: no se cargan con toda la carta (productos.py).
 export function FormularioPropuesta({ plato, onCerrar }: Props) {
   const { config } = useCartaContext();
-  const { proponer } = useMesaContext();
+  const { proponer, abrirPanel } = useMesaContext();
   const moneda = config.moneda || "€";
 
   const [grupos, setGrupos] = useState<Grupo[] | null>(null);
@@ -55,7 +55,22 @@ export function FormularioPropuesta({ plato, onCerrar }: Props) {
     });
   }
 
+  // Antes de enviar nada: evita el viaje al servidor para algo que ya se sabe
+  // que va a fallar (ej. "Punto de la carne" es obligatorio y no se eligió).
+  function grupoIncompleto(): Grupo | null {
+    for (const grupo of grupos ?? []) {
+      const elegidasDelGrupo = elegidasDe(grupo).length;
+      if (elegidasDelGrupo < grupo.minimo) return grupo;
+    }
+    return null;
+  }
+
   async function enviar() {
+    const incompleto = grupoIncompleto();
+    if (incompleto) {
+      setError(`Elige "${incompleto.nombre}" antes de añadirlo.`);
+      return;
+    }
     setEnviando(true);
     setError(null);
     const r = await proponer({
@@ -67,6 +82,9 @@ export function FormularioPropuesta({ plato, onCerrar }: Props) {
     });
     setEnviando(false);
     if (r.ok) {
+      // Se ve enseguida en la cesta compartida: no da la sensacion de que ya
+      // se mando el pedido (eso solo pasa cuando el anfitrion confirma).
+      abrirPanel();
       onCerrar();
     } else {
       setError("No se pudo añadir: revisa que hayas elegido lo necesario.");

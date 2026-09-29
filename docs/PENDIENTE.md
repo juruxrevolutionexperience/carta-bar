@@ -48,8 +48,25 @@ empezó saltando su requisito de entrada, en
   grupo en varios platos de golpe (agrupados por categoría), sin tener que
   abrir cada plato uno a uno para tildar la casilla. `asignar_grupo_a_platos()`
   en `productos.py`, endpoint `PUT /admin/api/grupos-opciones/{id}/platos`,
-  8 tests nuevos (499 en total). Formatos (media ración, etc.) siguen siendo
-  por plato, porque el precio cambia en cada uno — eso no tiene atajo.
+  8 tests nuevos. Formatos (media ración, etc.) siguen siendo por plato,
+  porque el precio cambia en cada uno — eso no tiene atajo.
+- **Tras probar en La CatedRal, 3 ajustes más (mismo día):**
+  1. Al escanear el QR ahora se pide el nombre antes de entrar
+     (`EntrarMesaDialog.tsx`), con opción de "seguir sin decirlo": antes
+     siempre salía "Comensal 2", ahora se ve el nombre real en el pedido.
+  2. Al añadir una propuesta, el panel del pedido se abre solo, para que
+     quede claro que es una cesta compartida sin enviar, no un pedido ya
+     mandado; además un aviso visible ("esto aún no se ha enviado") mientras
+     haya líneas pendientes.
+  3. El formulario valida los grupos obligatorios (ej. "Punto de la carne")
+     antes de enviar nada al servidor, en vez de esperar al error 400.
+  - Confirmado que ya funcionaba (sin cambios): se puede ir llenando la
+    cesta aunque la mesa siga "por confirmar", sin perder nada mientras el
+    camarero acepta. Test añadido para dejarlo protegido: 500 tests en total.
+  - **Aviso importante, dicho también al usuario:** hoy "Confirmar pedido"
+    solo cambia el estado interno a "confirmada"; no existe todavía ninguna
+    pantalla de cocina/barra que lo reciba. Eso es el bloque 3, pendiente de
+    plantear a fondo la próxima vez.
 
 ## DÓNDE LO DEJAMOS (2026-09-27) — LEER PRIMERO
 

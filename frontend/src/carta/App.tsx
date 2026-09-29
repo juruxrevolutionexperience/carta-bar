@@ -4,6 +4,7 @@ import "./estilos.css";
 import { Carrusel } from "./Carrusel";
 import { CartaProvider, useCartaContext } from "./CartaContext";
 import { Chat } from "./Chat";
+import { EntrarMesaDialog } from "./EntrarMesaDialog";
 import { ListaPlatos } from "./ListaPlatos";
 import { MesaProvider, useMesaContext } from "./MesaContext";
 import { MiLista } from "./MiLista";
@@ -112,6 +113,7 @@ function CartaApp() {
       />
       {enMesa ? <PanelPedidoMesa /> : <MiLista lista={lista} />}
       <SelectorIdioma />
+      <EntrarMesaDialog />
     </>
   );
 }

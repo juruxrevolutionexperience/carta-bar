@@ -37,13 +37,17 @@ export async function cargarIdiomas(): Promise<Idiomas | null> {
 // Al escanear el QR de una mesa: crea o une la sesión y deja una cookie de
 // comensal (httpOnly, la pone el backend). Idempotente: volver a llamar con
 // el mismo token de una mesa ya abierta simplemente une a quien pregunta.
-export async function entrarMesa(tokenQr: string, idioma: string): Promise<MiMesa | null> {
+export async function entrarMesa(
+  tokenQr: string,
+  idioma: string,
+  nombre?: string
+): Promise<MiMesa | null> {
   try {
     const r = await fetch("/api/mesa/entrar", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "same-origin",
-      body: JSON.stringify({ token_qr: tokenQr, idioma }),
+      body: JSON.stringify({ token_qr: tokenQr, idioma, nombre: nombre || undefined }),
     });
     if (!r.ok) return null;
     return await miMesa();

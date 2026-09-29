@@ -22,8 +22,8 @@ function lineaTexto(p: Propuesta): string {
 // manda el pedido (docs/PEDIDO-EN-MESA.md, seccion 11.1).
 export function PanelPedidoMesa() {
   const { config } = useCartaContext();
-  const { mesa, propuestas, quitar, confirmar } = useMesaContext();
-  const [abierto, setAbierto] = useState(false);
+  const { mesa, propuestas, quitar, confirmar, panelAbierto, abrirPanel, cerrarPanel } =
+    useMesaContext();
   const [confirmando, setConfirmando] = useState(false);
   const moneda = config.moneda || "€";
 
@@ -45,26 +45,26 @@ export function PanelPedidoMesa() {
       <button
         type="button"
         className="lanzador lanzador-lista"
-        onClick={() => setAbierto(true)}
+        onClick={abrirPanel}
         aria-label="Pedido de la mesa"
       >
         🍽️
         {activas.length > 0 && <span className="cuenta-lista">{activas.length}</span>}
       </button>
 
-      <div className={"panel" + (abierto ? " abierto" : "")}>
+      <div className={"panel" + (panelAbierto ? " abierto" : "")}>
         <div className="panel-top">
           <h2>Mesa {mesa.mesa}</h2>
-          <button
-            type="button"
-            className="cerrar"
-            aria-label="Cerrar"
-            onClick={() => setAbierto(false)}
-          >
+          <button type="button" className="cerrar" aria-label="Cerrar" onClick={cerrarPanel}>
             ×
           </button>
         </div>
         <p className="estado-mesa">{TEXTO_ESTADO[mesa.estado] ?? mesa.estado}</p>
+        {pendientes.length > 0 && (
+          <p className="estado-mesa aviso-pendiente">
+            Esto aún no se ha enviado: seguid añadiendo lo que queráis.
+          </p>
+        )}
 
         <div className="hilo-lista">
           {activas.length === 0 && <p className="vacio">Aún no habéis pedido nada.</p>}
