@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 
 import {
   actualizarGrupo,
+  asignarGrupoAPlatos,
+  cargarCarta,
+  cargarCategorias,
   cargarProductos,
   crearGrupo,
   eliminarGrupo,
@@ -10,15 +13,20 @@ import {
 } from "./api";
 import { FilasPrecio, filasAValores, valoresAFilas, type FilaPrecio } from "./FilasPrecio";
 import { resumenGrupo, textoPrecio } from "./textosProductos";
+import type { Categoria, Plato } from "./types";
 
 // Grupos de extras y opciones reutilizables: se crean aquí una vez ("Extras de
 // hamburguesa", "Punto de la carne") y se marcan en cada plato, en "Para pedir".
 // Cambiar un precio aquí vale para todos los platos que lo tengan.
 export function SeccionExtras() {
   const [config, setConfig] = useState<ConfigProductos | null>(null);
+  const [carta, setCarta] = useState<Plato[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [error, setError] = useState(false);
   // null = nada abierto; "nuevo" = creando; otro = id del grupo que se edita.
   const [editando, setEditando] = useState<string | null>(null);
+  // Grupo cuya lista de platos esta desplegada (para "asignar a varios de golpe").
+  const [asignando, setAsignando] = useState<string | null>(null);
 
   function recargar() {
     cargarProductos()
@@ -30,6 +38,10 @@ export function SeccionExtras() {
   }
 
   useEffect(recargar, []);
+  useEffect(() => {
+    cargarCarta().then(setCarta);
+    cargarCategorias().then(setCategorias);
+  }, []);
 
   function platosCon(id: string): number {
     return Object.values(config?.platos ?? {}).filter((p) => p.grupos.includes(id)).length;
@@ -103,13 +115,114 @@ export function SeccionExtras() {
                 ? "No está en ningún plato todavía."
                 : `En ${platosCon(g.id)} ${platosCon(g.id) === 1 ? "plato" : "platos"}.`}
             </p>
-            <button type="button" className="secundario" onClick={() => setEditando(g.id)}>
-              Editar
-            </button>
+            <div className="acciones-grupo">
+              <button type="button" className="secundario" onClick={() => setEditando(g.id)}>
+                Editar
+              </button>
+              <button
+                type="button"
+                className="secundario"
+                onClick={() => setAsignando(asignando === g.id ? null : g.id)}
+              >
+                {asignando === g.id ? "Cerrar" : "Asignar a platos"}
+              </button>
+            </div>
+            {asignando === g.id && (
+              <AsignarPlatos
+                grupo={g}
+                carta={carta}
+                categorias={categorias}
+                asignados={
+                  new Set(
+                    Object.entries(config.platos)
+                      .filter(([, p]) => p.grupos.includes(g.id))
+                      .map(([id]) => id)
+                  )
+                }
+                onGuardado={(nuevaConfig) => {
+                  setConfig(nuevaConfig);
+                  setAsignando(null);
+                }}
+              />
+            )}
           </div>
         )
       )}
     </section>
+  );
+}
+
+interface PropsAsignar {
+  grupo: GrupoOpciones;
+  carta: Plato[];
+  categorias: Categoria[];
+  asignados: Set<string>;
+  onGuardado: (config: ConfigProductos) => void;
+}
+
+// El "marcar de golpe" en el que se pensó todo esto: en vez de abrir cada
+// plato de carne para tildar "Punto de la carne", se hace una vez desde aqui.
+function AsignarPlatos({ grupo, carta, categorias, asignados, onGuardado }: PropsAsignar) {
+  const [elegidos, setElegidos] = useState<Set<string>>(new Set(asignados));
+  const [ocupado, setOcupado] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
+
+  const nombreCategoria = new Map(categorias.map((c) => [c.id, c.nombre]));
+  const porCategoria = new Map<string, Plato[]>();
+  for (const p of carta) {
+    if (!p.id) continue;
+    const lista = porCategoria.get(p.categoria) ?? [];
+    lista.push(p);
+    porCategoria.set(p.categoria, lista);
+  }
+
+  function alternar(id: string) {
+    setElegidos((actual) => {
+      const nuevo = new Set(actual);
+      if (nuevo.has(id)) nuevo.delete(id);
+      else nuevo.add(id);
+      return nuevo;
+    });
+  }
+
+  async function guardar() {
+    setOcupado(true);
+    setAviso(null);
+    const resp = await asignarGrupoAPlatos(grupo.id, [...elegidos]);
+    setOcupado(false);
+    if (resp.ok && resp.config) {
+      onGuardado(resp.config);
+    } else {
+      setAviso("No se pudo guardar. Inténtalo de nuevo.");
+    }
+  }
+
+  return (
+    <div className="asignar-platos">
+      {carta.length === 0 ? (
+        <p className="ayuda-campo">Cargando la carta…</p>
+      ) : (
+        [...porCategoria.entries()].map(([catId, platos]) => (
+          <div key={catId} className="asignar-categoria">
+            <h3>{nombreCategoria.get(catId) ?? catId}</h3>
+            {platos.map((p) => (
+              <label className="opcion" key={p.id}>
+                <input
+                  type="checkbox"
+                  checked={p.id !== null && elegidos.has(p.id)}
+                  onChange={() => p.id && alternar(p.id)}
+                />
+                {p.nombre}
+              </label>
+            ))}
+          </div>
+        ))
+      )}
+      <button type="button" className="primario" disabled={ocupado} onClick={guardar}>
+        Guardar ({elegidos.size} {elegidos.size === 1 ? "plato" : "platos"})
+      </button>
+      {aviso && <div className="aviso visible error">{aviso}</div>}
+    </div>
   );
 }
 

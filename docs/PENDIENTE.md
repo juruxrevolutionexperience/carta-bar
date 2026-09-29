@@ -43,6 +43,13 @@ empezó saltando su requisito de entrada, en
   `propuestas`, que se aplica sola al arrancar).
 - **Siguiente paso tras probarlo:** bloque 3 (comandas de verdad: cocina/
   barra, tickets, rol camarero con acceso rápido).
+- **Extra pedido por el usuario (mismo día):** en "Extras y opciones" del
+  panel, cada grupo tiene ahora un botón "Asignar a platos" que marca el
+  grupo en varios platos de golpe (agrupados por categoría), sin tener que
+  abrir cada plato uno a uno para tildar la casilla. `asignar_grupo_a_platos()`
+  en `productos.py`, endpoint `PUT /admin/api/grupos-opciones/{id}/platos`,
+  8 tests nuevos (499 en total). Formatos (media ración, etc.) siguen siendo
+  por plato, porque el precio cambia en cada uno — eso no tiene atajo.
 
 ## DÓNDE LO DEJAMOS (2026-09-27) — LEER PRIMERO
 

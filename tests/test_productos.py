@@ -18,6 +18,7 @@ from carta_bar.productos import (
     GrupoNoExisteError,
     Opcion,
     RepositorioProductosMemoria,
+    asignar_grupo_a_platos,
     con_formatos,
     config_productos,
     destino_de,
@@ -166,6 +167,50 @@ def test_borrar_un_grupo_lo_quita_de_los_platos(repo: RepositorioProductosMemori
     assert repo.eliminar_grupo("bar1", extras.id) is True
     assert repo.listar_pedido_platos("bar1")["clasica"].grupos == [punto.id]
     assert repo.eliminar_grupo("bar1", extras.id) is False
+
+
+def test_asignar_grupo_a_varios_platos_de_una_vez(repo: RepositorioProductosMemoria) -> None:
+    """La razon de existir: marcar "Punto de la carne" en diez platos de carne
+    sin tener que abrir cada uno, uno a uno."""
+    punto = repo.crear_grupo("bar1", _punto())
+    asignar_grupo_a_platos(repo, "bar1", punto.id, ["entrecot", "solomillo"])
+    asignados = repo.listar_pedido_platos("bar1")
+    assert asignados["entrecot"].grupos == [punto.id]
+    assert asignados["solomillo"].grupos == [punto.id]
+
+
+def test_asignar_de_nuevo_quita_de_los_que_ya_no_estan(repo: RepositorioProductosMemoria) -> None:
+    punto = repo.crear_grupo("bar1", _punto())
+    asignar_grupo_a_platos(repo, "bar1", punto.id, ["entrecot", "solomillo"])
+    asignar_grupo_a_platos(repo, "bar1", punto.id, ["solomillo"])
+    asignados = repo.listar_pedido_platos("bar1")
+    assert asignados["entrecot"].grupos == []
+    assert asignados["solomillo"].grupos == [punto.id]
+
+
+def test_asignar_grupo_conserva_el_resto_de_la_configuracion_del_plato(
+    repo: RepositorioProductosMemoria,
+) -> None:
+    """No debe borrar el destino, el alcohol o los formatos ya guardados."""
+    punto = repo.crear_grupo("bar1", _punto())
+    repo.guardar_pedido_plato(
+        "bar1",
+        "entrecot",
+        DatosPedidoPlato(
+            destino="barra", alcohol=True, formatos=[Formato(nombre="Media", precio=9)]
+        ),
+    )
+    asignar_grupo_a_platos(repo, "bar1", punto.id, ["entrecot"])
+    plato = repo.listar_pedido_platos("bar1")["entrecot"]
+    assert plato.destino == "barra"
+    assert plato.alcohol is True
+    assert plato.formatos == [Formato(nombre="Media", precio=9)]
+    assert plato.grupos == [punto.id]
+
+
+def test_asignar_un_grupo_que_no_existe(repo: RepositorioProductosMemoria) -> None:
+    with pytest.raises(GrupoNoExisteError):
+        asignar_grupo_a_platos(repo, "bar1", "grupo-inventado", ["entrecot"])
 
 
 def test_no_se_asigna_un_grupo_de_otro_restaurante(repo: RepositorioProductosMemoria) -> None:
@@ -357,4 +402,57 @@ def test_endpoint_publico_de_grupos_de_un_plato(gerente: TestClient) -> None:
     assert [g["id"] for g in r.json()] == [grupo["id"]]
 
     gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={})
+    gerente.delete(f"/admin/api/grupos-opciones/{grupo['id']}")
+
+
+PLATO_2 = "p002"
+
+
+def test_asignar_grupo_a_platos_por_api(gerente: TestClient) -> None:
+    grupo = gerente.post(
+        "/admin/api/grupos-opciones",
+        json={"nombre": "Punto", "minimo": 1, "maximo": 1, "opciones": [{"nombre": "Al punto"}]},
+    ).json()
+
+    r = gerente.put(
+        f"/admin/api/grupos-opciones/{grupo['id']}/platos",
+        json={"plato_ids": [PLATO, PLATO_2]},
+    )
+    assert r.status_code == 200
+    config = r.json()
+    assert config["platos"][PLATO]["grupos"] == [grupo["id"]]
+    assert config["platos"][PLATO_2]["grupos"] == [grupo["id"]]
+
+    # Repetir con menos platos quita el grupo de los que ya no estan.
+    r = gerente.put(f"/admin/api/grupos-opciones/{grupo['id']}/platos", json={"plato_ids": [PLATO]})
+    config = r.json()
+    assert config["platos"][PLATO]["grupos"] == [grupo["id"]]
+    assert config["platos"][PLATO_2]["grupos"] == []
+
+    gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={})
+    gerente.delete(f"/admin/api/grupos-opciones/{grupo['id']}")
+
+
+def test_asignar_grupo_a_platos_valida_sesion_grupo_y_platos(gerente: TestClient) -> None:
+    grupo = gerente.post(
+        "/admin/api/grupos-opciones", json={"nombre": "X", "opciones": [{"nombre": "Y"}]}
+    ).json()
+
+    sin_sesion = TestClient(app)
+    r = sin_sesion.put(
+        f"/admin/api/grupos-opciones/{grupo['id']}/platos", json={"plato_ids": [PLATO]}
+    )
+    assert r.status_code == 401
+
+    r = gerente.put(
+        "/admin/api/grupos-opciones/grupo-inventado/platos", json={"plato_ids": [PLATO]}
+    )
+    assert r.status_code == 404
+
+    r = gerente.put(
+        f"/admin/api/grupos-opciones/{grupo['id']}/platos",
+        json={"plato_ids": ["plato-que-no-existe"]},
+    )
+    assert r.status_code == 400
+
     gerente.delete(f"/admin/api/grupos-opciones/{grupo['id']}")

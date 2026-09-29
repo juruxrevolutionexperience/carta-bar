@@ -425,6 +425,46 @@ def config_productos(repo: RepositorioProductos, restaurante_id: str) -> ConfigP
     )
 
 
+def asignar_grupo_a_platos(
+    repo: RepositorioProductos, restaurante_id: str, grupo_id: str, plato_ids: list[str]
+) -> None:
+    """Deja `grupo_id` exactamente en los platos de `plato_ids`: se lo quita a
+    los que ya no estan en la lista y se lo pone a los que faltan. Para no
+    tener que entrar plato a plato cuando el mismo grupo (ej. "Punto de la
+    carne") va en muchos: se marca una vez, aqui, para todos a la vez. Lanza
+    GrupoNoExisteError si el grupo no es de este restaurante."""
+    if grupo_id not in {g.id for g in repo.listar_grupos(restaurante_id)}:
+        raise GrupoNoExisteError()
+    actuales = repo.listar_pedido_platos(restaurante_id)
+    con_el_grupo = {pid for pid, p in actuales.items() if grupo_id in p.grupos}
+    deseados = set(plato_ids)
+
+    for pid in con_el_grupo - deseados:
+        p = actuales[pid]
+        repo.guardar_pedido_plato(
+            restaurante_id,
+            pid,
+            DatosPedidoPlato(
+                destino=p.destino,
+                alcohol=p.alcohol,
+                formatos=p.formatos,
+                grupos=[g for g in p.grupos if g != grupo_id],
+            ),
+        )
+    for pid in deseados - con_el_grupo:
+        p = actuales.get(pid)
+        repo.guardar_pedido_plato(
+            restaurante_id,
+            pid,
+            DatosPedidoPlato(
+                destino=p.destino if p else None,
+                alcohol=p.alcohol if p else False,
+                formatos=p.formatos if p else [],
+                grupos=[*(p.grupos if p else []), grupo_id],
+            ),
+        )
+
+
 def grupos_de_plato(
     repo: RepositorioProductos, restaurante_id: str, plato_id: str
 ) -> list[GrupoOpciones]:

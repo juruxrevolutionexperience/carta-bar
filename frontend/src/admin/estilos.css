@@ -2345,6 +2345,39 @@ button.secundario.peligro {
   margin-left: 0;
 }
 
+.acciones-grupo {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.acciones-grupo button.secundario {
+  margin-left: 0;
+}
+
+/* "Asignar a platos": marcar el grupo en varios de golpe, sin abrir cada
+   plato uno a uno (SeccionExtras.tsx, AsignarPlatos). */
+.asignar-platos {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--borde-suave);
+  max-height: 360px;
+  overflow-y: auto;
+}
+.asignar-categoria h3 {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--tinta-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin: 10px 0 4px;
+}
+.asignar-categoria:first-child h3 {
+  margin-top: 0;
+}
+.asignar-platos .opcion {
+  padding: 3px 0;
+}
+
 /* Cocina o barra, en cada categoría: se toca para cambiarlo. */
 .fila-categoria button.destino-categoria {
   min-width: 70px;

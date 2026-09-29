@@ -430,3 +430,18 @@ export async function actualizarGrupo(id: string, datos: DatosGrupo): Promise<Re
 export async function eliminarGrupo(id: string): Promise<Response> {
   return apiFetch(`/admin/api/grupos-opciones/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
+
+// Deja el grupo exactamente en esos platos (se lo quita al resto): para
+// marcarlo en varios de golpe sin entrar plato a plato.
+export async function asignarGrupoAPlatos(
+  grupoId: string,
+  platoIds: string[]
+): Promise<{ ok: boolean; status: number; config: ConfigProductos | null }> {
+  const resp = await apiFetch(`/admin/api/grupos-opciones/${encodeURIComponent(grupoId)}/platos`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ plato_ids: platoIds }),
+  });
+  const config = resp.ok ? ((await resp.json()) as ConfigProductos) : null;
+  return { ok: resp.ok, status: resp.status, config };
+}

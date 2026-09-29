@@ -97,6 +97,7 @@ from carta_bar.productos import (
     GrupoNoExisteError,
     GrupoOpciones,
     PedidoPlato,
+    asignar_grupo_a_platos,
     con_formatos,
     config_productos,
     crear_repositorio_productos,
@@ -788,6 +789,31 @@ def admin_eliminar_grupo(
     if not productos.eliminar_grupo(restaurante_id, grupo_id):
         return Response(status_code=404, content="Grupo no encontrado")
     return Response(status_code=204)
+
+
+class AsignarGrupoPeticion(BaseModel):
+    plato_ids: list[str] = Field(default_factory=list, max_length=1000)
+
+
+@app.put("/admin/api/grupos-opciones/{grupo_id}/platos", response_model=None)
+def admin_asignar_grupo(
+    grupo_id: str,
+    peticion: AsignarGrupoPeticion,
+    request: Request,
+    restaurante_id: RestauranteActual,
+) -> ConfigProductos | Response:
+    """Para no entrar plato a plato cuando el mismo grupo (ej. "Punto de la
+    carne") va en muchos: se marca de una vez, desde el propio grupo."""
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    validos = {p.id for p in cargar_carta(restaurante_id)}
+    if not set(peticion.plato_ids) <= validos:
+        return Response(status_code=400, content="Alguno de esos platos no existe")
+    try:
+        asignar_grupo_a_platos(productos, restaurante_id, grupo_id, peticion.plato_ids)
+    except GrupoNoExisteError:
+        return Response(status_code=404, content="Grupo no encontrado")
+    return config_productos(productos, restaurante_id)
 
 
 # ------------------------------------------------ pedido en mesa (primer bloque)
