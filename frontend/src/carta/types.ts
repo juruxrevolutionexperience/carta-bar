@@ -92,3 +92,15 @@ export interface MensajeUI {
   texto: string;
   pendiente?: boolean;
 }
+
+// Coincide con MiSesion en src/carta_bar/mesas.py.
+export type EstadoSesionMesa = "por_confirmar" | "abierta" | "cuenta_pedida" | "cerrada";
+export type RolComensal = "anfitrion" | "invitado";
+
+export interface MiMesa {
+  mesa: string;
+  estado: EstadoSesionMesa;
+  rol: RolComensal;
+  nombre: string;
+  comensales: string[];
+}

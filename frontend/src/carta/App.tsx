@@ -10,8 +10,28 @@ import { Portada } from "./Portada";
 import { colorSeguro } from "./seguridad";
 import { SelectorIdioma } from "./SelectorIdioma";
 import { useListaCliente } from "./useListaCliente";
+import { useMesa } from "./useMesa";
 import { useVisorFoto } from "./useVisorFoto";
 import { VisorFoto } from "./VisorFoto";
+
+// Provisional, solo para probar el enganche con el backend de mesas: la
+// pantalla de verdad (barra de pedido, propuestas...) es la Fase B/C de
+// docs/PEDIDO-EN-MESA.md.
+const TEXTO_ESTADO: Record<string, string> = {
+  por_confirmar: "esperando a que os acepten",
+  abierta: "mesa abierta",
+  cuenta_pedida: "cuenta pedida",
+};
+
+function BarraMesa() {
+  const mesa = useMesa();
+  if (!mesa || mesa.estado === "cerrada") return null;
+  return (
+    <div className="barra-mesa">
+      Mesa {mesa.mesa} · {TEXTO_ESTADO[mesa.estado] ?? mesa.estado}
+    </div>
+  );
+}
 
 function CartaApp() {
   const { carta, config, idioma, categoriasVisibles, cargando, t } = useCartaContext();
@@ -63,6 +83,7 @@ function CartaApp() {
 
   return (
     <>
+      <BarraMesa />
       <div className="app">
         <Portada />
 
