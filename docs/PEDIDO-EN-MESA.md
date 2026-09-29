@@ -1443,3 +1443,11 @@ inicial de esta sesión (el "+" de Mi lista duplicado con "Pedir" en la carta de
 corregido) y queda por confirmar en el bar si el problema de "no se añade nada / lista en
 blanco" que describió el usuario es el buffering de SSE en nginx (pendiente de ver la
 configuración del servidor).
+
+### Mesas y Servicio muestran lo mismo (2026-09-29)
+
+El usuario señaló que si el panel de comanda solo estaba en Servicio, la pantalla Mesas no
+serviría de nada al tocar una mesa. Correcto: `PanelMesa.tsx` (el que usa Mesas) ahora incluye
+el mismo `PanelComandaMesa`, en modo ojo y con la mesa ocupada — misma mesa, mismo backend, se
+ve igual en los dos sitios. Mesas sigue siendo la pantalla para montar el local (plano, zonas);
+Servicio, la lista rápida del día a día sin plano.
