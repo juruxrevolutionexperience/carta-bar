@@ -1,7 +1,9 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 
+import { useComandas } from "./useComandas";
 import { useMesa } from "./useMesa";
 import { usePropuestas } from "./usePropuestas";
+import type { ResumenComanda } from "./types";
 
 interface MesaContextValue extends ReturnType<typeof usePropuestas> {
   mesa: ReturnType<typeof useMesa>["mesa"];
@@ -13,6 +15,8 @@ interface MesaContextValue extends ReturnType<typeof usePropuestas> {
   panelAbierto: boolean;
   abrirPanel: () => void;
   cerrarPanel: () => void;
+  // Una vez confirmado, si ya se sirvio o no (bloque 3, "Bloque 3 en detalle").
+  comandas: ResumenComanda[];
 }
 
 const MesaContext = createContext<MesaContextValue | null>(null);
@@ -26,6 +30,7 @@ export function useMesaContext(): MesaContextValue {
 export function MesaProvider({ children }: { children: ReactNode }) {
   const { mesa, pidiendoNombre, entrar } = useMesa();
   const propuestas = usePropuestas(mesa);
+  const comandas = useComandas(mesa);
   const [panelAbierto, setPanelAbierto] = useState(false);
 
   const value: MesaContextValue = {
@@ -36,6 +41,7 @@ export function MesaProvider({ children }: { children: ReactNode }) {
     panelAbierto,
     abrirPanel: () => setPanelAbierto(true),
     cerrarPanel: () => setPanelAbierto(false),
+    comandas,
   };
 
   return <MesaContext.Provider value={value}>{children}</MesaContext.Provider>;

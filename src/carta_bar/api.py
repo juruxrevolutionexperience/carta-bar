@@ -33,9 +33,11 @@ from carta_bar.comandas import (
     OpcionElegida as OpcionElegidaTicket,
 )
 from carta_bar.comandas import (
+    ResumenComanda,
     Ticket,
     crear_comanda,
     crear_repositorio_comandas,
+    resumen_comandas,
 )
 from carta_bar.costes import ConsumoTotal
 from carta_bar.datos import (
@@ -1317,6 +1319,48 @@ def api_propuestas_eventos(
     if encontrado is None:
         return _sin_mesa()
     return StreamingResponse(_eventos_propuestas(encontrado[0].id), media_type="text/event-stream")
+
+
+@app.get("/api/mesa/comandas", response_model=None)
+def api_mesa_comandas(
+    request: Request, restaurante_id: RestauranteActual
+) -> list[ResumenComanda] | Response:
+    """Lo que el cliente ve de su propio pedido, una vez confirmado (bloque 3):
+    solo si va o no va, sin tickets ni destinos (eso es de cocina)."""
+    encontrado = _comensal_en_sesion(request, restaurante_id)
+    if encontrado is None:
+        return _sin_mesa()
+    _, sesion = encontrado
+    return resumen_comandas(comandas, sesion.id)
+
+
+def _eventos_comandas(comensal_id: str) -> Iterator[str]:
+    anterior: str | None = None
+    limite = time.monotonic() + 900
+    while time.monotonic() < limite:
+        encontrado = mesas.comensal_con_sesion(comensal_id)
+        if encontrado is None or encontrado[1].estado == "cerrada":
+            yield f"data: {json.dumps([])}\n\n"
+            return
+        _, sesion = encontrado
+        lista = [r.model_dump(mode="json") for r in resumen_comandas(comandas, sesion.id)]
+        actual = json.dumps(lista, sort_keys=True, ensure_ascii=False)
+        if actual != anterior:
+            yield f"data: {actual}\n\n"
+            anterior = actual
+        else:
+            yield ": \n\n"
+        time.sleep(1.5)
+
+
+@app.get("/api/mesa/comandas/eventos", response_model=None)
+def api_comandas_eventos(
+    request: Request, restaurante_id: RestauranteActual
+) -> StreamingResponse | Response:
+    encontrado = _comensal_en_sesion(request, restaurante_id)
+    if encontrado is None:
+        return _sin_mesa()
+    return StreamingResponse(_eventos_comandas(encontrado[0].id), media_type="text/event-stream")
 
 
 # -- el personal, desde el panel (hoy la cookie del gerente; con el bloque 3,

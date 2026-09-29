@@ -15,11 +15,12 @@ from carta_bar import auth
 from carta_bar.api import (
     COOKIE_SESION,
     RESTAURANTE_ID,
+    _eventos_comandas,
     _eventos_tickets,
     _resolver_restaurante,
     app,
 )
-from carta_bar.comandas import Linea, RepositorioComandasMemoria, crear_comanda
+from carta_bar.comandas import Linea, RepositorioComandasMemoria, crear_comanda, resumen_comandas
 
 PLATO = "p001"  # datos/la-catedral/carta.json: precio 19.0, disponible.
 PLATO_2 = "p002"
@@ -82,6 +83,47 @@ def test_listar_pendientes_no_incluye_las_servidas(repo: RepositorioComandasMemo
 def test_listar_pendientes_filtra_por_destino(repo: RepositorioComandasMemoria) -> None:
     crear_comanda(repo, "bar1", "s1", "Mesa 1", {"cocina": [_linea()], "barra": [_linea("Caña")]})
     assert [t.destino for t in repo.listar_pendientes("bar1", "barra")] == ["barra"]
+
+
+def test_resumen_comandas_en_preparacion_mientras_falte_un_ticket(
+    repo: RepositorioComandasMemoria,
+) -> None:
+    """Comida y bebida de la misma comanda: el cliente solo la ve "servido"
+    cuando las dos partes lo estan, no antes."""
+    tickets = crear_comanda(
+        repo, "bar1", "s1", "Mesa 1", {"cocina": [_linea()], "barra": [_linea("Caña")]}
+    )
+    de_cocina = next(t for t in tickets if t.destino == "cocina")
+    repo.actualizar_estado("bar1", de_cocina.id, "servida", de_cocina.creado_en)
+
+    resumen = resumen_comandas(repo, "s1")
+    assert len(resumen) == 1
+    assert resumen[0].numero == 1
+    assert resumen[0].estado == "en_preparacion"
+
+
+def test_resumen_comandas_servido_cuando_todos_sus_tickets_lo_estan(
+    repo: RepositorioComandasMemoria,
+) -> None:
+    (ticket,) = crear_comanda(repo, "bar1", "s1", "Mesa 1", {"cocina": [_linea()]})
+    repo.actualizar_estado("bar1", ticket.id, "servida", ticket.creado_en)
+    resumen = resumen_comandas(repo, "s1")
+    assert resumen == [resumen[0]]
+    assert resumen[0].estado == "servido"
+
+
+def test_resumen_comandas_varias_por_numero_y_orden(repo: RepositorioComandasMemoria) -> None:
+    crear_comanda(repo, "bar1", "s1", "Mesa 1", {"cocina": [_linea()]})
+    crear_comanda(repo, "bar1", "s1", "Mesa 1", {"cocina": [_linea()]})
+    resumen = resumen_comandas(repo, "s1")
+    assert [r.numero for r in resumen] == [1, 2]
+    assert all(r.estado == "en_preparacion" for r in resumen)
+
+
+def test_resumen_comandas_no_mezcla_sesiones(repo: RepositorioComandasMemoria) -> None:
+    crear_comanda(repo, "bar1", "s1", "Mesa 1", {"cocina": [_linea()]})
+    crear_comanda(repo, "bar1", "s2", "Mesa 2", {"cocina": [_linea()]})
+    assert len(resumen_comandas(repo, "s1")) == 1
 
 
 def test_no_se_ve_ni_se_toca_un_ticket_de_otro_restaurante(
@@ -256,5 +298,67 @@ def test_eventos_sse_manda_los_tickets_pendientes(gerente: TestClient) -> None:
     primer_evento = next(_eventos_tickets(RESTAURANTE_ID))
     assert primer_evento.startswith("data:")
     assert "Terraza Comandas 7" in primer_evento
+
+    gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={})
+
+
+# ------------------------------------------------------ lo que ve el cliente
+
+
+def test_mesa_comandas_exige_estar_en_una_mesa() -> None:
+    assert TestClient(app).get("/api/mesa/comandas").status_code == 401
+
+
+def test_el_cliente_ve_su_comanda_en_preparacion_y_luego_servida(gerente: TestClient) -> None:
+    gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={"destino": "cocina"})
+    anfitrion = _mesa_con_anfitrion(gerente, "Terraza Comandas 8")
+    anfitrion.post("/api/mesa/propuestas", json={"plato_id": PLATO})
+    anfitrion.post("/api/mesa/propuestas/confirmar")
+
+    resumen = anfitrion.get("/api/mesa/comandas").json()
+    assert resumen == [{"numero": resumen[0]["numero"], "estado": "en_preparacion"}]
+
+    ticket = next(
+        t
+        for t in gerente.get("/admin/api/tickets").json()
+        if t["mesa_nombre"] == "Terraza Comandas 8"
+    )
+    gerente.post(f"/admin/api/tickets/{ticket['id']}/estado", json={"estado": "servida"})
+
+    resumen = anfitrion.get("/api/mesa/comandas").json()
+    assert resumen[0]["estado"] == "servido"
+
+    gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={})
+
+
+def test_un_invitado_ve_la_misma_comanda_que_el_anfitrion(gerente: TestClient) -> None:
+    gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={"destino": "cocina"})
+    creada = gerente.post("/admin/api/mesas", json={"nombre": "Terraza Comandas 9"}).json()
+    anfitrion = TestClient(app)
+    anfitrion.post("/api/mesa/entrar", json={"token_qr": creada["token_qr"], "nombre": "Ana"})
+    invitado = TestClient(app)
+    invitado.post("/api/mesa/entrar", json={"token_qr": creada["token_qr"], "nombre": "Luis"})
+
+    anfitrion.post("/api/mesa/propuestas", json={"plato_id": PLATO})
+    anfitrion.post("/api/mesa/propuestas/confirmar")
+
+    assert invitado.get("/api/mesa/comandas").json() == anfitrion.get("/api/mesa/comandas").json()
+
+    gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={})
+
+
+def test_eventos_sse_de_comandas_manda_el_resumen(gerente: TestClient) -> None:
+    gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={"destino": "cocina"})
+    creada = gerente.post("/admin/api/mesas", json={"nombre": "Terraza Comandas 10"}).json()
+    cliente = TestClient(app)
+    entrada = cliente.post(
+        "/api/mesa/entrar", json={"token_qr": creada["token_qr"], "nombre": "Ana"}
+    ).json()
+    cliente.post("/api/mesa/propuestas", json={"plato_id": PLATO})
+    cliente.post("/api/mesa/propuestas/confirmar")
+
+    primer_evento = next(_eventos_comandas(entrada["comensal_id"]))
+    assert primer_evento.startswith("data:")
+    assert "en_preparacion" in primer_evento
 
     gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={})

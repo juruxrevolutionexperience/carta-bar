@@ -11,6 +11,11 @@ const TEXTO_ESTADO: Record<string, string> = {
   cuenta_pedida: "Cuenta pedida",
 };
 
+const TEXTO_COMANDA: Record<string, string> = {
+  en_preparacion: "en preparación",
+  servido: "servido",
+};
+
 function lineaTexto(p: Propuesta): string {
   const partes = [p.formato, ...p.opciones.map((o) => o.nombre)].filter(Boolean);
   return partes.length > 0 ? `${p.nombre_plato} (${partes.join(", ")})` : p.nombre_plato;
@@ -22,7 +27,7 @@ function lineaTexto(p: Propuesta): string {
 // manda el pedido (docs/PEDIDO-EN-MESA.md, seccion 11.1).
 export function PanelPedidoMesa() {
   const { config } = useCartaContext();
-  const { mesa, propuestas, quitar, confirmar, panelAbierto, abrirPanel, cerrarPanel } =
+  const { mesa, propuestas, quitar, confirmar, panelAbierto, abrirPanel, cerrarPanel, comandas } =
     useMesaContext();
   const [confirmando, setConfirmando] = useState(false);
   const moneda = config.moneda || "€";
@@ -64,6 +69,16 @@ export function PanelPedidoMesa() {
           <p className="estado-mesa aviso-pendiente">
             Esto aún no se ha enviado: seguid añadiendo lo que queráis.
           </p>
+        )}
+
+        {comandas.length > 0 && (
+          <ul className="lista-comandas">
+            {comandas.map((c) => (
+              <li key={c.numero} className={"chip-comanda estado-" + c.estado}>
+                Comanda {c.numero} · {TEXTO_COMANDA[c.estado] ?? c.estado}
+              </li>
+            ))}
+          </ul>
         )}
 
         <div className="hilo-lista">

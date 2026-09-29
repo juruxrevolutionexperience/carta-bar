@@ -1321,3 +1321,18 @@ real**: falta que el usuario lo pruebe con La CatedRal o `demo.jurux.app`.
 **Pendiente para más adelante (fuera de este bloque):** rol camarero con su propio acceso;
 aviso sonoro al entrar un ticket nuevo; SSE en la pantalla de cocina en vez de refresco cada
 5 s; confirmación expresa al servir alcohol; anular una línea con motivo.
+
+### El cliente ve el estado de su comanda (añadido el mismo día, bloque 3)
+
+Faltaba: tras confirmar, el cliente solo veía "· pedido" en sus líneas, sin saber si la
+cocina/barra habían avanzado. Decidido con el usuario: solo dos estados visibles
+("en preparación" / "servido"), sin colas ni minutos, agregando todos los tickets de una
+misma comanda (si tiene cocina y barra, solo se ve "servido" cuando los dos lo están).
+
+- `resumen_comandas()` en `comandas.py`, agregando por número de comanda.
+- `GET /api/mesa/comandas` y `GET /api/mesa/comandas/eventos` (SSE, mismo patrón que las
+  propuestas), con la cookie de comensal.
+- En el panel del pedido de la mesa, un chip por comanda ("Comanda 5 · en preparación"),
+  encima del listado de propuestas. `useComandas.ts` en el cliente.
+
+6 tests nuevos (535 en total).

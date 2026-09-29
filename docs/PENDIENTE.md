@@ -68,6 +68,19 @@ empezó saltando su requisito de entrada, en
     pantalla de cocina/barra que lo reciba. Eso es el bloque 3, pendiente de
     plantear a fondo la próxima vez.
 
+## DÓNDE LO DEJAMOS (2026-09-29, noche) — LEER PRIMERO
+
+- **Aclarado con el usuario (sin cambios de código):** el destino cocina/
+  barra se configura por categoría en **Platos → "Organizar categorías"**
+  (no en "Extras y opciones", como dije mal en un momento dado). Bebidas en
+  "Barra", el resto ya va a "Cocina" por defecto.
+- **Añadido: el cliente ve el estado de su comanda.** Antes, tras confirmar,
+  el móvil solo decía "· pedido" sin más. Ahora hay un chip por comanda
+  ("Comanda 5 · en preparación" / "servido"), en tiempo real por SSE.
+  Detalle en `docs/PEDIDO-EN-MESA.md`. 535 tests, todo limpio.
+- Sigue sin desplegar nada de la tarde de hoy (bloque 3 + esto). Ver el
+  bloque de comandos más abajo.
+
 ## DÓNDE LO DEJAMOS (2026-09-29, tarde) — LEER PRIMERO
 
 - **Bloque 3 (comandas de verdad) construido: backend + pantalla, sin desplegar.**

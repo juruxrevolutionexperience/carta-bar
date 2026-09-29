@@ -85,6 +85,12 @@ class RepositorioComandas(Protocol):
         """Todos los que no estan "servida", del mas antiguo al mas nuevo."""
         ...
 
+    def listar_de_sesion(self, sesion_id: str) -> list[Ticket]:
+        """Todos los tickets de esa mesa, en cualquier estado: lo que ve el
+        cliente de su propia comanda (a diferencia de listar_pendientes, que
+        es para la pantalla de cocina de todo el restaurante)."""
+        ...
+
     def obtener_ticket(self, restaurante_id: str, ticket_id: str) -> Ticket | None: ...
 
     def actualizar_estado(
@@ -149,6 +155,10 @@ class RepositorioComandasMemoria:
         ]
         return sorted(propios, key=lambda t: t.creado_en)
 
+    def listar_de_sesion(self, sesion_id: str) -> list[Ticket]:
+        propios = [t for t in self.tickets.values() if t.sesion_id == sesion_id]
+        return sorted(propios, key=lambda t: t.creado_en)
+
     def obtener_ticket(self, restaurante_id: str, ticket_id: str) -> Ticket | None:
         ticket = self.tickets.get(ticket_id)
         return ticket if ticket is not None and ticket.restaurante_id == restaurante_id else None
@@ -202,6 +212,10 @@ WHERE restaurante_id = %s AND estado != 'servida'
 """
 
 _TICKET_POR_ID = f"SELECT {_COLUMNAS_TICKET} FROM tickets WHERE restaurante_id = %s AND id = %s"
+
+_TICKETS_DE_SESION = f"""
+SELECT {_COLUMNAS_TICKET} FROM tickets WHERE sesion_id = %s ORDER BY creado_en
+"""
 
 _ACTUALIZAR_ESTADO_TICKET = """
 UPDATE tickets SET estado = %s, actualizado_en = %s WHERE restaurante_id = %s AND id = %s
@@ -331,6 +345,11 @@ class RepositorioComandasPostgres:
             cur.execute(consulta, parametros)
             return self._con_lineas(cur, cur.fetchall())
 
+    def listar_de_sesion(self, sesion_id: str) -> list[Ticket]:
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(_TICKETS_DE_SESION, (sesion_id,))
+            return self._con_lineas(cur, cur.fetchall())
+
     def obtener_ticket(self, restaurante_id: str, ticket_id: str) -> Ticket | None:
         with self.pool.connection() as conn, conn.cursor() as cur:
             cur.execute(_TICKET_POR_ID, (restaurante_id, ticket_id))
@@ -369,6 +388,33 @@ def crear_comanda(
     return repo.crear_comanda_con_tickets(
         restaurante_id, sesion_id, mesa_nombre, lineas_por_destino, _ahora(ahora)
     )
+
+
+EstadoComandaCliente = Literal["en_preparacion", "servido"]
+
+
+class ResumenComanda(BaseModel):
+    """Lo que ve el cliente de su propia comanda (docs/PEDIDO-EN-MESA.md,
+    seccion 11.1): solo si ya se sirvio del todo o no, sin colas ni minutos.
+    Una comanda con tickets en cocina y en barra cuenta como servida solo
+    cuando los dos lo estan."""
+
+    numero: int
+    estado: EstadoComandaCliente
+
+
+def resumen_comandas(repo: RepositorioComandas, sesion_id: str) -> list[ResumenComanda]:
+    por_numero: dict[int, list[Ticket]] = {}
+    for ticket in repo.listar_de_sesion(sesion_id):
+        por_numero.setdefault(ticket.numero_comanda, []).append(ticket)
+    resultado = [
+        ResumenComanda(
+            numero=numero,
+            estado="servido" if all(t.estado == "servida" for t in tickets) else "en_preparacion",
+        )
+        for numero, tickets in por_numero.items()
+    ]
+    return sorted(resultado, key=lambda r: r.numero)
 
 
 def crear_repositorio_comandas() -> RepositorioComandas:

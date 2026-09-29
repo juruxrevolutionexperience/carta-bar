@@ -97,6 +97,15 @@ export interface MensajeUI {
 export type EstadoSesionMesa = "por_confirmar" | "abierta" | "cuenta_pedida" | "cerrada";
 export type RolComensal = "anfitrion" | "invitado";
 
+// Coincide con comandas.py: ResumenComanda. Solo si va o no va, sin tickets
+// ni destinos (eso es de cocina).
+export type EstadoComandaCliente = "en_preparacion" | "servido";
+
+export interface ResumenComanda {
+  numero: number;
+  estado: EstadoComandaCliente;
+}
+
 export interface MiMesa {
   mesa: string;
   estado: EstadoSesionMesa;
