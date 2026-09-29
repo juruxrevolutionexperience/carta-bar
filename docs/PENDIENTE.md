@@ -68,6 +68,48 @@ empezó saltando su requisito de entrada, en
     pantalla de cocina/barra que lo reciba. Eso es el bloque 3, pendiente de
     plantear a fondo la próxima vez.
 
+## DÓNDE LO DEJAMOS (2026-09-29, cierre del día) — LEER PRIMERO
+
+Día largo, todo commiteado, subido y desplegado (`fb0eb07`, confirmado por el usuario en
+producción). Resumen de lo que se construyó hoy, de arriba abajo, y lo que queda abierto.
+
+**Construido y probado por el usuario en producción:**
+1. Bloque 2 (propuestas): pedir desde la carta con formato/extras, cesta compartida, el
+   anfitrión confirma. Pide el nombre al entrar.
+2. Bloque 3 (comandas): confirmar reparte tickets en cocina/barra; pantalla "Cocina" en el
+   panel; el cliente ve "Comanda N · en preparación/servido" en su móvil.
+3. Pantalla de impresión dedicada (`/admin/impresion`), con historial y "Reimprimir" (por si
+   se cancela el diálogo de imprimir antes de tener el modo silencioso configurado).
+4. **Gestión de la comanda desde la mesa:** al entrar en una mesa ocupada (desde Servicio o
+   desde Mesas, ahora es el mismo panel) se ve todo lo pedido por persona, el total, se puede
+   añadir con un selector estilo TPV (categorías + platos grandes), ajustar el precio de una
+   línea y confirmar.
+5. **Mesas y Servicio unificados en modo ojo:** dejaron de ser dos paneles distintos. Mesas
+   usa el mismo `PanelServicio` (abrir/aceptar/comanda/liberar); el modo lápiz sigue aparte,
+   solo para montar el plano.
+
+Detalle tecnico completo de todo esto en [docs/PEDIDO-EN-MESA.md](PEDIDO-EN-MESA.md).
+
+**Abierto, para retomar la próxima sesión (en este orden de prioridad):**
+1. **Sospecha sin confirmar: nginx puede estar bloqueando el tiempo real (SSE).** El usuario
+   describió un fallo ("pedido que no se añade, lista en blanco") compatible con que nginx
+   acumule (buffer) la respuesta en vez de dejarla fluir. Hace falta ver la config de nginx
+   del servidor (`/etc/nginx/sites-available/` o `conf.d/` del dominio) para confirmarlo y
+   añadir `proxy_buffering off;` en las rutas `/api/mesa/*/eventos` y
+   `/admin/api/*/eventos` si hace falta. **Pedido al usuario, sin respuesta todavía.**
+2. **Impresoras físicas de cocina/barra: ¿red (IP) o USB al Turbopos?** Determina si basta un
+   mini PC/tablet en la wifi, o hace falta un adaptador de impresora en red (15-20€). Sin
+   tocar el Turbopos en ningún caso (es la máquina crítica de los camareros, no se toca).
+3. **Pregunta sin responder:** ¿el QR de la mesa debería verse también en modo servicio
+   dentro de Mesas (antes se veía, ahora solo en modo lápiz), o se queda solo en edición?
+4. **Decisión aplazada por el usuario ("hay que verlo bien"):** en la pantalla Cocina, quitar
+   el paso intermedio "Empezar" y dejar un solo botón "Listo" (recibida → servida
+   directamente), ya que el cliente ve lo mismo ("en preparación") en los dos estados de
+   camino. Propuesto, sin decidir.
+5. **Aparcado como proyecto propio, sin fecha:** sustituir Comandator por Carta Bar
+   directamente en el Turbopos (rol camarero en el TPV físico). No tocar hasta plantearlo a
+   fondo aparte.
+
 ## DÓNDE LO DEJAMOS (2026-09-29, madrugada) — LEER PRIMERO
 
 - **Impresión en cocina/barra: construida, pendiente de probar en el bar.**
