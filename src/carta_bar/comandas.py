@@ -47,6 +47,11 @@ class Linea(BaseModel):
     nota: str | None = None
     alcohol: bool = False
     pedido_por_nombre: str
+    # Nunca se borra: una linea equivocada o cancelada queda marcada, con el
+    # motivo, para que quede constancia (docs/PEDIDO-EN-MESA.md, "Anular una
+    # linea ya confirmada").
+    anulada: bool = False
+    motivo_anulacion: str | None = None
 
 
 class Ticket(BaseModel):
@@ -96,6 +101,13 @@ class RepositorioComandas(Protocol):
     def actualizar_estado(
         self, restaurante_id: str, ticket_id: str, estado: EstadoTicket, ahora: datetime
     ) -> Ticket | None: ...
+
+    def anular_linea(
+        self, restaurante_id: str, ticket_id: str, linea_id: str, motivo: str, ahora: datetime
+    ) -> Ticket | None:
+        """None si el ticket no es de ese restaurante o la linea no es de ese
+        ticket. No borra nada: marca `anulada` y guarda el motivo."""
+        ...
 
 
 def _id(prefijo: str) -> str:
@@ -173,6 +185,22 @@ class RepositorioComandasMemoria:
         self.tickets[ticket_id] = nuevo
         return nuevo
 
+    def anular_linea(
+        self, restaurante_id: str, ticket_id: str, linea_id: str, motivo: str, ahora: datetime
+    ) -> Ticket | None:
+        actual = self.obtener_ticket(restaurante_id, ticket_id)
+        if actual is None or not any(lin.id == linea_id for lin in actual.lineas):
+            return None
+        lineas = [
+            lin.model_copy(update={"anulada": True, "motivo_anulacion": motivo})
+            if lin.id == linea_id
+            else lin
+            for lin in actual.lineas
+        ]
+        nuevo = actual.model_copy(update={"lineas": lineas, "actualizado_en": ahora})
+        self.tickets[ticket_id] = nuevo
+        return nuevo
+
 
 _CANDADO_COMANDAS = "SELECT pg_advisory_xact_lock(hashtext(%s))"
 
@@ -201,8 +229,13 @@ _COLUMNAS_TICKET = (
 
 _COLUMNAS_LINEA = (
     "id, propuesta_id, nombre_plato, formato, precio_unitario, cantidad, opciones, nota, "
-    "alcohol, pedido_por_nombre"
+    "alcohol, pedido_por_nombre, anulada, motivo_anulacion"
 )
+
+_ANULAR_LINEA = """
+UPDATE lineas_ticket SET anulada = true, motivo_anulacion = %s
+WHERE id = %s AND ticket_id = %s
+"""
 
 _LINEAS_DE_TICKET = f"SELECT {_COLUMNAS_LINEA} FROM lineas_ticket WHERE ticket_id = %s"
 
@@ -234,6 +267,8 @@ def _linea_de_fila(f: tuple[Any, ...]) -> Linea:
         nota=f[7],
         alcohol=f[8],
         pedido_por_nombre=f[9],
+        anulada=f[10],
+        motivo_anulacion=f[11],
     )
 
 
@@ -365,6 +400,17 @@ class RepositorioComandasPostgres:
             cur.execute(_ACTUALIZAR_ESTADO_TICKET, (estado, ahora, restaurante_id, ticket_id))
         return self.obtener_ticket(restaurante_id, ticket_id)
 
+    def anular_linea(
+        self, restaurante_id: str, ticket_id: str, linea_id: str, motivo: str, ahora: datetime
+    ) -> Ticket | None:
+        if self.obtener_ticket(restaurante_id, ticket_id) is None:
+            return None
+        with self.pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(_ANULAR_LINEA, (motivo, linea_id, ticket_id))
+            if cur.rowcount == 0:
+                return None
+        return self.obtener_ticket(restaurante_id, ticket_id)
+
 
 # ------------------------------------------------------------ logica de negocio
 
@@ -388,6 +434,19 @@ def crear_comanda(
     return repo.crear_comanda_con_tickets(
         restaurante_id, sesion_id, mesa_nombre, lineas_por_destino, _ahora(ahora)
     )
+
+
+def anular_linea(
+    repo: RepositorioComandas,
+    restaurante_id: str,
+    ticket_id: str,
+    linea_id: str,
+    motivo: str,
+    ahora: datetime | None = None,
+) -> Ticket | None:
+    """El camarero anula una linea ya enviada (pedido equivocado, el cliente
+    cambia de idea): nunca se borra, queda marcada con el motivo."""
+    return repo.anular_linea(restaurante_id, ticket_id, linea_id, motivo, _ahora(ahora))
 
 
 EstadoComandaCliente = Literal["en_preparacion", "servido"]

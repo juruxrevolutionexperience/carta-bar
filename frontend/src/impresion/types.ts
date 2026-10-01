@@ -17,6 +17,8 @@ export interface LineaTicket {
   nota: string | null;
   alcohol: boolean;
   pedido_por_nombre: string;
+  anulada: boolean;
+  motivo_anulacion: string | null;
 }
 
 export interface Ticket {

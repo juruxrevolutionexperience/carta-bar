@@ -1451,3 +1451,46 @@ serviría de nada al tocar una mesa. Correcto: `PanelMesa.tsx` (el que usa Mesas
 el mismo `PanelComandaMesa`, en modo ojo y con la mesa ocupada — misma mesa, mismo backend, se
 ve igual en los dos sitios. Mesas sigue siendo la pantalla para montar el local (plano, zonas);
 Servicio, la lista rápida del día a día sin plano.
+
+### Pedir la cuenta y cobrar (construido 2026-10-01)
+
+Cerraba el ciclo de la mesa: el estado "cuenta_pedida" existía desde el bloque 1 pero nada lo
+activaba nunca.
+
+- `POST /api/mesa/pedir-cuenta` (solo el anfitrión, solo con la mesa ya "abierta") pasa la
+  sesión a "cuenta_pedida". `pedir_cuenta()` en `mesas.py`.
+- Botón "Pedir la cuenta" en el panel del cliente, visible solo al anfitrión y solo en ese
+  estado.
+- `POST /admin/api/mesas/{id}/cobrar` cierra la sesión con motivo **"cobrada"** (distinto de
+  "liberada", que sigue siendo para mesas abandonadas sin cobrar). `cobrar_mesa()` en
+  `mesas.py`.
+- Botón "Cobrar y cerrar" en Servicio/Mesas, visible solo cuando la mesa está en
+  "cuenta_pedida".
+
+### Anular una línea ya confirmada (construido 2026-10-01)
+
+Hasta ahora solo se podía quitar una propuesta mientras seguía pendiente; una vez en
+cocina/barra no había forma de anularla si el cliente cambiaba de idea o había un error.
+
+- `Linea` (en `comandas.py`) gana `anulada: bool` y `motivo_anulacion: str | None`. Nunca se
+  borra: queda marcada, con su motivo (igual que el diseño original, sección 5.7).
+- `POST /admin/api/tickets/{ticket_id}/lineas/{linea_id}/anular` con `{"motivo": "..."}`.
+- En Cocina, cada línea tiene un botón "Anular" que pide el motivo (con `window.prompt`); la
+  línea anulada se ve tachada, con el motivo en rojo, y ya no se puede volver a anular.
+- Si se reimprime un ticket con una línea anulada, el recibo lo marca como "ANULADA: motivo".
+
+### Plato agotado: ya existía (revisado 2026-10-01)
+
+Comprobado con el usuario: el interruptor "Disponible" de cada plato (en Platos) ya bloquea
+al instante que se pueda proponer ese plato (`_validar_pedido` en `api.py` ya comprueba
+`disponible`). No hacía falta construir nada nuevo; confirmado que es suficiente, sin atajo
+adicional desde Cocina.
+
+**Verificado:** 569 tests (18 nuevos entre las dos piezas), `ruff` y `ruff format` limpios en
+todo lo tocado. El bloqueo de pytest de hoy (Smart App Control de Windows, en modo Enforce,
+rechazando el `python.exe` de cada `.venv` por no cumplir su "nivel de firma Enterprise") se
+resolvió desactivando Smart App Control; detalle completo en `docs/PENDIENTE.md`.
+
+**Lo único que queda del plan de "pedido en mesa" sin construir: rol camarero** (login propio,
+permisos limitados). Aparcado para su propia sesión de planteamiento, no bloquea nada de lo
+demás.

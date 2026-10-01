@@ -68,6 +68,43 @@ empezó saltando su requisito de entrada, en
     pantalla de cocina/barra que lo reciba. Eso es el bloque 3, pendiente de
     plantear a fondo la próxima vez.
 
+## DÓNDE LO DEJAMOS (2026-10-01) — LEER PRIMERO
+
+**Sin commitear todavía** (recuerda: nunca lo subo yo solo, comandos al final de este bloque).
+
+Construido hoy, completando el ciclo de vida de una mesa de principio a fin:
+1. **Pedir la cuenta y cobrar**, cerraba el hueco de "cuenta_pedida" (existía el estado, nada
+   lo activaba). Cliente pide, camarero cobra y cierra con motivo "cobrada".
+2. **Anular una línea ya confirmada**, con motivo, sin borrarla nunca. Botón en Cocina.
+3. **Plato agotado:** ya existía (el interruptor "Disponible" de Platos). Confirmado con el
+   usuario que no hace falta nada más.
+
+Detalle técnico en [docs/PEDIDO-EN-MESA.md](PEDIDO-EN-MESA.md). **569 tests, todos en verde.**
+
+**Incidente resuelto hoy, importante para la próxima sesión:** `uv run pytest` se bloqueó
+toda la sesión con `os error 4551` ("Control de aplicaciones bloqueó este archivo"). Causa:
+**Smart App Control de Windows** (modo Enforce) rechazando el `python.exe` de `.venv` por no
+cumplir su "nivel de firma Enterprise" (confirmado mirando
+`Microsoft-Windows-CodeIntegrity/Operational`, eventos 3077/3033/3089). El usuario lo
+desactivó en Seguridad de Windows → Control de aplicaciones y del explorador → Smart App
+Control → Desactivado, y pytest volvió a funcionar. **Si vuelve a pasar, es esto.**
+
+**Pendiente, igual que antes:**
+- Confirmar si las impresoras de cocina/barra son de red o USB al Turbopos (nunca tocar el
+  Turbopos). Ver `docs/PEDIDO-EN-MESA.md`, "Impresión en cocina/barra".
+- Config de nginx del servidor, para confirmar si el buffering afectaba al tiempo real (SSE).
+  Sin confirmar todavía si sigue siendo un problema tras los últimos despliegues.
+- Decisión aplazada: quitar el paso "Empezar" en Cocina y dejar un solo botón "Listo".
+- Pregunta sin responder: ¿el QR de la mesa debería verse también en modo servicio dentro de
+  Mesas (hoy solo en modo lápiz)?
+
+**Lo único que queda del plan "pedido en mesa" sin construir: rol camarero** (login propio,
+permisos limitados). Se plantea aparte, con calma, cuando toque — no bloquea nada de lo demás.
+
+**Siguiente paso acordado con el usuario:** probar el flujo completo de principio a fin
+(escanear → pedir → aceptar → confirmar → cocina → cuenta → cobrar) antes de seguir
+desarrollando nada más.
+
 ## DÓNDE LO DEJAMOS (2026-09-29, cierre del día) — LEER PRIMERO
 
 Día largo, todo commiteado, subido y desplegado (`fb0eb07`, confirmado por el usuario en

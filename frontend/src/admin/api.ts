@@ -209,6 +209,10 @@ export async function liberarMesa(mesaId: string): Promise<Response> {
   return apiFetch(`/admin/api/mesas/${encodeURIComponent(mesaId)}/liberar`, { method: "POST" });
 }
 
+export async function cobrarMesa(mesaId: string): Promise<Response> {
+  return apiFetch(`/admin/api/mesas/${encodeURIComponent(mesaId)}/cobrar`, { method: "POST" });
+}
+
 export async function expulsarComensal(comensalId: string): Promise<Response> {
   return apiFetch(`/admin/api/comensales/${encodeURIComponent(comensalId)}/expulsar`, {
     method: "POST",
@@ -466,6 +470,8 @@ export interface LineaTicket {
   nota: string | null;
   alcohol: boolean;
   pedido_por_nombre: string;
+  anulada: boolean;
+  motivo_anulacion: string | null;
 }
 
 export interface Ticket {
@@ -495,6 +501,21 @@ export async function cambiarEstadoTicket(id: string, estado: EstadoTicket): Pro
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ estado }),
   });
+}
+
+export async function anularLinea(
+  ticketId: string,
+  lineaId: string,
+  motivo: string
+): Promise<Response> {
+  return apiFetch(
+    `/admin/api/tickets/${encodeURIComponent(ticketId)}/lineas/${encodeURIComponent(lineaId)}/anular`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ motivo }),
+    }
+  );
 }
 
 // ---------------------------------------- gestion de la comanda desde la mesa

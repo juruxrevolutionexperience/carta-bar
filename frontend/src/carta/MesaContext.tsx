@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 
+import { pedirCuenta as pedirCuentaApi } from "./api";
 import { useComandas } from "./useComandas";
 import { useMesa } from "./useMesa";
 import { usePropuestas } from "./usePropuestas";
@@ -17,6 +18,9 @@ interface MesaContextValue extends ReturnType<typeof usePropuestas> {
   cerrarPanel: () => void;
   // Una vez confirmado, si ya se sirvio o no (bloque 3, "Bloque 3 en detalle").
   comandas: ResumenComanda[];
+  // Solo el anfitrion, y solo con la mesa ya abierta ("Pedir la cuenta y
+  // cobrar"). El cambio de estado llega solo, por el refresco de useMesa.
+  pedirCuenta: () => Promise<boolean>;
 }
 
 const MesaContext = createContext<MesaContextValue | null>(null);
@@ -42,6 +46,7 @@ export function MesaProvider({ children }: { children: ReactNode }) {
     abrirPanel: () => setPanelAbierto(true),
     cerrarPanel: () => setPanelAbierto(false),
     comandas,
+    pedirCuenta: pedirCuentaApi,
   };
 
   return <MesaContext.Provider value={value}>{children}</MesaContext.Provider>;

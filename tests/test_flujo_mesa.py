@@ -19,12 +19,14 @@ from carta_bar.mesas import (
     Mesa,
     RepositorioMesasMemoria,
     abrir_mesa,
+    cobrar_mesa,
     confirmar_mesa,
     entrar_por_qr,
     expulsar_comensal,
     liberar_mesa,
     mesas_del_local,
     mi_sesion,
+    pedir_cuenta,
     sesion_de_mesa,
 )
 
@@ -219,6 +221,76 @@ def test_liberar_una_mesa_libre_o_ajena_no_hace_nada(
     entrar_por_qr(repo, mesa.token_qr, "Ana", "es", ahora=T0)
     assert liberar_mesa(repo, "bar2", mesa.id, ahora=T0) is False
     assert _estado(repo, mesa, T0) == "por_confirmar"
+
+
+# ------------------------------------------------------------ pedir la cuenta
+
+
+def test_el_anfitrion_pide_la_cuenta_con_la_mesa_abierta(
+    repo: RepositorioMesasMemoria, mesa: Mesa
+) -> None:
+    resultado = entrar_por_qr(repo, mesa.token_qr, "Ana", "es", ahora=T0)
+    assert resultado is not None
+    _, ana = resultado
+    abrir_mesa(repo, "bar1", mesa.id, ahora=_min(1))
+
+    sesion = pedir_cuenta(repo, "bar1", ana.id, ahora=_min(5))
+    assert sesion is not None
+    assert sesion.estado == "cuenta_pedida"
+    assert _estado(repo, mesa, _min(5)) == "cuenta_pedida"
+
+
+def test_un_invitado_no_puede_pedir_la_cuenta(repo: RepositorioMesasMemoria, mesa: Mesa) -> None:
+    entrar_por_qr(repo, mesa.token_qr, "Ana", "es", ahora=T0)
+    resultado = entrar_por_qr(repo, mesa.token_qr, "Luis", "es", ahora=T0)
+    assert resultado is not None
+    _, luis = resultado
+    abrir_mesa(repo, "bar1", mesa.id, ahora=_min(1))
+    assert pedir_cuenta(repo, "bar1", luis.id, ahora=_min(5)) is None
+
+
+def test_no_se_puede_pedir_la_cuenta_sin_que_acepten_la_mesa(
+    repo: RepositorioMesasMemoria, mesa: Mesa
+) -> None:
+    resultado = entrar_por_qr(repo, mesa.token_qr, "Ana", "es", ahora=T0)
+    assert resultado is not None
+    _, ana = resultado
+    assert pedir_cuenta(repo, "bar1", ana.id, ahora=_min(5)) is None
+
+
+def test_no_se_pide_la_cuenta_de_otro_restaurante_ni_expulsado(
+    repo: RepositorioMesasMemoria, mesa: Mesa
+) -> None:
+    resultado = entrar_por_qr(repo, mesa.token_qr, "Ana", "es", ahora=T0)
+    assert resultado is not None
+    _, ana = resultado
+    abrir_mesa(repo, "bar1", mesa.id, ahora=_min(1))
+    assert pedir_cuenta(repo, "bar2", ana.id, ahora=_min(5)) is None
+
+    expulsar_comensal(repo, "bar1", ana.id, ahora=_min(6))
+    assert pedir_cuenta(repo, "bar1", ana.id, ahora=_min(7)) is None
+
+
+def test_cobrar_cierra_con_motivo_cobrada(repo: RepositorioMesasMemoria, mesa: Mesa) -> None:
+    resultado = entrar_por_qr(repo, mesa.token_qr, "Ana", "es", ahora=T0)
+    assert resultado is not None
+    sesion, ana = resultado
+    abrir_mesa(repo, "bar1", mesa.id, ahora=_min(1))
+    pedir_cuenta(repo, "bar1", ana.id, ahora=_min(5))
+
+    assert cobrar_mesa(repo, "bar1", mesa.id, ahora=_min(10)) is True
+    cerrada = repo.sesiones[sesion.id]
+    assert cerrada.estado == "cerrada"
+    assert cerrada.motivo_cierre == "cobrada"
+    assert _estado(repo, mesa, _min(10)) == "libre"
+
+
+def test_cobrar_una_mesa_libre_o_ajena_no_hace_nada(
+    repo: RepositorioMesasMemoria, mesa: Mesa
+) -> None:
+    assert cobrar_mesa(repo, "bar1", mesa.id, ahora=T0) is False
+    entrar_por_qr(repo, mesa.token_qr, "Ana", "es", ahora=T0)
+    assert cobrar_mesa(repo, "bar2", mesa.id, ahora=T0) is False
 
 
 # ------------------------------------------------------------ cierre automatico
@@ -531,3 +603,56 @@ def test_el_gerente_de_otro_restaurante_no_toca_estas_mesas(gerente: TestClient)
     app.dependency_overrides[_resolver_restaurante] = lambda: RESTAURANTE_ID
     assert _en_listado(gerente, mesa["id"])["estado"] == "por_confirmar"
     assert cliente.get("/api/mesa/yo").status_code == 200
+
+
+# ------------------------------------------------------------- pedir la cuenta (API)
+
+
+@pytest.mark.parametrize(
+    ("metodo", "ruta"),
+    [
+        ("post", "/api/mesa/pedir-cuenta"),
+        ("post", "/admin/api/mesas/mesa-x/cobrar"),
+    ],
+)
+def test_pedir_cuenta_y_cobrar_exigen_sesion(metodo: str, ruta: str) -> None:
+    assert getattr(TestClient(app), metodo)(ruta).status_code == 401
+
+
+def test_pedir_cuenta_y_cobrar_por_api(gerente: TestClient) -> None:
+    mesa = _mesa_nueva(gerente, "Flujo API 7")
+    cliente = TestClient(app)
+    cliente.post("/api/mesa/entrar", json={"token_qr": mesa["token_qr"], "nombre": "Ana"})
+    gerente.post(f"/admin/api/mesas/{mesa['id']}/confirmar")
+
+    r = cliente.post("/api/mesa/pedir-cuenta")
+    assert r.status_code == 204
+    assert cliente.get("/api/mesa/yo").json()["estado"] == "cuenta_pedida"
+    assert _en_listado(gerente, mesa["id"])["estado"] == "cuenta_pedida"
+
+    assert gerente.post(f"/admin/api/mesas/{mesa['id']}/cobrar").status_code == 204
+    assert _en_listado(gerente, mesa["id"])["estado"] == "libre"
+    assert cliente.get("/api/mesa/yo").status_code == 401
+
+
+def test_pedir_cuenta_sin_haberla_aceptado_se_rechaza(gerente: TestClient) -> None:
+    mesa = _mesa_nueva(gerente, "Flujo API 8")
+    cliente = TestClient(app)
+    cliente.post("/api/mesa/entrar", json={"token_qr": mesa["token_qr"], "nombre": "Ana"})
+    assert cliente.post("/api/mesa/pedir-cuenta").status_code == 403
+
+
+def test_invitado_no_puede_pedir_la_cuenta_por_api(gerente: TestClient) -> None:
+    mesa = _mesa_nueva(gerente, "Flujo API 9")
+    anfitrion = TestClient(app)
+    anfitrion.post("/api/mesa/entrar", json={"token_qr": mesa["token_qr"], "nombre": "Ana"})
+    invitado = TestClient(app)
+    invitado.post("/api/mesa/entrar", json={"token_qr": mesa["token_qr"], "nombre": "Luis"})
+    gerente.post(f"/admin/api/mesas/{mesa['id']}/confirmar")
+
+    assert invitado.post("/api/mesa/pedir-cuenta").status_code == 403
+
+
+def test_cobrar_una_mesa_ya_libre_da_404(gerente: TestClient) -> None:
+    mesa = _mesa_nueva(gerente, "Flujo API 10")
+    assert gerente.post(f"/admin/api/mesas/{mesa['id']}/cobrar").status_code == 404

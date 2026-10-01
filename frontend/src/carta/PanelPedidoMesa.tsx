@@ -27,9 +27,19 @@ function lineaTexto(p: Propuesta): string {
 // manda el pedido (docs/PEDIDO-EN-MESA.md, seccion 11.1).
 export function PanelPedidoMesa() {
   const { config } = useCartaContext();
-  const { mesa, propuestas, quitar, confirmar, panelAbierto, abrirPanel, cerrarPanel, comandas } =
-    useMesaContext();
+  const {
+    mesa,
+    propuestas,
+    quitar,
+    confirmar,
+    panelAbierto,
+    abrirPanel,
+    cerrarPanel,
+    comandas,
+    pedirCuenta,
+  } = useMesaContext();
   const [confirmando, setConfirmando] = useState(false);
+  const [pidiendoCuenta, setPidiendoCuenta] = useState(false);
   const moneda = config.moneda || "€";
 
   if (!mesa || mesa.estado === "cerrada") return null;
@@ -43,6 +53,13 @@ export function PanelPedidoMesa() {
     setConfirmando(true);
     await confirmar();
     setConfirmando(false);
+  }
+
+  async function pedirLaCuenta() {
+    if (!window.confirm("¿Pedir la cuenta? El camarero vendrá a cobrar.")) return;
+    setPidiendoCuenta(true);
+    await pedirCuenta();
+    setPidiendoCuenta(false);
   }
 
   return (
@@ -130,6 +147,16 @@ export function PanelPedidoMesa() {
                   ? `${mesa.comensales[0] ?? "El anfitrión"} confirma los pedidos de la mesa`
                   : "El anfitrión ya ha confirmado este pedido"}
               </p>
+            )}
+            {soyAnfitrion && mesa.estado === "abierta" && (
+              <button
+                type="button"
+                className="pedir-cuenta"
+                disabled={pidiendoCuenta}
+                onClick={() => void pedirLaCuenta()}
+              >
+                Pedir la cuenta
+              </button>
             )}
           </div>
         )}

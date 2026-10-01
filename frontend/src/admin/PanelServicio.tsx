@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   abrirMesa,
   cargarSesionMesa,
+  cobrarMesa,
   confirmarMesa,
   expulsarComensal,
   liberarMesa,
@@ -83,6 +84,11 @@ export function PanelServicio({
         : `¿Liberar "${mesa.nombre}"? Los clientes perderán la mesa en su móvil.`;
     if (!window.confirm(texto)) return;
     void hacer(() => liberarMesa(mesa.id));
+  }
+
+  function cobrar() {
+    if (!window.confirm(`¿Ya has cobrado "${mesa.nombre}"? La mesa quedará libre.`)) return;
+    void hacer(() => cobrarMesa(mesa.id));
   }
 
   function quitar(id: string, nombre: string) {
@@ -198,6 +204,17 @@ export function PanelServicio({
           )}
 
           <PanelComandaMesa mesaId={mesa.id} />
+
+          {estado === "cuenta_pedida" && (
+            <button
+              type="button"
+              className="primario boton-servicio"
+              disabled={ocupado}
+              onClick={cobrar}
+            >
+              Cobrar y cerrar
+            </button>
+          )}
 
           <button
             type="button"

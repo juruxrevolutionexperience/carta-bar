@@ -931,6 +931,25 @@ main {
   cursor: default;
 }
 
+.pedir-cuenta {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 16px;
+  border-radius: 100px;
+  border: 1px solid var(--borde);
+  background: none;
+  color: var(--tinta-media);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pedir-cuenta:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 /* ---------- pedido de la mesa (panel del anfitrion y de todos) ---------- */
 
 .estado-mesa {

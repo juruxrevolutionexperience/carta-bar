@@ -122,6 +122,11 @@ export async function confirmarPropuestas(): Promise<boolean> {
   return r.ok;
 }
 
+export async function pedirCuenta(): Promise<boolean> {
+  const r = await conCookie("POST", "/api/mesa/pedir-cuenta");
+  return r.ok;
+}
+
 export async function preguntar(
   texto: string,
   idioma: string,

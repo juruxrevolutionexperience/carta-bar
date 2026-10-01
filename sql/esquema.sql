@@ -310,6 +310,11 @@ CREATE TABLE IF NOT EXISTS lineas_ticket (
     pedido_por_nombre TEXT NOT NULL
 );
 
+-- Anular una linea ya confirmada (docs/PEDIDO-EN-MESA.md): nunca se borra,
+-- queda marcada con el motivo. ALTER por si la tabla ya existia desplegada.
+ALTER TABLE lineas_ticket ADD COLUMN IF NOT EXISTS anulada          BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE lineas_ticket ADD COLUMN IF NOT EXISTS motivo_anulacion TEXT;
+
 CREATE INDEX IF NOT EXISTS idx_tickets_pendientes
     ON tickets (restaurante_id, estado) WHERE estado != 'servida';
 CREATE INDEX IF NOT EXISTS idx_comandas_dia ON comandas (restaurante_id, creada_en);

@@ -35,6 +35,7 @@ from carta_bar.comandas import (
 from carta_bar.comandas import (
     ResumenComanda,
     Ticket,
+    anular_linea,
     crear_comanda,
     crear_repositorio_comandas,
     resumen_comandas,
@@ -84,6 +85,7 @@ from carta_bar.mesas import (
     Zona,
     ZonaNoExisteError,
     abrir_mesa,
+    cobrar_mesa,
     confirmar_mesa,
     crear_repositorio_mesas,
     entrar_por_qr,
@@ -91,6 +93,7 @@ from carta_bar.mesas import (
     liberar_mesa,
     mesas_del_local,
     mi_sesion,
+    pedir_cuenta,
     sesion_de_mesa,
 )
 from carta_bar.metricas import (
@@ -1116,6 +1119,22 @@ def api_mesa_yo(request: Request, restaurante_id: RestauranteActual) -> MiSesion
     return datos
 
 
+@app.post("/api/mesa/pedir-cuenta", response_model=None)
+def api_pedir_cuenta(request: Request, restaurante_id: RestauranteActual) -> Response:
+    """Solo el anfitrion, y solo con la mesa ya abierta (docs/PEDIDO-EN-MESA.md,
+    "Pedir la cuenta y cobrar")."""
+    comensal_id = _comensal_de_cookie(request)
+    if comensal_id is None:
+        return _sin_mesa()
+    sesion = pedir_cuenta(mesas, restaurante_id, comensal_id)
+    if sesion is None:
+        return Response(
+            status_code=403,
+            content="Solo el anfitrión puede pedir la cuenta, y solo si ya os aceptaron",
+        )
+    return Response(status_code=204)
+
+
 # -- propuestas (bloque 2): lo que un comensal quiere, antes de que exista
 # comanda. Requieren la cookie de comensal, igual que entrar/yo.
 
@@ -1463,6 +1482,19 @@ def admin_liberar_mesa(
     return Response(status_code=204)
 
 
+@app.post("/admin/api/mesas/{mesa_id}/cobrar", response_model=None)
+def admin_cobrar_mesa(
+    mesa_id: str, request: Request, restaurante_id: RestauranteActual
+) -> Response:
+    """Cierra la mesa con motivo "cobrada", para distinguirla de una liberada
+    sin cobrar (docs/PEDIDO-EN-MESA.md, "Pedir la cuenta y cobrar")."""
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    if not cobrar_mesa(mesas, restaurante_id, mesa_id):
+        return Response(status_code=404, content="Esta mesa ya estaba libre")
+    return Response(status_code=204)
+
+
 @app.get("/admin/api/mesas/{mesa_id}/sesion", response_model=None)
 def admin_sesion_mesa(
     mesa_id: str, request: Request, restaurante_id: RestauranteActual
@@ -1682,6 +1714,26 @@ def admin_cambiar_estado_ticket(
     )
     if ticket is None:
         return Response(status_code=404, content="Ticket no encontrado")
+    return ticket
+
+
+class AnularLineaPeticion(BaseModel):
+    motivo: str = Field(min_length=1, max_length=200)
+
+
+@app.post("/admin/api/tickets/{ticket_id}/lineas/{linea_id}/anular", response_model=None)
+def admin_anular_linea(
+    ticket_id: str,
+    linea_id: str,
+    peticion: AnularLineaPeticion,
+    request: Request,
+    restaurante_id: RestauranteActual,
+) -> Ticket | Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    ticket = anular_linea(comandas, restaurante_id, ticket_id, linea_id, peticion.motivo)
+    if ticket is None:
+        return Response(status_code=404, content="Esa línea no es de ese ticket")
     return ticket
 
 

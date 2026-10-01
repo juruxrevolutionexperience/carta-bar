@@ -13,6 +13,7 @@ import pytest
 
 from carta_bar.comandas import (
     _ACTUALIZAR_ESTADO_TICKET,
+    _ANULAR_LINEA,
     _CREAR_COMANDA,
     _CREAR_LINEA,
     _CREAR_TICKET,
@@ -95,6 +96,7 @@ def test_el_esquema_crea_la_tabla_y_su_indice() -> None:
         _TICKET_POR_ID,
         _ACTUALIZAR_ESTADO_TICKET,
         _LINEAS_DE_TICKET,
+        _ANULAR_LINEA,
     ],
 )
 def test_las_consultas_son_sql_valido(consulta: str) -> None:

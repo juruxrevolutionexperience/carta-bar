@@ -20,7 +20,13 @@ from carta_bar.api import (
     _resolver_restaurante,
     app,
 )
-from carta_bar.comandas import Linea, RepositorioComandasMemoria, crear_comanda, resumen_comandas
+from carta_bar.comandas import (
+    Linea,
+    RepositorioComandasMemoria,
+    anular_linea,
+    crear_comanda,
+    resumen_comandas,
+)
 
 PLATO = "p001"  # datos/la-catedral/carta.json: precio 19.0, disponible.
 PLATO_2 = "p002"
@@ -381,3 +387,71 @@ def test_eventos_sse_de_comandas_manda_el_resumen(gerente: TestClient) -> None:
     assert "en_preparacion" in primer_evento
 
     gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={})
+
+
+# ------------------------------------------------------------- anular una linea
+
+
+def test_anular_linea_la_marca_con_el_motivo_sin_borrarla(
+    repo: RepositorioComandasMemoria,
+) -> None:
+    (ticket,) = crear_comanda(repo, "bar1", "s1", "Mesa 1", {"cocina": [_linea()]})
+    linea_id = ticket.lineas[0].id
+
+    actualizado = anular_linea(repo, "bar1", ticket.id, linea_id, "Cliente cambió de idea")
+    assert actualizado is not None
+    assert actualizado.lineas[0].anulada is True
+    assert actualizado.lineas[0].motivo_anulacion == "Cliente cambió de idea"
+    # Sigue estando: nunca se borra.
+    assert len(actualizado.lineas) == 1
+
+
+def test_anular_linea_que_no_existe_o_de_otro_ticket_da_none(
+    repo: RepositorioComandasMemoria,
+) -> None:
+    (ticket,) = crear_comanda(repo, "bar1", "s1", "Mesa 1", {"cocina": [_linea()]})
+    assert anular_linea(repo, "bar1", ticket.id, "linea-que-no-existe", "motivo") is None
+    assert anular_linea(repo, "bar1", "ticket-que-no-existe", ticket.lineas[0].id, "m") is None
+
+
+def test_no_se_anula_una_linea_de_otro_restaurante(repo: RepositorioComandasMemoria) -> None:
+    (ticket,) = crear_comanda(repo, "bar1", "s1", "Mesa 1", {"cocina": [_linea()]})
+    assert anular_linea(repo, "bar2", ticket.id, ticket.lineas[0].id, "motivo") is None
+
+
+def test_anular_linea_por_api(gerente: TestClient) -> None:
+    gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={"destino": "cocina"})
+    anfitrion = _mesa_con_anfitrion(gerente, "Terraza Comandas 11")
+    anfitrion.post("/api/mesa/propuestas", json={"plato_id": PLATO})
+    anfitrion.post("/api/mesa/propuestas/confirmar")
+    ticket = next(
+        t
+        for t in gerente.get("/admin/api/tickets").json()
+        if t["mesa_nombre"] == "Terraza Comandas 11"
+    )
+    linea_id = ticket["lineas"][0]["id"]
+
+    r = gerente.post(
+        f"/admin/api/tickets/{ticket['id']}/lineas/{linea_id}/anular",
+        json={"motivo": "Pedido por error"},
+    )
+    assert r.status_code == 200
+    linea = next(lin for lin in r.json()["lineas"] if lin["id"] == linea_id)
+    assert linea["anulada"] is True
+    assert linea["motivo_anulacion"] == "Pedido por error"
+
+    gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={})
+
+
+def test_anular_linea_exige_sesion_y_motivo(gerente: TestClient) -> None:
+    assert (
+        TestClient(app)
+        .post("/admin/api/tickets/x/lineas/y/anular", json={"motivo": "m"})
+        .status_code
+        == 401
+    )
+    assert (
+        gerente.post("/admin/api/tickets/x/lineas/y/anular", json={"motivo": ""}).status_code == 422
+    )
+    r = gerente.post("/admin/api/tickets/no-existe/lineas/y/anular", json={"motivo": "m"})
+    assert r.status_code == 404

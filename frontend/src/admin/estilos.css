@@ -2530,6 +2530,27 @@ button.secundario.peligro {
   color: var(--tinta-suave);
 }
 
+.lineas-ticket li.anulada .texto-linea {
+  text-decoration: line-through;
+  color: var(--tinta-suave);
+}
+
+.lineas-ticket li.anulada .nota-linea {
+  color: var(--rojo);
+  font-style: normal;
+  font-weight: 600;
+}
+
+.anular-linea {
+  flex: none;
+  border: none;
+  background: none;
+  color: var(--rojo, #b8391f);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
 .boton-avanzar {
   width: 100%;
 }

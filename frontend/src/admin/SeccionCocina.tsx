@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { cambiarEstadoTicket, cargarTickets, type Destino, type Ticket } from "./api";
+import { anularLinea, cambiarEstadoTicket, cargarTickets, type Destino, type Ticket } from "./api";
 
 const REFRESCO_MS = 5000;
 
@@ -53,6 +53,18 @@ export function SeccionCocina() {
     }
   }
 
+  async function anular(ticket: Ticket, lineaId: string) {
+    const motivo = window.prompt("¿Por qué se anula? (lo verá el gerente)");
+    if (!motivo || !motivo.trim()) return;
+    setOcupado(ticket.id);
+    try {
+      const r = await anularLinea(ticket.id, lineaId, motivo.trim());
+      if (r.ok) recargar();
+    } finally {
+      setOcupado(null);
+    }
+  }
+
   if (tickets === null) {
     return (
       <div className="tarjeta">
@@ -97,13 +109,25 @@ export function SeccionCocina() {
         <section className="columna-cocina">
           <h2>Nuevas ({recibidas.length})</h2>
           {recibidas.map((t) => (
-            <TarjetaTicket key={t.id} ticket={t} ocupado={ocupado === t.id} onAvanzar={avanzar} />
+            <TarjetaTicket
+              key={t.id}
+              ticket={t}
+              ocupado={ocupado === t.id}
+              onAvanzar={avanzar}
+              onAnular={anular}
+            />
           ))}
         </section>
         <section className="columna-cocina">
           <h2>En preparación ({enPreparacion.length})</h2>
           {enPreparacion.map((t) => (
-            <TarjetaTicket key={t.id} ticket={t} ocupado={ocupado === t.id} onAvanzar={avanzar} />
+            <TarjetaTicket
+              key={t.id}
+              ticket={t}
+              ocupado={ocupado === t.id}
+              onAvanzar={avanzar}
+              onAnular={anular}
+            />
           ))}
         </section>
       </div>
@@ -115,9 +139,10 @@ interface PropsTarjeta {
   ticket: Ticket;
   ocupado: boolean;
   onAvanzar: (ticket: Ticket) => void;
+  onAnular: (ticket: Ticket, lineaId: string) => void;
 }
 
-function TarjetaTicket({ ticket, ocupado, onAvanzar }: PropsTarjeta) {
+function TarjetaTicket({ ticket, ocupado, onAvanzar, onAnular }: PropsTarjeta) {
   return (
     <article className={"tarjeta-ticket destino-" + ticket.destino}>
       <div className="cabecera-ticket">
@@ -126,13 +151,30 @@ function TarjetaTicket({ ticket, ocupado, onAvanzar }: PropsTarjeta) {
       </div>
       <ul className="lineas-ticket">
         {ticket.lineas.map((l) => (
-          <li key={l.id} className={l.alcohol ? "con-alcohol" : undefined}>
+          <li
+            key={l.id}
+            className={(l.alcohol ? "con-alcohol " : "") + (l.anulada ? "anulada" : "")}
+          >
             <span className="cantidad-linea">{l.cantidad}×</span>
             <span className="texto-linea">
               {lineaTexto(l)}
               {l.alcohol && <span className="chip-alcohol">alcohol</span>}
             </span>
-            {l.nota && <span className="nota-linea">{l.nota}</span>}
+            {l.anulada ? (
+              <span className="nota-linea">Anulada: {l.motivo_anulacion}</span>
+            ) : (
+              <>
+                {l.nota && <span className="nota-linea">{l.nota}</span>}
+                <button
+                  type="button"
+                  className="anular-linea"
+                  disabled={ocupado}
+                  onClick={() => onAnular(ticket, l.id)}
+                >
+                  Anular
+                </button>
+              </>
+            )}
             <span className="quien-linea">{l.pedido_por_nombre}</span>
           </li>
         ))}

@@ -1219,6 +1219,40 @@ def liberar_mesa(
     return cerrada is not None
 
 
+def cobrar_mesa(
+    repo: RepositorioMesas, restaurante_id: str, mesa_id: str, ahora: datetime | None = None
+) -> bool:
+    """El camarero cierra la mesa porque ha cobrado (motivo "cobrada", para
+    distinguirla de una liberada sin cobrar). False si no habia nada que cerrar."""
+    ahora = _ahora(ahora)
+    sesion = repo.sesion_abierta_de(restaurante_id, mesa_id)
+    if sesion is None:
+        return False
+    cerrada = repo.actualizar_sesion(
+        sesion.id, {"estado": "cerrada", "motivo_cierre": "cobrada", "cerrada_en": ahora}
+    )
+    return cerrada is not None
+
+
+def pedir_cuenta(
+    repo: RepositorioMesas, restaurante_id: str, comensal_id: str, ahora: datetime | None = None
+) -> SesionMesa | None:
+    """Solo el anfitrion, y solo si la mesa ya esta abierta (no tiene sentido
+    pedir la cuenta de una mesa que el camarero aun no ha aceptado). None si
+    no se puede: comensal de otro restaurante, expulsado, sesion ya cerrada,
+    sin aceptar, o no es el anfitrion."""
+    ahora = _ahora(ahora)
+    encontrado = repo.comensal_con_sesion(comensal_id)
+    if encontrado is None:
+        return None
+    comensal, sesion = encontrado
+    if sesion.restaurante_id != restaurante_id or comensal.expulsado_en is not None:
+        return None
+    if comensal.rol != "anfitrion" or sesion.estado != "abierta":
+        return None
+    return repo.actualizar_sesion(sesion.id, {"estado": "cuenta_pedida", "ultima_actividad": ahora})
+
+
 def sesion_de_mesa(
     repo: RepositorioMesas, restaurante_id: str, mesa_id: str, ahora: datetime | None = None
 ) -> tuple[SesionMesa, list[Comensal]] | None:

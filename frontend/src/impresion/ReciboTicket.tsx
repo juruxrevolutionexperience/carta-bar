@@ -20,10 +20,10 @@ export function ReciboTicket({ ticket }: { ticket: Ticket }) {
           <li key={l.id} className={l.alcohol ? "alcohol" : undefined}>
             <span className="cantidad">{l.cantidad}×</span> {lineaTexto(l)}
             {l.alcohol && <strong> · ALCOHOL</strong>}
-            {l.nota && (
-              <div className="nota">
-                Nota: {l.nota}
-              </div>
+            {l.anulada ? (
+              <div className="nota">ANULADA: {l.motivo_anulacion}</div>
+            ) : (
+              l.nota && <div className="nota">Nota: {l.nota}</div>
             )}
             <div className="quien">{l.pedido_por_nombre}</div>
           </li>
