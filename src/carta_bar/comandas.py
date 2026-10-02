@@ -10,6 +10,7 @@ confirmacion expresa al servirlo — eso se deja para mas adelante si hace
 falta de verdad.
 """
 
+import json
 import os
 import secrets
 from datetime import UTC, date, datetime
@@ -323,7 +324,7 @@ class RepositorioComandasPostgres:
                             linea.formato,
                             linea.precio_unitario,
                             linea.cantidad,
-                            [o.model_dump() for o in linea.opciones],
+                            json.dumps([o.model_dump() for o in linea.opciones]),
                             linea.nota,
                             linea.alcohol,
                             linea.pedido_por_nombre,

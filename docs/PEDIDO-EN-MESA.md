@@ -1494,3 +1494,33 @@ resolvió desactivando Smart App Control; detalle completo en `docs/PENDIENTE.md
 **Lo único que queda del plan de "pedido en mesa" sin construir: rol camarero** (login propio,
 permisos limitados). Aparcado para su propia sesión de planteamiento, no bloquea nada de lo
 demás.
+
+### Bug real en producción: las comandas con extras no llegaban a cocina (2026-10-02)
+
+El usuario lo encontró probando el flujo completo: confirmaba el pedido, las propuestas se
+marcaban "· pedido", pero Cocina se quedaba vacía.
+
+**Causa:** en `RepositorioComandasPostgres.crear_comanda_con_tickets()`, las `opciones` de cada
+línea se mandaban como lista de Python (`[o.model_dump() for o in linea.opciones]`) directa al
+INSERT, sin `json.dumps()`. psycopg3 no sabe adaptar una lista de dicts a una columna JSONB por
+su cuenta e intenta tratarla como ARRAY: `cannot adapt type 'dict'`. Esto pasaba *después* de
+que `confirmar_pendientes()` ya hubiera marcado las propuestas como confirmadas (en otra
+sentencia), así que el fallo quedaba a medias: propuestas confirmadas, comanda nunca creada, y
+el cliente no veía ningún error (la llamada del móvil al confirmar no comprueba la respuesta).
+Solo afectaba a líneas con `opciones` no vacías (formato solo, sin extras, no reventaba — por
+eso no era evidente con cualquier pedido).
+
+**Por qué no lo detectaron los 469 tests que ya existían:** toda la suite corre con el
+repositorio en memoria (`conftest.py` vacía las credenciales de `POSTGRES_*`), que no pasa por
+psycopg ni por tipos de columna reales. `test_sql.py` solo valida la sintaxis SQL (con
+`pglast`), no la ejecuta.
+
+**Arreglo:** `json.dumps(...)` antes de mandar `opciones` al INSERT, igual que ya hacía
+`propuestas.py` para su propia tabla.
+
+**Test nuevo:** `tests/test_comandas_postgres.py`, contra un Postgres real (vía `pgserver`,
+no es dependencia del proyecto, se instala al vuelo con `uv run --with pgserver pytest ...`).
+Comprobado el ciclo correcto: falla contra el código viejo con el error exacto de producción,
+pasa con el arreglo. No corre en la suite normal (se salta si `pgserver` no está instalado),
+así que no hace falta para el día a día, pero queda ahí para la próxima vez que se toque esta
+tabla.
