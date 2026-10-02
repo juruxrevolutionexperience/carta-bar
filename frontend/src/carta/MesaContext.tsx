@@ -31,6 +31,14 @@ export function useMesaContext(): MesaContextValue {
   return ctx;
 }
 
+// Para componentes que se reutilizan fuera de la carta (la vista previa de
+// un plato en el panel del gerente usa el mismo PlatoCard, sin MesaProvider
+// alrededor): null en vez de reventar, y quien lo use trata "sin mesa" igual
+// que "null" de toda la vida.
+export function useMesaContextOpcional(): MesaContextValue | null {
+  return useContext(MesaContext);
+}
+
 export function MesaProvider({ children }: { children: ReactNode }) {
   const { mesa, pidiendoNombre, entrar } = useMesa();
   const propuestas = usePropuestas(mesa);

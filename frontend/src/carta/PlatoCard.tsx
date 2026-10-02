@@ -5,7 +5,7 @@ import { useCartaContext } from "./CartaContext";
 import { FormularioPropuesta } from "./FormularioPropuesta";
 import { degradado, iconoPlato, ICONO_ETQ } from "./iconos";
 import { importe, textoPrecio } from "./precios";
-import { useMesaContext } from "./MesaContext";
+import { useMesaContextOpcional } from "./MesaContext";
 import { urlSegura } from "./seguridad";
 import type { Plato } from "./types";
 
@@ -17,7 +17,8 @@ interface Props {
 
 export function PlatoCard({ plato: p, onAbrirFoto, onAnadirALista }: Props) {
   const { idioma, config, textos, t } = useCartaContext();
-  const { mesa } = useMesaContext();
+  const mesaCtx = useMesaContextOpcional();
+  const mesa = mesaCtx?.mesa ?? null;
   const [pidiendo, setPidiendo] = useState(false);
   const moneda = config.moneda || "€";
   const enMesa = mesa !== null && mesa.estado !== "cerrada";
