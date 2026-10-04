@@ -2417,26 +2417,18 @@ button.secundario.peligro {
   gap: 14px;
 }
 
-.columnas-cocina {
+/* Una sola lista de comandas pendientes, en rejilla: sin columnas "Nuevas" y
+   "En preparacion" desde que se quito el paso "Empezar". En pantalla ancha
+   caben varias tarjetas por fila, como en una cocina de verdad. */
+.lista-cocina {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
   align-items: start;
 }
 
-@media (max-width: 860px) {
-  .columnas-cocina {
-    grid-template-columns: 1fr;
-  }
-}
-
-.columna-cocina h2 {
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--tinta-media);
-  margin-bottom: 10px;
+.lista-cocina .tarjeta-ticket {
+  margin-bottom: 0;
 }
 
 .tarjeta-ticket {

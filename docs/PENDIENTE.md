@@ -68,6 +68,25 @@ empezó saltando su requisito de entrada, en
     pantalla de cocina/barra que lo reciba. Eso es el bloque 3, pendiente de
     plantear a fondo la próxima vez.
 
+## DÓNDE LO DEJAMOS (2026-10-04) — LEER PRIMERO
+
+El usuario probó el flujo completo en el bar. Funciona; tres ajustes:
+
+1. ✅ **El pedido ya no se abre solo al añadir un plato.** Sale un aviso breve abajo
+   ("✓ Tabla Mixta añadido · Ver pedido") que se quita a los 3 s, y el contador del pedido
+   salta. El cliente lo abre cuando quiere. Esto deshace el ajuste del 2026-09-29 ("al añadir,
+   el panel se abre solo"): en la práctica cortaba el ir eligiendo.
+2. ✅ **Cocina sin paso "Empezar":** una lista y un botón "Listo" por comanda. Test nuevo
+   `test_un_solo_toque_de_recien_llegada_a_servida`.
+3. ⬜ **Avisos al personal** (mesa nueva, pide la cuenta…) en el aparato donde esté el
+   panel, visibles y con sonido. Propuesto, pendiente de que el usuario elija alcance.
+4. ⬜ **Simplificar el panel del bar:** el usuario no quiere que el cliente monte nada (QR,
+   marca, plano, extras). Propuesto separar "montaje" (solo superadmin) de "día a día".
+   Pendiente de decidir qué ve cada uno.
+
+Visto de paso: al escanear por primera vez, el diálogo del nombre ("Dinos tu nombre") sale
+encima del selector de idioma, en español, antes de que un turista pueda elegir el suyo.
+
 ## DÓNDE LO DEJAMOS (2026-10-01) — LEER PRIMERO
 
 **Sin commitear todavía** (recuerda: nunca lo subo yo solo, comandos al final de este bloque).
@@ -94,7 +113,7 @@ Control → Desactivado, y pytest volvió a funcionar. **Si vuelve a pasar, es e
   Turbopos). Ver `docs/PEDIDO-EN-MESA.md`, "Impresión en cocina/barra".
 - Config de nginx del servidor, para confirmar si el buffering afectaba al tiempo real (SSE).
   Sin confirmar todavía si sigue siendo un problema tras los últimos despliegues.
-- Decisión aplazada: quitar el paso "Empezar" en Cocina y dejar un solo botón "Listo".
+- ✅ Quitado el paso "Empezar" en Cocina: un solo botón "Listo" (2026-10-04).
 - Pregunta sin responder: ¿el QR de la mesa debería verse también en modo servicio dentro de
   Mesas (hoy solo en modo lápiz)?
 

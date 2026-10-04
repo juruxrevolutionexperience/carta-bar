@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { pedirCuenta as pedirCuentaApi } from "./api";
 import { useComandas } from "./useComandas";
@@ -10,12 +10,16 @@ interface MesaContextValue extends ReturnType<typeof usePropuestas> {
   mesa: ReturnType<typeof useMesa>["mesa"];
   pidiendoNombre: boolean;
   entrar: (nombre: string) => void;
-  // Se abre solo al proponer un plato (FormularioPropuesta), para que quede
-  // claro que se ha añadido a una cesta compartida y no a un pedido ya
-  // mandado (ver docs/PEDIDO-EN-MESA.md, "Bloque 2 en detalle").
+  // Solo lo abre el cliente, cuando quiere revisar o enviar. Antes se abria
+  // solo al anadir cada plato y cortaba el ir eligiendo: decidido con el
+  // dueno el 2026-10-04 tras probarlo en el bar.
   panelAbierto: boolean;
   abrirPanel: () => void;
   cerrarPanel: () => void;
+  // Lo que se acaba de anadir, para un aviso breve que se quita solo: el
+  // cliente sabe que ha entrado sin que nada le tape la carta.
+  recienAnadido: { nombre: string; vez: number } | null;
+  anunciarAnadido: (nombre: string) => void;
   // Una vez confirmado, si ya se sirvio o no (bloque 3, "Bloque 3 en detalle").
   comandas: ResumenComanda[];
   // Solo el anfitrion, y solo con la mesa ya abierta ("Pedir la cuenta y
@@ -44,6 +48,19 @@ export function MesaProvider({ children }: { children: ReactNode }) {
   const propuestas = usePropuestas(mesa);
   const comandas = useComandas(mesa);
   const [panelAbierto, setPanelAbierto] = useState(false);
+  const [recienAnadido, setRecienAnadido] = useState<{ nombre: string; vez: number } | null>(
+    null
+  );
+  const temporizador = useRef<number | undefined>(undefined);
+
+  function anunciarAnadido(nombre: string) {
+    // `vez` cambia aunque se repita el mismo plato: reinicia la animacion.
+    setRecienAnadido((actual) => ({ nombre, vez: (actual?.vez ?? 0) + 1 }));
+    window.clearTimeout(temporizador.current);
+    temporizador.current = window.setTimeout(() => setRecienAnadido(null), 3200);
+  }
+
+  useEffect(() => () => window.clearTimeout(temporizador.current), []);
 
   const value: MesaContextValue = {
     mesa,
@@ -51,8 +68,13 @@ export function MesaProvider({ children }: { children: ReactNode }) {
     entrar,
     ...propuestas,
     panelAbierto,
-    abrirPanel: () => setPanelAbierto(true),
+    abrirPanel: () => {
+      setRecienAnadido(null);
+      setPanelAbierto(true);
+    },
     cerrarPanel: () => setPanelAbierto(false),
+    recienAnadido,
+    anunciarAnadido,
     comandas,
     pedirCuenta: pedirCuentaApi,
   };

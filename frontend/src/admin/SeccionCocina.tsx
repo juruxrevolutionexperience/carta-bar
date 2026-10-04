@@ -42,11 +42,14 @@ export function SeccionCocina() {
     return () => window.clearInterval(id);
   }, [recargar]);
 
-  async function avanzar(ticket: Ticket) {
-    const siguiente = ticket.estado === "recibida" ? "en_preparacion" : "servida";
+  // Un solo toque: de pendiente a servida. Antes habia un paso "Empezar" que
+  // obligaba a alguien a pulsar cada comanda al llegar, y en hora punta eso
+  // es tiempo perdido (decidido con el dueno el 2026-10-04). El cliente ve
+  // "en preparacion" desde que se envia hasta que se marca como lista.
+  async function marcarLista(ticket: Ticket) {
     setOcupado(ticket.id);
     try {
-      const r = await cambiarEstadoTicket(ticket.id, siguiente);
+      const r = await cambiarEstadoTicket(ticket.id, "servida");
       if (r.ok) recargar();
     } finally {
       setOcupado(null);
@@ -73,9 +76,10 @@ export function SeccionCocina() {
     );
   }
 
+  // Del mas antiguo al mas nuevo (ya viene asi del servidor): lo que lleva
+  // mas tiempo esperando, arriba. Incluye los que quedaran "en preparacion"
+  // de antes de quitar el paso "Empezar".
   const visibles = tickets.filter((t) => filtro === TODOS || t.destino === filtro);
-  const recibidas = visibles.filter((t) => t.estado === "recibida");
-  const enPreparacion = visibles.filter((t) => t.estado === "en_preparacion");
 
   return (
     <div className="cocina">
@@ -105,31 +109,16 @@ export function SeccionCocina() {
 
       {visibles.length === 0 && <p className="cargando">Sin comandas pendientes.</p>}
 
-      <div className="columnas-cocina">
-        <section className="columna-cocina">
-          <h2>Nuevas ({recibidas.length})</h2>
-          {recibidas.map((t) => (
-            <TarjetaTicket
-              key={t.id}
-              ticket={t}
-              ocupado={ocupado === t.id}
-              onAvanzar={avanzar}
-              onAnular={anular}
-            />
-          ))}
-        </section>
-        <section className="columna-cocina">
-          <h2>En preparación ({enPreparacion.length})</h2>
-          {enPreparacion.map((t) => (
-            <TarjetaTicket
-              key={t.id}
-              ticket={t}
-              ocupado={ocupado === t.id}
-              onAvanzar={avanzar}
-              onAnular={anular}
-            />
-          ))}
-        </section>
+      <div className="lista-cocina">
+        {visibles.map((t) => (
+          <TarjetaTicket
+            key={t.id}
+            ticket={t}
+            ocupado={ocupado === t.id}
+            onLista={marcarLista}
+            onAnular={anular}
+          />
+        ))}
       </div>
     </div>
   );
@@ -138,11 +127,11 @@ export function SeccionCocina() {
 interface PropsTarjeta {
   ticket: Ticket;
   ocupado: boolean;
-  onAvanzar: (ticket: Ticket) => void;
+  onLista: (ticket: Ticket) => void;
   onAnular: (ticket: Ticket, lineaId: string) => void;
 }
 
-function TarjetaTicket({ ticket, ocupado, onAvanzar, onAnular }: PropsTarjeta) {
+function TarjetaTicket({ ticket, ocupado, onLista, onAnular }: PropsTarjeta) {
   return (
     <article className={"tarjeta-ticket destino-" + ticket.destino}>
       <div className="cabecera-ticket">
@@ -183,9 +172,9 @@ function TarjetaTicket({ ticket, ocupado, onAvanzar, onAnular }: PropsTarjeta) {
         type="button"
         className="primario boton-avanzar"
         disabled={ocupado}
-        onClick={() => onAvanzar(ticket)}
+        onClick={() => onLista(ticket)}
       >
-        {ticket.estado === "recibida" ? "Empezar" : "Servida"}
+        Listo
       </button>
     </article>
   );

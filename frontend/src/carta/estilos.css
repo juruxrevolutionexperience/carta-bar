@@ -313,6 +313,64 @@ main {
   border: 2px solid var(--fondo);
 }
 
+/* Aviso breve al anadir un plato: confirma sin tapar la carta (antes se
+   abria el pedido entero cada vez). Se quita solo a los ~3 s. */
+.aviso-anadido {
+  position: fixed;
+  left: calc(84px + env(safe-area-inset-left));
+  right: calc(84px + env(safe-area-inset-right));
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  z-index: 31;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 10px 10px 14px;
+  border-radius: 14px;
+  background: var(--tinta);
+  color: #fff;
+  font-size: 13.5px;
+  box-shadow: 0 10px 30px rgba(23, 19, 16, 0.32);
+  animation: aviso-anadido-entrar 0.22s ease-out;
+}
+.aviso-anadido-texto {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aviso-anadido button {
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 10px;
+  padding: 7px 11px;
+  background: var(--marca);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+@keyframes aviso-anadido-entrar {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+}
+.cuenta-lista.salta {
+  animation: salto-cuenta 0.4s ease-out;
+}
+@keyframes salto-cuenta {
+  40% {
+    transform: scale(1.35);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aviso-anadido,
+  .cuenta-lista.salta {
+    animation: none;
+  }
+}
+
 .hilo-lista {
   flex: 1;
   overflow-y: auto;

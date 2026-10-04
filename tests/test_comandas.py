@@ -262,6 +262,29 @@ def test_cambiar_estado_hasta_servida_lo_quita_del_listado(gerente: TestClient) 
     gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={})
 
 
+def test_un_solo_toque_de_recien_llegada_a_servida(gerente: TestClient) -> None:
+    # Cocina ya no tiene el paso "Empezar" (decidido el 2026-10-04): el boton
+    # "Listo" manda la comanda recien llegada directamente a servida, sin pasar
+    # por "en_preparacion", y sale de la pantalla de cocina.
+    gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={"destino": "cocina"})
+    anfitrion = _mesa_con_anfitrion(gerente, "Terraza Comandas Listo")
+    anfitrion.post("/api/mesa/propuestas", json={"plato_id": PLATO})
+    anfitrion.post("/api/mesa/propuestas/confirmar")
+    ticket = next(
+        t
+        for t in gerente.get("/admin/api/tickets").json()
+        if t["mesa_nombre"] == "Terraza Comandas Listo"
+    )
+    assert ticket["estado"] == "recibida"
+
+    r = gerente.post(f"/admin/api/tickets/{ticket['id']}/estado", json={"estado": "servida"})
+    assert r.status_code == 200
+    assert r.json()["estado"] == "servida"
+    assert all(t["id"] != ticket["id"] for t in gerente.get("/admin/api/tickets").json())
+
+    gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={})
+
+
 def test_estado_invalido_o_ticket_inexistente(gerente: TestClient) -> None:
     r = gerente.post("/admin/api/tickets/no-existe/estado", json={"estado": "servida"})
     assert r.status_code == 404

@@ -686,8 +686,12 @@ el camarero reabre. Hay que preverlo, porque pasa constantemente.
         └───────────────────┴──► [ ANULADA ]   (solo camarero, con motivo)
 ```
 
-No se salta de recibida a servida sin pasar por preparación, salvo que el camarero lo fuerce
-(bebidas simples). Una vez servida no se anula: se corrige en la cuenta.
+**Cambiado el 2026-10-04, tras probar el flujo en el bar:** en cocina ya no hay paso
+"Empezar". La comanda llega y un solo botón, "Listo", la pasa a servida. Obligar a alguien a
+pulsar cada comanda al llegar era tiempo perdido en hora punta. El cliente ve "en
+preparación" desde que se envía hasta que cocina la marca lista. El estado `en_preparacion`
+sigue existiendo en los datos (por los tickets antiguos), pero la pantalla no lo usa. Una vez
+servida no se anula: se corrige en la cuenta.
 
 ### Propuesta
 

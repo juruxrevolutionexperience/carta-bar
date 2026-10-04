@@ -37,6 +37,7 @@ export function PanelPedidoMesa() {
     cerrarPanel,
     comandas,
     pedirCuenta,
+    recienAnadido,
   } = useMesaContext();
   const [confirmando, setConfirmando] = useState(false);
   const [pidiendoCuenta, setPidiendoCuenta] = useState(false);
@@ -71,8 +72,26 @@ export function PanelPedidoMesa() {
         aria-label="Pedido de la mesa"
       >
         🍽️
-        {activas.length > 0 && <span className="cuenta-lista">{activas.length}</span>}
+        {activas.length > 0 && (
+          // La key es el propio numero: el salto se lanza justo cuando cambia,
+          // al llegar la lista nueva por tiempo real (medio segundo despues
+          // del aviso, como mucho).
+          <span key={activas.length} className="cuenta-lista salta">
+            {activas.length}
+          </span>
+        )}
       </button>
+
+      {recienAnadido && !panelAbierto && (
+        <div className="aviso-anadido" role="status" key={recienAnadido.vez}>
+          <span className="aviso-anadido-texto">
+            ✓ <strong>{recienAnadido.nombre}</strong> añadido
+          </span>
+          <button type="button" onClick={abrirPanel}>
+            Ver pedido
+          </button>
+        </div>
+      )}
 
       <div className={"panel" + (panelAbierto ? " abierto" : "")}>
         <div className="panel-top">

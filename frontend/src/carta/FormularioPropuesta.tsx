@@ -15,7 +15,7 @@ interface Props {
 // Los extras se piden aqui: no se cargan con toda la carta (productos.py).
 export function FormularioPropuesta({ plato, onCerrar }: Props) {
   const { config } = useCartaContext();
-  const { proponer, abrirPanel } = useMesaContext();
+  const { proponer, anunciarAnadido } = useMesaContext();
   const moneda = config.moneda || "€";
 
   const [grupos, setGrupos] = useState<Grupo[] | null>(null);
@@ -82,9 +82,9 @@ export function FormularioPropuesta({ plato, onCerrar }: Props) {
     });
     setEnviando(false);
     if (r.ok) {
-      // Se ve enseguida en la cesta compartida: no da la sensacion de que ya
-      // se mando el pedido (eso solo pasa cuando el anfitrion confirma).
-      abrirPanel();
+      // Un aviso breve y el contador del pedido sube: el cliente sigue
+      // eligiendo y abre el pedido cuando quiera revisarlo o enviarlo.
+      anunciarAnadido(plato.nombre);
       onCerrar();
     } else {
       setError("No se pudo añadir: revisa que hayas elegido lo necesario.");
