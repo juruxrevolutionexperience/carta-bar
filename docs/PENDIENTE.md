@@ -19,6 +19,39 @@ empezó saltando su requisito de entrada, en
 
 ---
 
+## DÓNDE LO DEJAMOS (2026-10-05, segunda parte) — LEER PRIMERO
+
+Preguntado el usuario si el sistema está listo para un bar real hoy: sí para
+pedir y mandar a cocina/barra, **no** si Carta Bar tiene que sustituir el
+cobro/caja del TPV (falta VeriFactu, Fase D, aparcado). El camarero puede
+trabajar 100% sin que ningún cliente use el QR (botón "Abrir mesa" en
+Servicio, ya existía).
+
+De ahí salieron dos cosas más, ya hechas y verificadas (579 tests,
+`tests/test_cuentas_postgres.py` con Postgres real vía `pgserver`, `ruff`,
+`tsc -b`, `npm run build`):
+
+1. ✅ **Bug real encontrado y corregido**: anular una línea en Cocina no
+   tocaba la cuenta de la mesa — se seguía cobrando algo ya anulado. Detalle
+   y test en `docs/PEDIDO-EN-MESA.md`, "Bug real: anular una línea...".
+2. ✅ **Resumen de cuenta impreso al cobrar**: nuevo `src/carta_bar/cuentas.py`
+   + tercer destino "Cuenta" en la pantalla de impresión dedicada
+   (`/admin/impresion`), con precios y desglose por persona. No es factura
+   (sin NIF ni numeración fiscal). Detalle en `docs/PEDIDO-EN-MESA.md`,
+   "Resumen de cuenta impreso al cobrar".
+
+Pendiente: dar los comandos de commit/push cuando el usuario quiera subir
+esto (incluye una migración de base de datos nueva, tabla `recibos_cuenta`
+— se aplica sola al arrancar, como todo `sql/esquema.sql`). Probar en real
+en La CatedRal/el bar, sobre todo la impresión del resumen de cuenta en la
+pantalla dedicada.
+
+**Pendiente de decidir con el usuario, no empezado:** si se plantea VeriFactu
+como su propio bloque (Fase D) o se sigue cobrando con el TPV de siempre por
+ahora.
+
+---
+
 ## DÓNDE LO DEJAMOS (2026-10-05) — LEER PRIMERO
 
 Los tres ajustes pendientes del 2026-10-04 están hechos y verificados

@@ -1,8 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 
 import "./estilos.css";
+import { ReciboCuenta } from "./ReciboCuenta";
 import { ReciboTicket } from "./ReciboTicket";
-import type { Destino, Ticket } from "./types";
+import type { Cuenta, PantallaImpresion, Ticket } from "./types";
+
+type Imprimible = Ticket | Cuenta;
+
+function esTicket(item: Imprimible): item is Ticket {
+  return "destino" in item;
+}
+
+function euros(n: number): string {
+  return n.toFixed(2).replace(".", ",") + " €";
+}
 
 const CLAVE_DESTINO = "impresion_destino";
 const CLAVE_IMPRESOS = "impresion_impresos";
@@ -12,7 +23,7 @@ const MAX_HISTORIAL_GUARDADO = 50;
 const ESPERA_ENTRE_IMPRESIONES_MS = 1200;
 
 interface Impreso {
-  ticket: Ticket;
+  item: Imprimible;
   impreso_en: string;
 }
 
@@ -46,7 +57,10 @@ function cargarHistorial(): Impreso[] {
 
 function guardarHistorial(historial: Impreso[]) {
   try {
-    localStorage.setItem(CLAVE_HISTORIAL, JSON.stringify(historial.slice(0, MAX_HISTORIAL_GUARDADO)));
+    localStorage.setItem(
+      CLAVE_HISTORIAL,
+      JSON.stringify(historial.slice(0, MAX_HISTORIAL_GUARDADO))
+    );
   } catch {
     // Sin sitio en localStorage: el historial de esta sesion se pierde al
     // recargar, pero la impresion en si no se ve afectada.
@@ -57,37 +71,49 @@ function hora(iso: string): string {
   return new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
 }
 
+function tituloDestino(d: PantallaImpresion): string {
+  if (d === "cocina") return "Cocina";
+  if (d === "barra") return "Barra";
+  return "Cuenta";
+}
+
+function urlEventos(d: PantallaImpresion): string {
+  return d === "cuenta"
+    ? "/admin/api/cuentas/eventos"
+    : `/admin/api/tickets/eventos?destino=${d}`;
+}
+
 // Pensada para un aparato aparte y modesto, dedicado solo a esto (ver
 // docs/PEDIDO-EN-MESA.md, "Impresion en cocina/barra"): nunca en el TPV
-// principal del bar. Elige una vez si es la de cocina o la de barra, y desde
-// ahi imprime sola cada ticket nuevo que le llega por SSE, sin que nadie
-// tenga que tocar nada.
+// principal del bar. Elige una vez que imprime este aparato (cocina, barra o
+// la cuenta) y desde ahi imprime solo cada cosa nueva que le llega por SSE,
+// sin que nadie tenga que tocar nada.
 //
-// El historial de abajo (mesa, comanda, hora, con su "Reimprimir") existe
-// sobre todo por lo siguiente: hasta que el navegador de este aparato se
-// abra con --kiosk-printing, cada ticket saca el dialogo de imprimir de
-// Windows, y si alguien le da a Cancelar por error la comanda no debe
-// perderse en silencio — aqui se puede volver a mandar.
+// El historial de abajo (mesa, hora, con su "Reimprimir") existe sobre todo
+// por lo siguiente: hasta que el navegador de este aparato se abra con
+// --kiosk-printing, cada papel saca el dialogo de imprimir de Windows, y si
+// alguien le da a Cancelar por error no debe perderse en silencio — aqui se
+// puede volver a mandar.
 export function App() {
-  const [destino, setDestino] = useState<Destino | null>(
-    () => (localStorage.getItem(CLAVE_DESTINO) as Destino | null) ?? null
+  const [destino, setDestino] = useState<PantallaImpresion | null>(
+    () => (localStorage.getItem(CLAVE_DESTINO) as PantallaImpresion | null) ?? null
   );
   const [conectado, setConectado] = useState(false);
   const [enCola, setEnCola] = useState(0);
   const [historial, setHistorial] = useState<Impreso[]>(() => cargarHistorial());
   const impresos = useRef<Set<string>>(cargarImpresos());
-  const cola = useRef<Ticket[]>([]);
+  const cola = useRef<Imprimible[]>([]);
   const imprimiendo = useRef(false);
-  const [ticketVisible, setTicketVisible] = useState<Ticket | null>(null);
+  const [itemVisible, setItemVisible] = useState<Imprimible | null>(null);
 
-  function elegirDestino(d: Destino) {
+  function elegirDestino(d: PantallaImpresion) {
     localStorage.setItem(CLAVE_DESTINO, d);
     setDestino(d);
   }
 
-  function registrarImpreso(ticket: Ticket) {
+  function registrarImpreso(item: Imprimible) {
     setHistorial((actual) => {
-      const nuevo = [{ ticket, impreso_en: new Date().toISOString() }, ...actual].slice(
+      const nuevo = [{ item, impreso_en: new Date().toISOString() }, ...actual].slice(
         0,
         MAX_HISTORIAL_GUARDADO
       );
@@ -99,15 +125,15 @@ export function App() {
   function procesarCola() {
     if (imprimiendo.current || cola.current.length === 0) return;
     imprimiendo.current = true;
-    const ticket = cola.current.shift()!;
+    const item = cola.current.shift()!;
     setEnCola(cola.current.length);
-    setTicketVisible(ticket);
+    setItemVisible(item);
     // Un respiro para que el DOM pinte el recibo antes de imprimir.
     setTimeout(() => {
       window.print();
-      impresos.current.add(ticket.id);
+      impresos.current.add(item.id);
       guardarImpresos(impresos.current);
-      registrarImpreso(ticket);
+      registrarImpreso(item);
       setTimeout(() => {
         imprimiendo.current = false;
         procesarCola();
@@ -118,10 +144,10 @@ export function App() {
   // Reimprimir es siempre un gesto manual y puntual (alguien canceló el
   // diálogo, o quiere una copia más): se salta la cola en vez de competir con
   // lo que vaya llegando por SSE.
-  function reimprimir(ticket: Ticket) {
+  function reimprimir(item: Imprimible) {
     if (imprimiendo.current) return;
     imprimiendo.current = true;
-    setTicketVisible(ticket);
+    setItemVisible(item);
     setTimeout(() => {
       window.print();
       setTimeout(() => {
@@ -133,14 +159,14 @@ export function App() {
 
   useEffect(() => {
     if (!destino) return;
-    const fuente = new EventSource(`/admin/api/tickets/eventos?destino=${destino}`);
+    const fuente = new EventSource(urlEventos(destino));
     fuente.onopen = () => setConectado(true);
     fuente.onerror = () => setConectado(false);
     fuente.onmessage = (evento) => {
       try {
-        const tickets = JSON.parse(evento.data) as Ticket[];
-        if (!Array.isArray(tickets)) return;
-        const nuevos = tickets.filter((t) => !impresos.current.has(t.id));
+        const items = JSON.parse(evento.data) as Imprimible[];
+        if (!Array.isArray(items)) return;
+        const nuevos = items.filter((t) => !impresos.current.has(t.id));
         for (const t of nuevos) {
           if (!cola.current.some((c) => c.id === t.id)) cola.current.push(t);
         }
@@ -157,12 +183,15 @@ export function App() {
   if (!destino) {
     return (
       <div className="elegir-destino">
-        <h1>¿Qué impresora es esta?</h1>
+        <h1>¿Qué imprime este aparato?</h1>
         <button type="button" onClick={() => elegirDestino("cocina")}>
           Cocina
         </button>
         <button type="button" onClick={() => elegirDestino("barra")}>
           Barra
+        </button>
+        <button type="button" onClick={() => elegirDestino("cuenta")}>
+          Cuenta
         </button>
       </div>
     );
@@ -170,7 +199,7 @@ export function App() {
 
   return (
     <div className="pantalla-impresion">
-      <h1>Impresión — {destino === "cocina" ? "Cocina" : "Barra"}</h1>
+      <h1>Impresión — {tituloDestino(destino)}</h1>
       <p className={"estado" + (conectado ? " ok" : " sin-conexion")}>
         {conectado ? "Conectado" : "Sin conexión — reintentando…"}
       </p>
@@ -181,19 +210,19 @@ export function App() {
           <thead>
             <tr>
               <th>Mesa</th>
-              <th>Comanda</th>
+              <th>{destino === "cuenta" ? "Total" : "Comanda"}</th>
               <th>Hora</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             {historial.map((h) => (
-              <tr key={h.ticket.id + h.impreso_en}>
-                <td>{h.ticket.mesa_nombre}</td>
-                <td>{h.ticket.numero_comanda}</td>
+              <tr key={h.item.id + h.impreso_en}>
+                <td>{h.item.mesa_nombre}</td>
+                <td>{esTicket(h.item) ? h.item.numero_comanda : euros(h.item.total)}</td>
                 <td>{hora(h.impreso_en)}</td>
                 <td>
-                  <button type="button" onClick={() => reimprimir(h.ticket)}>
+                  <button type="button" onClick={() => reimprimir(h.item)}>
                     Reimprimir
                   </button>
                 </td>
@@ -213,7 +242,12 @@ export function App() {
       >
         Cambiar impresora
       </button>
-      {ticketVisible && <ReciboTicket ticket={ticketVisible} />}
+      {itemVisible &&
+        (esTicket(itemVisible) ? (
+          <ReciboTicket ticket={itemVisible} />
+        ) : (
+          <ReciboCuenta cuenta={itemVisible} />
+        ))}
     </div>
   );
 }

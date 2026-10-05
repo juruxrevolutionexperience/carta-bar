@@ -319,6 +319,23 @@ CREATE INDEX IF NOT EXISTS idx_tickets_pendientes
     ON tickets (restaurante_id, estado) WHERE estado != 'servida';
 CREATE INDEX IF NOT EXISTS idx_comandas_dia ON comandas (restaurante_id, creada_en);
 
+-- Resumen de cuenta impreso al cobrar una mesa (carta_bar/cuentas.py): una
+-- foto de lo pedido en el momento de cobrar, para la misma pantalla dedicada
+-- de impresion que ya usan cocina y barra. No es una factura (sin NIF ni
+-- numeracion fiscal): eso es VeriFactu, aparcado en docs/PEDIDO-EN-MESA.md.
+CREATE TABLE IF NOT EXISTS recibos_cuenta (
+    id             TEXT PRIMARY KEY,
+    restaurante_id TEXT NOT NULL,
+    mesa_nombre    TEXT NOT NULL,
+    lineas         JSONB NOT NULL,
+    por_persona    JSONB NOT NULL,
+    total          NUMERIC(10,2) NOT NULL,
+    creada_en      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_recibos_cuenta_restaurante_creada
+    ON recibos_cuenta (restaurante_id, creada_en);
+
 -- RLS activada en todas las tablas y SIN politicas: la clave publica (anon) y
 -- las autenticadas de Supabase no pueden leer ni escribir nada. La app entra
 -- con el usuario `postgres`, que se salta RLS (rolbypassrls = true, comprobado

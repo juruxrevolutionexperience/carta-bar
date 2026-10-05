@@ -1490,6 +1490,45 @@ al instante que se pueda proponer ese plato (`_validar_pedido` en `api.py` ya co
 `disponible`). No hacía falta construir nada nuevo; confirmado que es suficiente, sin atajo
 adicional desde Cocina.
 
+### Bug real: anular una línea no la quitaba de la cuenta (encontrado y corregido 2026-10-05)
+
+Al construir el resumen de cuenta (siguiente sección) se vio que anular una línea en Cocina
+(`POST .../lineas/{id}/anular`) marcaba el ticket pero nunca tocaba la `Propuesta` de la que
+nació. `resumen_mesa()` (lo que arma la cuenta en pantalla y el total a cobrar) filtra por
+`estado != "retirada"`, así que una línea anulada se seguía cobrando igual. Arreglado:
+`admin_anular_linea` en `api.py` ahora también marca esa propuesta como `"retirada"`. Test que
+falla contra el código viejo y pasa con el arreglo:
+`test_anular_linea_quita_la_propuesta_de_la_cuenta_de_la_mesa` (`tests/test_comandas.py`).
+
+### Resumen de cuenta impreso al cobrar (construido 2026-10-05)
+
+El camarero gestiona la cuenta en pantalla (bloque anterior), pero no había nada en papel para
+dársela al cliente. Decidido con el usuario: **no es una factura** (sin NIF, sin numeración
+fiscal: eso es VeriFactu, Fase D, aparcado) — un resumen de lo pedido, con el desglose por
+persona también impreso, en la **misma pantalla dedicada** que ya imprime cocina/barra (nunca
+en el TPV).
+
+- `src/carta_bar/cuentas.py` (nuevo, mismo patrón que `comandas.py`): `Cuenta` es una foto
+  fija de `resumen_mesa()` en el momento de cobrar (líneas activas, por persona, total).
+  `registrar_cuenta()` devuelve `None` si no había nada que cobrar (no imprime cuentas
+  vacías). `RepositorioCuentas` con Memoria y Postgres (tabla `recibos_cuenta`, `lineas` y
+  `por_persona` en JSONB).
+- `POST /admin/api/mesas/{id}/cobrar` saca la foto (via `resumen_mesa`) **antes** de cerrar la
+  sesión, porque después ya no tendría sentido reconstruirla.
+- `GET /admin/api/cuentas/eventos` (SSE, mismo patrón de sondeo que `/admin/api/tickets/eventos`):
+  manda las cuentas de las últimas 6 h (margen de sobra para no perder ninguna si el aparato
+  estuvo apagado).
+- `frontend/src/impresion/`: la pantalla de elegir destino ahora tiene un tercer botón,
+  "Cuenta" (`PantallaImpresion = Destino | "cuenta"`); si se elige, escucha
+  `/admin/api/cuentas/eventos` e imprime con `ReciboCuenta.tsx` (mismo formato de 80 mm que
+  `ReciboTicket.tsx`, con precios, desglose por persona y un aviso "No es un documento
+  fiscal"). El historial con "Reimprimir" funciona igual para las dos cosas.
+
+**Verificado:** 579 tests (8 nuevos en `tests/test_cuentas.py`, 1 en `test_comandas.py` para
+el bug de arriba), más `tests/test_cuentas_postgres.py` (como `test_comandas_postgres.py`,
+contra un Postgres real con `pgserver`: confirma que `lineas`/`por_persona` como JSONB no
+revientan). `ruff`, `tsc -b`, `npm run build` limpios.
+
 **Verificado:** 569 tests (18 nuevos entre las dos piezas), `ruff` y `ruff format` limpios en
 todo lo tocado. El bloqueo de pytest de hoy (Smart App Control de Windows, en modo Enforce,
 rechazando el `python.exe` de cada `.venv` por no cumplir su "nivel de firma Enterprise") se

@@ -135,6 +135,28 @@ body {
     font-size: 11px;
     color: #333;
   }
+
+  #recibo .aviso-no-factura {
+    font-size: 10px;
+    margin: 0 0 4px;
+  }
+
+  #recibo .fila-cuenta {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  #recibo .total {
+    font-size: 14px;
+    font-weight: bold;
+    margin: 4px 0 0;
+  }
+
+  #recibo .por-persona li {
+    font-size: 12px;
+    margin-bottom: 3px;
+  }
 }
 
 .historial-impresion {

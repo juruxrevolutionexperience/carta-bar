@@ -3,7 +3,7 @@ import os
 import re
 import time
 from collections.abc import Iterator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Annotated, Literal
 
@@ -41,6 +41,7 @@ from carta_bar.comandas import (
     resumen_comandas,
 )
 from carta_bar.costes import ConsumoTotal
+from carta_bar.cuentas import crear_repositorio_cuentas, registrar_cuenta
 from carta_bar.datos import (
     CampoImagenMarca,
     _validar_slug,
@@ -216,6 +217,7 @@ mesas = crear_repositorio_mesas()
 productos = crear_repositorio_productos()
 propuestas = crear_repositorio_propuestas()
 comandas = crear_repositorio_comandas()
+cuentas = crear_repositorio_cuentas()
 
 # Indice de busqueda del chat: uno por restaurante, calculado la primera vez
 # que se le pregunta algo (no todos de golpe al arrancar). Se vacia para un
@@ -1487,9 +1489,17 @@ def admin_cobrar_mesa(
     mesa_id: str, request: Request, restaurante_id: RestauranteActual
 ) -> Response:
     """Cierra la mesa con motivo "cobrada", para distinguirla de una liberada
-    sin cobrar (docs/PEDIDO-EN-MESA.md, "Pedir la cuenta y cobrar")."""
+    sin cobrar (docs/PEDIDO-EN-MESA.md, "Pedir la cuenta y cobrar"). Antes de
+    cerrar, saca una foto de lo pedido para la pantalla de impresion: una vez
+    cerrada la sesion ya no tiene sentido reconstruir la cuenta."""
     if not _sesion_activa(request, restaurante_id):
         return Response(status_code=401, content="Sesión no válida")
+    resultado = sesion_de_mesa(mesas, restaurante_id, mesa_id)
+    if resultado is not None:
+        sesion, _ = resultado
+        mesa = mesas.obtener_mesa(restaurante_id, mesa_id)
+        resumen = resumen_mesa(propuestas.listar_de_sesion(sesion.id))
+        registrar_cuenta(cuentas, restaurante_id, mesa.nombre if mesa else mesa_id, resumen)
     if not cobrar_mesa(mesas, restaurante_id, mesa_id):
         return Response(status_code=404, content="Esta mesa ya estaba libre")
     return Response(status_code=204)
@@ -1734,6 +1744,12 @@ def admin_anular_linea(
     ticket = anular_linea(comandas, restaurante_id, ticket_id, linea_id, peticion.motivo)
     if ticket is None:
         return Response(status_code=404, content="Esa línea no es de ese ticket")
+    # La propuesta que dio origen a esta linea tambien se retira: si no, la
+    # cuenta de la mesa (resumen_mesa, el futuro ticket de cuenta) seguiria
+    # cobrando algo que la cocina ya tiene marcado como anulado.
+    linea = next((lin for lin in ticket.lineas if lin.id == linea_id), None)
+    if linea is not None:
+        propuestas.actualizar_estado(linea.propuesta_id, "retirada")
     return ticket
 
 
@@ -1766,6 +1782,34 @@ def admin_eventos_tickets(
     return StreamingResponse(
         _eventos_tickets(restaurante_id, destino), media_type="text/event-stream"
     )
+
+
+# Ventana de "recientes" para no perder una cuenta si el aparato de impresion
+# estuvo apagado o sin red un rato (igual de espiritu que el cierre automatico
+# de mesas olvidadas, ver mesas.py): mas que de sobra para un turno.
+_VENTANA_CUENTAS_RECIENTES = timedelta(hours=6)
+
+
+def _eventos_cuentas(restaurante_id: str) -> Iterator[str]:
+    anterior: str | None = None
+    limite = time.monotonic() + 900
+    while time.monotonic() < limite:
+        desde = datetime.now(UTC) - _VENTANA_CUENTAS_RECIENTES
+        lista = [c.model_dump(mode="json") for c in cuentas.listar_recientes(restaurante_id, desde)]
+        actual = json.dumps(lista, sort_keys=True, ensure_ascii=False)
+        if actual != anterior:
+            yield f"data: {actual}\n\n"
+            anterior = actual
+        else:
+            yield ": \n\n"
+        time.sleep(1.5)
+
+
+@app.get("/admin/api/cuentas/eventos", response_model=None)
+def admin_eventos_cuentas(request: Request, restaurante_id: RestauranteActual) -> Response:
+    if not _sesion_activa(request, restaurante_id):
+        return Response(status_code=401, content="Sesión no válida")
+    return StreamingResponse(_eventos_cuentas(restaurante_id), media_type="text/event-stream")
 
 
 # Comprimida en el navegador (canvas, JPEG calidad 0.8) antes de llegar aqui:

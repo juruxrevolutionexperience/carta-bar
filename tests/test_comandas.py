@@ -466,6 +466,40 @@ def test_anular_linea_por_api(gerente: TestClient) -> None:
     gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={})
 
 
+def test_anular_linea_quita_la_propuesta_de_la_cuenta_de_la_mesa(gerente: TestClient) -> None:
+    """Bug real: anular una linea en cocina no tocaba la propuesta de la que
+    nacio, asi que la cuenta de la mesa (resumen_mesa) la seguia cobrando."""
+    gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={"destino": "cocina"})
+    creada = gerente.post("/admin/api/mesas", json={"nombre": "Terraza Comandas Cuenta"}).json()
+    cliente = TestClient(app)
+    r = cliente.post("/api/mesa/entrar", json={"token_qr": creada["token_qr"], "nombre": "Ana"})
+    assert r.status_code == 200
+    cliente.post("/api/mesa/propuestas", json={"plato_id": PLATO})
+    cliente.post("/api/mesa/propuestas/confirmar")
+
+    ticket = next(
+        t
+        for t in gerente.get("/admin/api/tickets").json()
+        if t["mesa_nombre"] == "Terraza Comandas Cuenta"
+    )
+    linea_id = ticket["lineas"][0]["id"]
+
+    antes = gerente.get(f"/admin/api/mesas/{creada['id']}/comanda").json()
+    assert antes["total"] > 0
+
+    r = gerente.post(
+        f"/admin/api/tickets/{ticket['id']}/lineas/{linea_id}/anular",
+        json={"motivo": "Pedido por error"},
+    )
+    assert r.status_code == 200
+
+    despues = gerente.get(f"/admin/api/mesas/{creada['id']}/comanda").json()
+    assert despues["total"] == 0
+    assert despues["por_persona"] == []
+
+    gerente.put(f"/admin/api/platos/{PLATO}/pedido", json={})
+
+
 def test_anular_linea_exige_sesion_y_motivo(gerente: TestClient) -> None:
     assert (
         TestClient(app)
