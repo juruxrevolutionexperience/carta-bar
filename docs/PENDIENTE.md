@@ -19,7 +19,34 @@ empezó saltando su requisito de entrada, en
 
 ---
 
-## DÓNDE LO DEJAMOS (2026-09-29) — LEER PRIMERO
+## DÓNDE LO DEJAMOS (2026-10-05) — LEER PRIMERO
+
+Los tres ajustes pendientes del 2026-10-04 están hechos y verificados
+(`tsc -b`, `npm run build`, `ruff check`, `pytest` 570 passed). Nada
+comiteado ni desplegado todavía.
+
+1. ✅ Diálogo de idioma antes que el de nombre: `EntrarMesaDialog` ahora no se
+   pinta si `mostrarSelectorIdioma` está activo, así que un turista elige
+   idioma antes de que le pregunten cómo se llama.
+2. ✅ Avisos al personal: `useAvisosPersonal.ts` + `AvisosPersonal.tsx`, un
+   banner fijo arriba a la derecha, montado una vez en `App.tsx` (visible en
+   cualquier sección), con un pitido simple (WebAudio, sin archivo de audio)
+   solo cuando aparece un aviso nuevo (mesa por confirmar o que pide la
+   cuenta). No es historial: desaparece solo en cuanto se resuelve la mesa.
+3. ✅ Panel simplificado en "día a día" vs "montaje": `secciones.tsx` marca
+   cada sección con `montaje: boolean` (Servicio/Cocina/Mesas = día a día,
+   el resto = montaje). `MenuLateral.tsx` muestra el día a día siempre
+   visible y el montaje plegado bajo un desplegable "Montaje" (recuerda si
+   estaba abierto en `localStorage`, empieza cerrado la primera vez). Nadie
+   pierde acceso: el equipo de Carta Bar sigue entrando a QR/Marca/Platos
+   para el montaje inicial, solo que no estorba en el día a día del bar.
+
+Pendiente: dar los comandos de commit/push y despliegue cuando el usuario
+quiera subir esto; probar en real en La CatedRal/el bar.
+
+---
+
+## DÓNDE LO DEJAMOS (2026-09-29)
 
 - **Bloque 1 probado de punta a punta por el usuario**, en el móvil de
   verdad contra `demo.jurux.app`: escanear el QR, aceptar en Servicio,

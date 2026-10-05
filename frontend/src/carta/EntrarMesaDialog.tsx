@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { useCartaContext } from "./CartaContext";
 import { useMesaContext } from "./MesaContext";
 
 // Se ve justo al escanear el QR de una mesa, antes de entrar: pide el nombre
@@ -7,9 +8,13 @@ import { useMesaContext } from "./MesaContext";
 // "Comensal 2"). "Entrar sin decirlo" sigue funcionando igual que antes.
 export function EntrarMesaDialog() {
   const { pidiendoNombre, entrar } = useMesaContext();
+  const { mostrarSelectorIdioma } = useCartaContext();
   const [nombre, setNombre] = useState("");
 
-  if (!pidiendoNombre) return null;
+  // Primero el idioma, luego el nombre: los dos son un "velo" a pantalla
+  // completa y, si se vieran a la vez, este se pintaria encima sin dejar a
+  // un turista elegir su idioma antes de que le pregunten como se llama.
+  if (!pidiendoNombre || mostrarSelectorIdioma) return null;
 
   function confirmar() {
     entrar(nombre);

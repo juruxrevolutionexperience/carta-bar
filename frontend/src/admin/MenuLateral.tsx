@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { SECCIONES, type Seccion } from "./secciones";
 
@@ -9,8 +9,49 @@ interface Props {
   onCerrar: () => void;
 }
 
+const CLAVE_MONTAJE_ABIERTO = "cartaBar.menu.montajeAbierto";
+
+function item(
+  s: (typeof SECCIONES)[number],
+  activa: Seccion,
+  abierto: boolean,
+  onElegir: () => void,
+) {
+  return (
+    <button
+      key={s.id}
+      type="button"
+      className={"item-menu" + (s.id === activa ? " activo" : "")}
+      aria-current={s.id === activa ? "page" : undefined}
+      tabIndex={abierto ? undefined : -1}
+      onClick={onElegir}
+    >
+      {s.icono}
+      {s.texto}
+    </button>
+  );
+}
+
 export function MenuLateral({ activa, abierto, onCambiar, onCerrar }: Props) {
   const panel = useRef<HTMLElement>(null);
+  // Montaje (QR, marca, platos...) lo deja listo el equipo de Carta Bar al
+  // arrancar: el camarero no lo toca a diario, así que empieza plegado y
+  // fuera de en medio del día a día (Servicio, Cocina, Mesas).
+  const [montajeAbierto, setMontajeAbierto] = useState(() => {
+    try {
+      return localStorage.getItem(CLAVE_MONTAJE_ABIERTO) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CLAVE_MONTAJE_ABIERTO, montajeAbierto ? "1" : "0");
+    } catch {
+      // Sin almacenamiento: no pasa nada, simplemente no se recuerda entre visitas.
+    }
+  }, [montajeAbierto]);
 
   // Escape cierra el menú: en escritorio es el gesto esperado, y el menú tapa
   // media pantalla mientras está abierto.
@@ -23,7 +64,13 @@ export function MenuLateral({ activa, abierto, onCambiar, onCerrar }: Props) {
     return () => window.removeEventListener("keydown", alPulsar);
   }, [abierto, onCerrar]);
 
-  let grupoAnterior = "";
+  const diaADia = SECCIONES.filter((s) => !s.montaje);
+  const montaje = SECCIONES.filter((s) => s.montaje);
+
+  function elegir(id: Seccion) {
+    onCambiar(id);
+    onCerrar();
+  }
 
   return (
     <>
@@ -45,28 +92,26 @@ export function MenuLateral({ activa, abierto, onCambiar, onCerrar }: Props) {
           <div className="sub">Panel de gestión</div>
         </div>
 
-        {SECCIONES.map((s) => {
-          const cabecera = s.grupo !== grupoAnterior ? s.grupo : null;
-          grupoAnterior = s.grupo;
-          return (
-            <div key={s.id}>
-              {cabecera && <div className="grupo-menu">{cabecera}</div>}
-              <button
-                type="button"
-                className={"item-menu" + (s.id === activa ? " activo" : "")}
-                aria-current={s.id === activa ? "page" : undefined}
-                tabIndex={abierto ? undefined : -1}
-                onClick={() => {
-                  onCambiar(s.id);
-                  onCerrar();
-                }}
-              >
-                {s.icono}
-                {s.texto}
-              </button>
-            </div>
-          );
-        })}
+        {diaADia.map((s) => item(s, activa, abierto, () => elegir(s.id)))}
+
+        <button
+          type="button"
+          className="toggle-montaje"
+          aria-expanded={montajeAbierto}
+          tabIndex={abierto ? undefined : -1}
+          onClick={() => setMontajeAbierto((v) => !v)}
+        >
+          <span>Montaje</span>
+          <svg
+            viewBox="0 0 24 24"
+            className={montajeAbierto ? "giro" : ""}
+            aria-hidden="true"
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
+        {montajeAbierto &&
+          montaje.map((s) => item(s, activa, abierto, () => elegir(s.id)))}
       </nav>
     </>
   );

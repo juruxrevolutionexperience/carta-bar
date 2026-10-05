@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import "./estilos.css";
 import { cargarCarta, cargarCategorias } from "./api";
+import { AvisosPersonal } from "./AvisosPersonal";
 import { BarraSuperior } from "./BarraSuperior";
 import { MenuLateral } from "./MenuLateral";
 import { SeccionCocina } from "./SeccionCocina";
@@ -63,6 +64,7 @@ export function App() {
   return (
     <>
       <BarraSuperior titulo={tituloDe(seccion)} onAbrirMenu={() => setMenuAbierto(true)} />
+      <AvisosPersonal />
       <MenuLateral
         activa={seccion}
         abierto={menuAbierto}
