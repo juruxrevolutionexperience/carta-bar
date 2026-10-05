@@ -19,7 +19,39 @@ empezó saltando su requisito de entrada, en
 
 ---
 
-## DÓNDE LO DEJAMOS (2026-10-05, segunda parte) — LEER PRIMERO
+## DÓNDE LO DEJAMOS (2026-10-05, tercera parte) — LEER PRIMERO
+
+El usuario se va a ver el bar en persona mañana (2026-10-06). Lo que trae de
+vuelta de esa visita decide por dónde seguir. Puntos sueltos que dejó antes
+de irse, sin empezar ninguno:
+
+1. ⬜ **Conectar las impresoras de verdad** (cocina, barra, y la de cuenta si
+   la hay) al aparato dedicado — de red o por USB, cuántas hay, si alguna
+   cuelga del Turbopos (en cuyo caso hace falta el adaptador de red, no
+   tocar el Turbopos). Esto es instalación/hardware en el bar, no código.
+   El usuario comenta que es un problema típico de muchos bares y que nunca
+   lo ha hecho él mismo — ir con tiempo. Guía ya dada en el chat (impresora
+   de red vs. USB, predeterminada en Windows, `--kiosk-printing`); falta
+   verlo físicamente mañana y contar cuántas impresoras y de qué tipo son.
+2. ⬜ **VeriFactu**: pendiente de decidir si se plantea como su propio bloque
+   (Fase D de `docs/PEDIDO-EN-MESA.md`, aparcada) o se sigue cobrando con el
+   TPV de siempre por ahora. No se ha empezado nada de código.
+3. Sobre comandas en general, el usuario cree que el flujo **ya está bien**
+   tal cual — no pidió más funcionalidad ahí.
+4. ⬜ **El diseño (visual) necesita una vuelta** — dicho así, sin concretar
+   qué pantallas ni qué cambiar. Pendiente de que el usuario lo aterrice la
+   próxima vez.
+5. ⬜ **Bebidas sin carta** — confirmado que es un hueco real (el usuario no
+   llegó a decir cuál de las dos lecturas era exactamente: faltan por dar de
+   alta como platos normales, o hace falta una "venta libre" tipo TPV para
+   que el camarero añada algo que no existe como plato). **Preguntar primero
+   qué es exactamente antes de tocar nada** — no asumir, puede ser solo
+   catálogo (decisión del negocio, no tocar sin que el usuario la dé de
+   alta) o puede ser código nuevo.
+
+---
+
+## DÓNDE LO DEJAMOS (2026-10-05, segunda parte)
 
 Preguntado el usuario si el sistema está listo para un bar real hoy: sí para
 pedir y mandar a cocina/barra, **no** si Carta Bar tiene que sustituir el
