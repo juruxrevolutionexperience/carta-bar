@@ -17,6 +17,19 @@ const REFRESCO_MS = 5000;
 
 const TODAS = "todas";
 
+// Lo que pide atencion sale primero: una mesa por aceptar bloquea al cliente
+// que espera, una cuenta pedida bloquea la salida; abiertas y libres despues.
+const PRIORIDAD: Record<string, number> = {
+  por_confirmar: 0,
+  cuenta_pedida: 1,
+  abierta: 2,
+  libre: 3,
+};
+
+function porUrgencia(a: Mesa, b: Mesa): number {
+  return PRIORIDAD[estadoDe(a)] - PRIORIDAD[estadoDe(b)];
+}
+
 // El día a día de la sala: las mismas mesas y zonas del plano, pero en
 // tarjetas grandes separadas por zona, para ver de un vistazo qué está libre,
 // qué hay que aceptar y qué está abierto. El plano queda para montar el local.
@@ -68,9 +81,13 @@ export function SeccionServicio() {
     );
   }
 
-  const grupos = agruparPorZona(zonas, mesas).filter(
-    (g) => g.mesas.length > 0 && (filtro === TODAS || g.zona.id === filtro)
-  );
+  const grupos = agruparPorZona(zonas, mesas)
+    .filter((g) => g.mesas.length > 0 && (filtro === TODAS || g.zona.id === filtro))
+    .map((g) => ({ ...g, mesas: [...g.mesas].sort(porUrgencia) }));
+  const urgentes = mesas
+    .filter((m) => PRIORIDAD[estadoDe(m)] <= PRIORIDAD.cuenta_pedida)
+    .filter((m) => filtro === TODAS || m.zona_id === filtro)
+    .sort(porUrgencia);
   const cuenta = contarPorEstado(mesas);
   const elegida = mesas.find((m) => m.id === seleccionada) ?? null;
 
@@ -126,6 +143,28 @@ export function SeccionServicio() {
             );
           })}
         </div>
+      )}
+
+      {urgentes.length > 0 && (
+        <section className="cola-atencion" aria-label="Piden atención">
+          <h2>Atender ahora · {urgentes.length}</h2>
+          <div className="rejilla-atencion">
+            {urgentes.map((m) => {
+              const estado = estadoDe(m);
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={"tarjeta-atencion estado-" + estado}
+                  onClick={() => setSeleccionada(m.id)}
+                >
+                  <span className="nombre-mesa">{m.nombre}</span>
+                  <span className="estado-tarjeta">{TEXTO_ESTADO[estado]}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
       )}
 
       <div className="zona-trabajo">

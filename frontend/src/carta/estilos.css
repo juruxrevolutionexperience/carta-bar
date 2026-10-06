@@ -1189,14 +1189,51 @@ main {
 
 /* Provisional (ver App.tsx: BarraMesa) mientras no existe la pantalla real
    de mesa de las Fases B/C. */
-.barra-mesa {
+.tarjeta-mesa {
   position: sticky;
   top: 0;
   z-index: 20;
-  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 16px;
   background: var(--marca, #222);
   color: #fff;
-  font-size: 13px;
-  font-weight: 600;
   text-align: center;
+  transition: background-color 0.3s ease;
+}
+
+.tarjeta-mesa strong {
+  font-size: 15px;
+}
+
+.tarjeta-mesa span {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.tarjeta-mesa.esperando {
+  background: #b45309;
+}
+
+.tarjeta-mesa.aceptada {
+  background: #15803d;
+  animation: pulso-aceptada 0.6s ease 2;
+}
+
+.tarjeta-mesa.cuenta {
+  background: #374151;
+}
+
+@keyframes pulso-aceptada {
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tarjeta-mesa.aceptada {
+    animation: none;
+  }
 }

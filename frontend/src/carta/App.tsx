@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import "./estilos.css";
 import { Carrusel } from "./Carrusel";
@@ -16,18 +16,56 @@ import { useListaCliente } from "./useListaCliente";
 import { useVisorFoto } from "./useVisorFoto";
 import { VisorFoto } from "./VisorFoto";
 
-const TEXTO_ESTADO: Record<string, string> = {
-  por_confirmar: "esperando a que os acepten",
-  abierta: "mesa abierta",
-  cuenta_pedida: "cuenta pedida",
-};
+const DURACION_ACEPTADA_MS = 4000;
 
+// Lo que el cliente ve de un vistazo en el movil: si el camarero aun no ha
+// aceptado la mesa, si ya la acepto (un aviso breve con vibracion), o si ha
+// pedido la cuenta. Sustituye a la barra fina de antes.
 function BarraMesa() {
   const { mesa } = useMesaContext();
+  const [aceptadaRecien, setAceptadaRecien] = useState(false);
+  const estadoAnterior = useRef<string | null>(null);
+
+  useEffect(() => {
+    const actual = mesa?.estado ?? null;
+    const anterior = estadoAnterior.current;
+    estadoAnterior.current = actual;
+    if (anterior !== "por_confirmar" || actual !== "abierta") return;
+    setAceptadaRecien(true);
+    try {
+      navigator.vibrate?.([120, 80, 120]);
+    } catch {
+      // Sin vibracion (escritorio, iOS): el cambio de color sigue avisando.
+    }
+    const id = window.setTimeout(() => setAceptadaRecien(false), DURACION_ACEPTADA_MS);
+    return () => window.clearTimeout(id);
+  }, [mesa?.estado]);
+
   if (!mesa || mesa.estado === "cerrada") return null;
+
+  let clase = "tarjeta-mesa";
+  let titulo = "Mesa abierta";
+  let detalle = "Podéis pedir lo que queráis desde la carta.";
+  if (mesa.estado === "por_confirmar") {
+    clase += " esperando";
+    titulo = "Esperando al camarero";
+    detalle = "Os avisamos en cuanto os acepte la mesa.";
+  } else if (mesa.estado === "cuenta_pedida") {
+    clase += " cuenta";
+    titulo = "Cuenta pedida";
+    detalle = "El camarero viene a cobrar.";
+  } else if (aceptadaRecien) {
+    clase += " aceptada";
+    titulo = "¡Mesa aceptada!";
+    detalle = "Ya podéis hacer vuestro pedido.";
+  }
+
   return (
-    <div className="barra-mesa">
-      Mesa {mesa.mesa} · {TEXTO_ESTADO[mesa.estado] ?? mesa.estado}
+    <div className={clase} role="status" aria-live="polite">
+      <strong>
+        Mesa {mesa.mesa} · {titulo}
+      </strong>
+      <span>{detalle}</span>
     </div>
   );
 }

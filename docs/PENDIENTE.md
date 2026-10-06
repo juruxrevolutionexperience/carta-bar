@@ -805,3 +805,40 @@ a tener clientes de pago de verdad.
 ## EN PARALELO (días separados)
 
 - Currículum: Módulo 2 y evaluación formal del Módulo 3
+
+## APARCADO (idea nueva, 2026-10-06, sin empezar)
+
+- ⬜ **CRM / control de stock y compras**: fichas de proveedores, inventario, y
+  avisos automáticos (ej. "quedan menos de 15 alcachofas → pedido al proveedor
+  por correo"). Idea del usuario, distinta del pedido en mesa. No empezar hasta
+  que el pedido en mesa esté estable en un bar real.
+- ⬜ **Modelo de cobro del servicio** (mensualidad, por mesa, etc.): decisión
+  del negocio, aún sin definir. Si se factura a los bares, esa factura también
+  entra en VeriFactu.
+
+## VERIFACTU · investigado 2026-10-06 (sin código, sin decidir)
+
+- Calendario vigente según RD-ley 15/2025: sociedades (IS) desde 1 ene 2027;
+  autónomos en IRPF y resto de obligados desde 1 jul 2027. El plazo "1 jul 2025"
+  del texto de la gestoría está superado.
+- Una noticia menciona un nuevo aplazamiento a oct 2028, pendiente de BOE: **sin
+  verificar**, no tomar como cierto.
+- Obligación: el software que genera la factura o ticket (Carta Bar, si el ticket
+  sale de aquí). Requisitos según Orden HAC/1177/2024: numeración correlativa,
+  encadenado de huellas (hash), registro de eventos, QR de verificación en la
+  factura, y envío a la AEAT en modalidad Veri*factu.
+- Duda abierta: quién emite el ticket fiscal en el bar (Carta Bar o Turbopos).
+  Pendiente de confirmar con la gestoría antes de programar nada.
+
+## 2026-10-06 · avisos para cliente y prioridad en Servicio (sin commit)
+
+- 🔍 Carta del cliente: barra fina sustituida por tarjeta de estado
+  (`frontend/src/carta/App.tsx`, `BarraMesa`): "Esperando al camarero" (ámbar),
+  "¡Mesa aceptada!" (verde, 4 s, con vibración si el móvil la soporta), "Cuenta
+  pedida" (gris).
+- 🔍 Panel de Servicio: cola "Atender ahora" arriba (por aceptar primero, luego
+  cuenta pedida) y orden por urgencia dentro de cada zona
+  (`frontend/src/admin/SeccionServicio.tsx`).
+- Compila (`tsc -b`, `npm run build`). Falta comprobarlo con mesas reales en
+  pantalla: el cambio de estado necesita que el camarero acepte una mesa.
+- 🔍 Plano a pantalla completa en escritorio (`body.plano-completo .plano-scroll`, `estilos.css`): quita el tope de 560 px; el zoom se ajusta solo. Compila; falta verlo con mesas reales.
