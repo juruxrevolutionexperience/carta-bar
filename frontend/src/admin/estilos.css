@@ -2828,59 +2828,6 @@ button.secundario.peligro {
   border-left: 4px solid var(--azul);
 }
 
-.cola-atencion {
-  margin: 0 0 16px;
-}
-
-.cola-atencion h2 {
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--tinta-suave);
-  margin: 0 0 8px;
-}
-
-.rejilla-atencion {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 10px;
-}
-
-.tarjeta-atencion {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-height: 84px;
-  padding: 14px;
-  border: 2px solid var(--borde);
-  border-radius: 14px;
-  background: var(--superficie);
-  color: var(--tinta);
-  font-family: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.tarjeta-atencion.estado-por_confirmar {
-  border-color: var(--ambar);
-  background: var(--ambar-suave);
-}
-
-.tarjeta-atencion.estado-cuenta_pedida {
-  border-color: var(--azul);
-  background: var(--azul-suave);
-}
-
-.tarjeta-atencion .nombre-mesa {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.tarjeta-atencion .estado-tarjeta {
-  font-size: 13px;
-  font-weight: 600;
-}
 
 /* En el movil el plano solo se mira: montarlo (crear, mover, duplicar mesas)
    se hace desde el ordenador. El boton de editar no aparece. */
