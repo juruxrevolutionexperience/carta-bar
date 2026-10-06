@@ -388,7 +388,7 @@ export function SeccionMesas() {
                     aria-checked={editando}
                     aria-label="Editar el plano"
                     title="Editar el plano"
-                    className={"boton-modo" + (editando ? " activo" : "")}
+                    className={"boton-modo solo-escritorio" + (editando ? " activo" : "")}
                     onClick={() => {
                       setModo("edicion");
                       setSeleccionada(null);

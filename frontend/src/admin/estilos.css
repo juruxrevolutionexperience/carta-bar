@@ -2881,3 +2881,11 @@ button.secundario.peligro {
   font-size: 13px;
   font-weight: 600;
 }
+
+/* En el movil el plano solo se mira: montarlo (crear, mover, duplicar mesas)
+   se hace desde el ordenador. El boton de editar no aparece. */
+@media (max-width: 999px) {
+  .solo-escritorio {
+    display: none;
+  }
+}
