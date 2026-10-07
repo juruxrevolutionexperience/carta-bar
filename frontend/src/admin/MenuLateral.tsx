@@ -21,7 +21,13 @@ function item(
     <button
       key={s.id}
       type="button"
-      className={"item-menu" + (s.id === activa ? " activo" : "")}
+      className={
+        "item-menu" +
+        (s.id === activa ? " activo" : "") +
+        // Mesas es para montar el local: en el movil no aporta nada que no
+        // tenga ya Servicio, y el plano ahi no se maneja bien con el dedo.
+        (s.id === "mesas" ? " solo-escritorio" : "")
+      }
       aria-current={s.id === activa ? "page" : undefined}
       tabIndex={abierto ? undefined : -1}
       onClick={onElegir}

@@ -15,7 +15,23 @@ os.environ["CARTA_BD_ACTIVA"] = "false"
 
 import pytest  # noqa: E402
 
+from carta_bar import api  # noqa: E402
 from carta_bar.api import RESTAURANTE_ID, _resolver_restaurante, app  # noqa: E402
+
+# Red de seguridad, no solo las variables de arriba: si por lo que sea
+# (un .env con credenciales, un cambio futuro) algun repositorio de api.py
+# terminara siendo el de Postgres en vez de memoria, mejor que la suite entera
+# falle aqui mismo a que un test de verdad cree mesas o sesiones en produccion
+# (como paso el 2026-10-06: "Terraza API 1..4" en la-catedral).
+for _nombre_repo in ("mesas", "productos", "propuestas", "comandas", "cuentas"):
+    _repo = getattr(api, _nombre_repo)
+    _clase = type(_repo).__name__
+    if "Postgres" in _clase:
+        raise RuntimeError(
+            f"carta_bar.api.{_nombre_repo} es {_clase}, no memoria: los tests no "
+            "pueden correr asi (tocarian la base de datos real). Revisa que "
+            "POSTGRES_USER/PASSWORD/DB/HOST esten vacios en el entorno."
+        )
 
 
 @pytest.fixture(autouse=True)
