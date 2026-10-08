@@ -121,17 +121,19 @@ body {
   color: var(--tinta);
   font-family: "Roboto", system-ui, sans-serif;
   min-height: 100vh;
-  /* La barra superior es fija: el contenido empieza por debajo de ella. */
-  padding: calc(var(--alto-barra) + env(safe-area-inset-top) + 20px) 20px
-    calc(32px + env(safe-area-inset-bottom));
   touch-action: pan-x pan-y;
   overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
 }
 
+/* El contenido (no el body: ahora la barra y el menu son de MUI, con su
+   propio espacio reservado via AppBar/Drawer) empieza por debajo de la barra
+   superior fija. */
 .app {
   max-width: 560px;
   margin: 0 auto;
+  padding: calc(var(--alto-barra) + env(safe-area-inset-top) + 20px) 20px
+    calc(32px + env(safe-area-inset-bottom));
 }
 
 h1 {
@@ -891,27 +893,11 @@ button.secundario:hover {
 /* ---------- escritorio: barra inferior -> menu lateral ---------- */
 
 @media (min-width: 860px) {
-  body {
-    padding-left: calc(var(--ancho-menu) + 40px);
-    padding-right: 40px;
-  }
   .app {
     max-width: 900px;
     margin: 0;
-  }
-  /* Con sitio de sobra el menu se queda siempre abierto y deja de ser un
-     panel deslizante: el velo y el boton de hamburguesa sobran. */
-  .menu-lateral {
-    transform: none;
-    box-shadow: none;
-  }
-  .velo-menu,
-  .boton-menu {
-    display: none;
-  }
-  .barra-superior {
-    left: var(--ancho-menu);
-    padding-left: 24px;
+    padding-left: calc(var(--ancho-menu) + 40px);
+    padding-right: 40px;
   }
 }
 

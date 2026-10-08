@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { ThemeProvider } from "@mui/material/styles";
 
 import "./estilos.css";
 import { cargarCarta, cargarCategorias } from "./api";
 import { AvisosPersonal } from "./AvisosPersonal";
-import { BarraSuperior } from "./BarraSuperior";
-import { MenuLateral } from "./MenuLateral";
+import { crearTemaMui } from "./muiTheme";
+import { PanelShell } from "./PanelShell";
 import { SeccionCocina } from "./SeccionCocina";
 import { SeccionCuenta } from "./SeccionCuenta";
 import { SeccionMesas } from "./SeccionMesas";
@@ -14,7 +16,8 @@ import { SeccionExtras } from "./SeccionExtras";
 import { SeccionPlatos } from "./SeccionPlatos";
 import { SeccionQr } from "./SeccionQr";
 import { SeccionServicio } from "./SeccionServicio";
-import { SECCIONES, tituloDe, type Seccion } from "./secciones";
+import { SECCIONES, type Seccion } from "./secciones";
+import { aplicarTema, guardarTema, temaGuardado, type Tema } from "./tema";
 import { CATEGORIA_ESPECIALES, platoVacio, type Categoria, type Plato } from "./types";
 
 export function App() {
@@ -23,6 +26,15 @@ export function App() {
   const [platos, setPlatos] = useState<Plato[] | null>(null);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [error, setError] = useState(false);
+  const [tema, setTema] = useState<Tema>(temaGuardado);
+  const temaMui = useMemo(() => crearTemaMui(tema === "oscuro" ? "dark" : "light"), [tema]);
+
+  function alternarTema() {
+    const nuevo: Tema = tema === "claro" ? "oscuro" : "claro";
+    aplicarTema(nuevo);
+    guardarTema(nuevo);
+    setTema(nuevo);
+  }
 
   useEffect(() => {
     Promise.all([cargarCarta(), cargarCategorias()])
@@ -62,15 +74,17 @@ export function App() {
   const especiales = platos?.filter((p) => p.categoria === CATEGORIA_ESPECIALES) ?? null;
 
   return (
-    <>
-      <BarraSuperior titulo={tituloDe(seccion)} onAbrirMenu={() => setMenuAbierto(true)} />
-      <AvisosPersonal />
-      <MenuLateral
-        activa={seccion}
+    <ThemeProvider theme={temaMui}>
+      <PanelShell
+        seccion={seccion}
         abierto={menuAbierto}
         onCambiar={setSeccion}
+        onAbrir={() => setMenuAbierto(true)}
         onCerrar={() => setMenuAbierto(false)}
+        tema={tema}
+        onAlternarTema={alternarTema}
       />
+      <AvisosPersonal />
 
       <div
         className={
@@ -111,6 +125,6 @@ export function App() {
         {seccion === "qr" && <SeccionQr />}
         {seccion === "cuenta" && <SeccionCuenta />}
       </div>
-    </>
+    </ThemeProvider>
   );
 }
