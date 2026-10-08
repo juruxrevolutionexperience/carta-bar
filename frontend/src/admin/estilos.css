@@ -1,98 +1,104 @@
-/* Panel de gestion. Dos temas: CLARO (el de por defecto, el mismo blanco calido
-   de la carta del cliente) y OSCURO (para quien lo use de noche o con poca luz
-   en el bar). Se elige con el boton sol/luna de la barra superior y se recuerda
-   en el navegador (ver tema.ts). Todo color vive aqui, en variables: ningun
-   componente debe llevar un color suelto, o no cambiaria con el tema. */
+/* Panel de gestion. Dos temas: CLARO (el de por defecto) y OSCURO (para quien
+   lo use de noche o con poca luz en el bar). Se elige con el boton sol/luna de
+   la barra superior y se recuerda en el navegador (ver tema.ts). Todo color
+   vive aqui, en variables: ningun componente debe llevar un color suelto, o
+   no cambiaria con el tema.
+
+   Paleta adaptada de la plantilla Berry (MUI): no es el color de marca del
+   restaurante (eso es --marca en carta/estilos.css, que cada bar personaliza
+   en "Marca"), es el color propio del PANEL de Carta Bar como producto. */
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap");
+
 :root {
   color-scheme: light;
 
-  --fondo: #f6f3f0;
+  --fondo: #f8fafc;
   --superficie: #ffffff;
-  --superficie-alta: #f1ece7;
-  --superficie-viva: #e8e1da;
-  --borde: #d6cdc4;
-  --borde-suave: #e6dfd8;
-  --fondo-translucido: rgba(246, 243, 240, 0.92);
+  --superficie-alta: #eef2f6;
+  --superficie-viva: #e3e8ef;
+  --borde: #e3e8ef;
+  --borde-suave: #eef2f6;
+  --fondo-translucido: rgba(248, 250, 252, 0.92);
 
-  --tinta: #171310;
-  --tinta-media: #6a615b;
-  --tinta-suave: #8f867f;
+  --tinta: #364152;
+  --tinta-media: #4b5565;
+  --tinta-suave: #697586;
 
-  --marca: #c94a32;
-  --marca-viva: #b03a2e;
-  --marca-tenue: rgba(201, 74, 50, 0.12);
+  --marca: #2196f3;
+  --marca-viva: #1e88e5;
+  --marca-tenue: #e3f2fd;
   --sobre-marca: #ffffff;
 
-  --verde: #1e7a48;
-  --verde-suave: rgba(30, 122, 72, 0.12);
-  --ambar: #a86b0f;
-  --ambar-suave: rgba(168, 107, 15, 0.14);
-  --rojo: #c0392b;
-  --rojo-suave: rgba(192, 57, 43, 0.12);
-  --azul: #2c62a8;
-  --azul-suave: rgba(44, 98, 168, 0.12);
+  --verde: #00c853;
+  --verde-suave: rgba(0, 200, 83, 0.12);
+  --ambar: #ffc107;
+  --ambar-suave: rgba(255, 193, 7, 0.16);
+  --rojo: #f44336;
+  --rojo-suave: rgba(244, 67, 54, 0.12);
+  --azul: #1565c0;
+  --azul-suave: rgba(21, 101, 192, 0.12);
 
-  --sombra: 0 2px 8px rgba(23, 19, 16, 0.12);
-  --sombra-alta: 0 12px 32px rgba(23, 19, 16, 0.2);
+  --sombra: 0 1px 2px 0 rgba(18, 25, 38, 0.1);
+  --sombra-alta: 0 0 3px 0 rgba(18, 25, 38, 0.12), 0 14px 28px -5px rgba(18, 25, 38, 0.16);
 
   /* Plano de mesas */
-  --plano-fondo: #fbfaf8;
-  --plano-guia: rgba(23, 19, 16, 0.07);
+  --plano-fondo: #fbfcfd;
+  --plano-guia: rgba(18, 25, 38, 0.06);
   --mesa-fondo: #ffffff;
-  --mesa-borde: #9c9288;
-  --mesa-taburete: #efeae4;
-  --mesa-barril-borde: #b58a55;
-  --mesa-ocupada: rgba(201, 74, 50, 0.16);
-  --mesa-seleccion: rgba(201, 74, 50, 0.3);
-  --silla: #b8afa5;
-  --silla-barril: #c9a26f;
+  --mesa-borde: #cdd5df;
+  --mesa-taburete: #eef2f6;
+  --mesa-barril-borde: #90caf9;
+  --mesa-ocupada: rgba(33, 150, 243, 0.16);
+  --mesa-seleccion: rgba(33, 150, 243, 0.32);
+  --silla: #cdd5df;
+  --silla-barril: #90caf9;
 
   --alto-barra: 56px;
-  --ancho-menu: 264px;
+  --ancho-menu: 260px;
 }
 
 :root[data-tema="oscuro"] {
   color-scheme: dark;
 
-  --fondo: #121110;
-  --superficie: #1c1b19;
-  --superficie-alta: #262421;
-  --superficie-viva: #302d29;
-  --borde: #3a3630;
-  --borde-suave: #292724;
-  --fondo-translucido: rgba(18, 17, 16, 0.92);
+  --fondo: #1a223f;
+  --superficie: #111936;
+  --superficie-alta: #29314f;
+  --superficie-viva: #212946;
+  --borde: rgba(255, 255, 255, 0.08);
+  --borde-suave: rgba(255, 255, 255, 0.05);
+  --fondo-translucido: rgba(26, 34, 63, 0.92);
 
-  --tinta: #f7f2ee;
-  --tinta-media: #b5a79d;
-  --tinta-suave: #8a7d74;
+  --tinta: #d7dcec;
+  --tinta-media: #bdc8f0;
+  --tinta-suave: #8492c4;
 
-  --marca: #e0654b;
-  --marca-viva: #f0785e;
-  --marca-tenue: rgba(224, 101, 75, 0.14);
-  --sobre-marca: #1a0f0c;
+  --marca: #2196f3;
+  --marca-viva: #90caf9;
+  --marca-tenue: rgba(144, 202, 249, 0.16);
+  --sobre-marca: #0b1222;
 
-  --verde: #46c98b;
-  --verde-suave: rgba(70, 201, 139, 0.14);
-  --ambar: #e8a33d;
-  --ambar-suave: rgba(232, 163, 61, 0.14);
-  --rojo: #ef6a5e;
-  --rojo-suave: rgba(239, 106, 94, 0.14);
-  --azul: #6fa3ec;
-  --azul-suave: rgba(111, 163, 236, 0.14);
+  --verde: #00e676;
+  --verde-suave: rgba(0, 230, 118, 0.14);
+  --ambar: #ffc107;
+  --ambar-suave: rgba(255, 193, 7, 0.14);
+  --rojo: #f44336;
+  --rojo-suave: rgba(244, 67, 54, 0.16);
+  --azul: #7c4dff;
+  --azul-suave: rgba(124, 77, 255, 0.16);
 
-  --sombra: 0 2px 8px rgba(0, 0, 0, 0.35);
-  --sombra-alta: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --sombra: 0 1px 2px 0 rgba(0, 0, 0, 0.35);
+  --sombra-alta: 0 0 3px 0 rgba(0, 0, 0, 0.4), 0 14px 28px -5px rgba(0, 0, 0, 0.5);
 
-  --plano-fondo: #121110;
+  --plano-fondo: #1a223f;
   --plano-guia: rgba(255, 255, 255, 0.05);
-  --mesa-fondo: #25221f;
-  --mesa-borde: #7a7166;
-  --mesa-taburete: #2f2b27;
-  --mesa-barril-borde: #a5825a;
-  --mesa-ocupada: rgba(224, 101, 75, 0.3);
-  --mesa-seleccion: rgba(224, 101, 75, 0.35);
-  --silla: #7d7468;
-  --silla-barril: #9a7a52;
+  --mesa-fondo: #212946;
+  --mesa-borde: #4b5565;
+  --mesa-taburete: #29314f;
+  --mesa-barril-borde: #90caf9;
+  --mesa-ocupada: rgba(33, 150, 243, 0.26);
+  --mesa-seleccion: rgba(33, 150, 243, 0.4);
+  --silla: #4b5565;
+  --silla-barril: #90caf9;
 }
 
 * {
@@ -113,7 +119,7 @@ html {
 body {
   background: var(--fondo);
   color: var(--tinta);
-  font-family: system-ui, sans-serif;
+  font-family: "Roboto", system-ui, sans-serif;
   min-height: 100vh;
   /* La barra superior es fija: el contenido empieza por debajo de ella. */
   padding: calc(var(--alto-barra) + env(safe-area-inset-top) + 20px) 20px
@@ -135,10 +141,10 @@ h1 {
 .tarjeta {
   background: var(--superficie);
   border: 1px solid var(--borde-suave);
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 20px;
   margin-bottom: 14px;
-  box-shadow: var(--sombra);
+  box-shadow: var(--sombra-alta);
 }
 
 .tarjeta h2 {
@@ -165,13 +171,14 @@ select,
 textarea {
   width: 100%;
   padding: 11px 13px;
-  background: var(--superficie-alta);
+  background: var(--superficie);
   color: var(--tinta);
   border: 1px solid var(--borde);
-  border-radius: 10px;
+  border-radius: 8px;
   /* 16px minimo: por debajo, Safari en iPhone hace zoom automatico al enfocar. */
   font-size: 16px;
   font-family: inherit;
+  transition: border-color 0.15s ease;
 }
 
 textarea {
@@ -250,31 +257,53 @@ input[type="search"] {
 
 button.primario {
   margin-top: 16px;
-  padding: 11px 16px;
+  padding: 10px 18px;
   background: var(--marca);
   color: var(--sobre-marca);
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: 0 2px 8px -2px rgba(33, 150, 243, 0.5);
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
+}
+
+button.primario:hover {
+  background: var(--marca-viva);
+}
+
+button.primario:active {
+  transform: translateY(1px);
 }
 
 button.primario:disabled {
   opacity: 0.6;
   cursor: default;
+  box-shadow: none;
 }
 
 button.secundario {
   margin-top: 16px;
   margin-left: 8px;
-  padding: 11px 16px;
+  padding: 10px 18px;
   background: none;
   color: var(--tinta-media);
   border: 1px solid var(--borde);
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 14px;
   cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+button.secundario:hover {
+  background: var(--superficie-alta);
+  border-color: var(--tinta-suave);
 }
 
 .aviso {
@@ -718,15 +747,20 @@ button.secundario {
   align-items: center;
   gap: 12px;
   width: 100%;
-  padding: 11px 10px;
+  padding: 11px 12px;
   background: none;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   color: var(--tinta-media);
   font-size: 14.5px;
   font-family: inherit;
   text-align: left;
   cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.item-menu:hover {
+  background: var(--superficie-alta);
 }
 
 .item-menu svg {
@@ -777,7 +811,7 @@ button.secundario {
 
 .fila-categoria button {
   border: 1px solid var(--borde);
-  background: var(--fondo);
+  background: var(--superficie);
   color: var(--tinta);
   border-radius: 8px;
   min-width: 38px;
@@ -2573,7 +2607,7 @@ button.secundario.peligro {
   flex: none;
   border: none;
   background: none;
-  color: var(--rojo, #b8391f);
+  color: var(--rojo, #f44336);
   font-size: 12px;
   cursor: pointer;
   padding: 0;
@@ -2633,7 +2667,7 @@ button.secundario.peligro {
 .fila-linea-comanda-quien button {
   border: none;
   background: none;
-  color: var(--rojo, #b8391f);
+  color: var(--rojo, #f44336);
   font-size: 12px;
   cursor: pointer;
   padding: 0;
@@ -2714,8 +2748,9 @@ button.secundario.peligro {
 }
 
 .selector-tpv {
-  background: var(--fondo);
-  border-radius: 16px;
+  background: var(--superficie);
+  border-radius: 12px;
+  box-shadow: var(--sombra-alta);
   width: 100%;
   max-width: 640px;
   max-height: 85vh;
