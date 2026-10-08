@@ -1,5 +1,25 @@
 import { useEffect, useState } from "react";
 
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Checkbox from "@mui/material/Checkbox";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import Stack from "@mui/material/Stack";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+
 import {
   cargarCategoriasRestaurante,
   crearCategoriaRestaurante,
@@ -126,112 +146,151 @@ export function PanelImportar({ restauranteId, onCerrar }: Props) {
   }
 
   return (
-    <div className="panel-tarjeta">
-      <h2>Importar platos de una foto — {restauranteId}</h2>
-      <p className="sub">
-        Sube una foto de la carta en papel; el modelo propone los platos y tú los revisas antes de
-        crear nada.
-      </p>
+    <Card sx={{ mb: 2 }}>
+      <CardContent>
+        <Typography variant="h3" sx={{ mb: 0.5 }}>
+          Importar platos de una foto — {restauranteId}
+        </Typography>
+        <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 2 }}>
+          Sube una foto de la carta en papel; el modelo propone los platos y tú los revisas antes
+          de crear nada.
+        </Typography>
 
-      {!filas && (
-        <label className="boton-archivo">
-          {leyendo ? "Leyendo la foto…" : "Elegir foto"}
-          <input type="file" accept="image/jpeg" hidden disabled={leyendo} onChange={alElegirFoto} />
-        </label>
-      )}
+        {!filas && (
+          <Button component="label" variant="outlined" disabled={leyendo} sx={{ mb: 2 }}>
+            {leyendo ? "Leyendo la foto…" : "Elegir foto"}
+            <input
+              type="file"
+              accept="image/jpeg"
+              hidden
+              disabled={leyendo}
+              onChange={alElegirFoto}
+            />
+          </Button>
+        )}
 
-      {filas && filas.length > 0 && (
-        <>
-          <div className="tabla-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>Nombre</th>
-                  <th>Descripción</th>
-                  <th>Ingredientes</th>
-                  <th>Precio</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filas.map((f, i) => (
-                  <tr key={i}>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={f.incluir}
-                        onChange={(e) => cambiarFila(i, { incluir: e.target.checked })}
-                        aria-label={`Incluir ${f.nombre || "este plato"}`}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        value={f.nombre}
-                        onChange={(e) => cambiarFila(i, { nombre: e.target.value })}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        value={f.descripcion}
-                        onChange={(e) => cambiarFila(i, { descripcion: e.target.value })}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        value={f.ingredientes}
-                        onChange={(e) => cambiarFila(i, { ingredientes: e.target.value })}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        value={f.precio}
-                        inputMode="decimal"
-                        style={{ width: "70px" }}
-                        onChange={(e) => cambiarFila(i, { precio: e.target.value })}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        {filas && filas.length > 0 && (
+          <>
+            <TableContainer sx={{ mb: 2 }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell padding="checkbox"></TableCell>
+                    <TableCell>Nombre</TableCell>
+                    <TableCell>Descripción</TableCell>
+                    <TableCell>Ingredientes</TableCell>
+                    <TableCell>Precio</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filas.map((f, i) => (
+                    <TableRow key={i}>
+                      <TableCell padding="checkbox">
+                        <Checkbox
+                          size="small"
+                          checked={f.incluir}
+                          onChange={(e) => cambiarFila(i, { incluir: e.target.checked })}
+                          aria-label={`Incluir ${f.nombre || "este plato"}`}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          size="small"
+                          variant="standard"
+                          value={f.nombre}
+                          onChange={(e) => cambiarFila(i, { nombre: e.target.value })}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          size="small"
+                          variant="standard"
+                          value={f.descripcion}
+                          onChange={(e) => cambiarFila(i, { descripcion: e.target.value })}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          size="small"
+                          variant="standard"
+                          value={f.ingredientes}
+                          onChange={(e) => cambiarFila(i, { ingredientes: e.target.value })}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          size="small"
+                          variant="standard"
+                          value={f.precio}
+                          slotProps={{ htmlInput: { inputMode: "decimal" } }}
+                          sx={{ width: 70 }}
+                          onChange={(e) => cambiarFila(i, { precio: e.target.value })}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
 
-          <label>Categoría de destino</label>
-          <select value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
-            {categorias.length === 0 && <option value="">— sin categorías todavía —</option>}
-            {categorias.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nombre}
-              </option>
-            ))}
-          </select>
-          <label>O crea una categoría nueva</label>
-          <input
-            value={nuevaCategoria}
-            placeholder="p. ej. Tostas"
-            onChange={(e) => setNuevaCategoria(e.target.value)}
-          />
+            <Stack spacing={2} alignItems="flex-start" sx={{ mb: 2 }}>
+              <FormControl size="small" fullWidth>
+                <InputLabel id="categoria-destino">Categoría de destino</InputLabel>
+                <Select
+                  labelId="categoria-destino"
+                  label="Categoría de destino"
+                  value={categoriaId}
+                  onChange={(e) => setCategoriaId(e.target.value)}
+                >
+                  {categorias.length === 0 && (
+                    <MenuItem value="">— sin categorías todavía —</MenuItem>
+                  )}
+                  {categorias.map((c) => (
+                    <MenuItem key={c.id} value={c.id}>
+                      {c.nombre}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                label="O crea una categoría nueva"
+                size="small"
+                fullWidth
+                value={nuevaCategoria}
+                placeholder="p. ej. Tostas"
+                onChange={(e) => setNuevaCategoria(e.target.value)}
+              />
 
-          <button type="button" className="primario" disabled={creando} onClick={crearTodos}>
-            {creando
-              ? `Creando… (${creados}/${filas.filter((f) => f.incluir).length})`
-              : `Crear ${filas.filter((f) => f.incluir).length} platos`}
-          </button>
-          <button type="button" className="secundario" disabled={creando} onClick={() => setFilas(null)}>
-            Empezar de nuevo
-          </button>
-        </>
-      )}
+              <Stack direction="row" spacing={1}>
+                <Button variant="contained" disabled={creando} onClick={crearTodos}>
+                  {creando
+                    ? `Creando… (${creados}/${filas.filter((f) => f.incluir).length})`
+                    : `Crear ${filas.filter((f) => f.incluir).length} platos`}
+                </Button>
+                <Button variant="outlined" disabled={creando} onClick={() => setFilas(null)}>
+                  Empezar de nuevo
+                </Button>
+              </Stack>
+            </Stack>
+          </>
+        )}
 
-      {filas && filas.length === 0 && (
-        <p className="cargando">No se reconoció ningún plato en la foto.</p>
-      )}
+        {filas && filas.length === 0 && (
+          <p className="cargando">No se reconoció ningún plato en la foto.</p>
+        )}
 
-      {aviso && <div className="aviso visible exito">{aviso}</div>}
+        {aviso && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {aviso}
+          </Alert>
+        )}
 
-      <button type="button" className="secundario" onClick={onCerrar}>
-        Cerrar
-      </button>
-    </div>
+        <Box>
+          <Button variant="outlined" onClick={onCerrar}>
+            Cerrar
+          </Button>
+        </Box>
+      </CardContent>
+    </Card>
   );
 }

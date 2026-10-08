@@ -1,5 +1,15 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
+import Alert from "@mui/material/Alert";
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+
 import { cambiarNombre, cargarMarca, quitarImagenMarca, subirImagenMarca } from "./api";
 import { comprimirImagen } from "./comprimirImagen";
 import type { ConfigMarca, TipoImagenMarca } from "./types";
@@ -52,36 +62,78 @@ function BloqueImagen({ tipo, titulo, ayuda, url, claseMiniatura, anchoMax, onCa
     }
   }
 
+  const esRedonda = claseMiniatura === "redonda";
+
   return (
-    <div className="tarjeta">
-      <h2>{titulo}</h2>
-      <p>{ayuda}</p>
-      <div className="bloque-foto">
-        {url ? (
-          <img className={`miniatura-foto ${claseMiniatura}`} src={url} alt="" />
-        ) : (
-          <div className={`miniatura-foto vacia ${claseMiniatura}`}>Sin imagen</div>
-        )}
-        <div className="acciones-foto">
-          <label className="boton-archivo">
-            {ocupado ? "Subiendo…" : url ? "Cambiar" : "Subir"}
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*"
-              disabled={ocupado}
-              onChange={subir}
-            />
-          </label>
-          {url && (
-            <button type="button" onClick={quitar} disabled={ocupado}>
-              Quitar
-            </button>
+    <Card sx={{ mb: 2 }}>
+      <CardContent>
+        <Typography variant="h3" sx={{ mb: 1 }}>
+          {titulo}
+        </Typography>
+        <Typography sx={{ fontSize: 14, color: "text.secondary", mb: 2 }}>{ayuda}</Typography>
+        <Stack direction="row" spacing={2} alignItems="center">
+          {esRedonda ? (
+            <Avatar src={url || undefined} sx={{ width: 72, height: 72 }}>
+              {!url && "Sin"}
+            </Avatar>
+          ) : (
+            <Box
+              sx={{
+                width: 160,
+                height: 72,
+                borderRadius: 1.5,
+                overflow: "hidden",
+                bgcolor: "action.hover",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              {url ? (
+                <Box
+                  component="img"
+                  src={url}
+                  alt=""
+                  sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              ) : (
+                <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
+                  Sin imagen
+                </Typography>
+              )}
+            </Box>
           )}
-          {error && <div className="aviso visible error">{error}</div>}
-        </div>
-      </div>
-    </div>
+          <Stack spacing={1}>
+            <Stack direction="row" spacing={1}>
+              <Button component="label" variant="outlined" disabled={ocupado}>
+                {ocupado ? "Subiendo…" : url ? "Cambiar" : "Subir"}
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept="image/*"
+                  disabled={ocupado}
+                  onChange={subir}
+                  style={{
+                    position: "absolute",
+                    width: 1,
+                    height: 1,
+                    opacity: 0,
+                    overflow: "hidden",
+                  }}
+                />
+              </Button>
+              {url && (
+                <Button variant="outlined" color="error" onClick={quitar} disabled={ocupado}>
+                  Quitar
+                </Button>
+              )}
+            </Stack>
+            {error && <Alert severity="error">{error}</Alert>}
+          </Stack>
+        </Stack>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -126,24 +178,34 @@ export function SeccionMarca() {
 
   return (
     <section className="seccion">
-      <div className="tarjeta">
-        <h2>Nombre del negocio</h2>
-        <form onSubmit={guardarNombre}>
-          <label htmlFor="nombre-negocio">Nombre</label>
-          <input
-            type="text"
-            id="nombre-negocio"
-            maxLength={80}
-            required
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-          />
-          <button type="submit" className="primario" disabled={guardando}>
-            Guardar
-          </button>
-          {aviso && <div className={`aviso visible ${aviso.tipo}`}>{aviso.texto}</div>}
-        </form>
-      </div>
+      <Card sx={{ mb: 2 }}>
+        <CardContent>
+          <Typography variant="h3" sx={{ mb: 1.5 }}>
+            Nombre del negocio
+          </Typography>
+          <Box component="form" onSubmit={guardarNombre}>
+            <Stack spacing={2} alignItems="flex-start">
+              <TextField
+                label="Nombre"
+                size="small"
+                fullWidth
+                required
+                slotProps={{ htmlInput: { maxLength: 80 } }}
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+              />
+              <Button type="submit" variant="contained" disabled={guardando}>
+                Guardar
+              </Button>
+              {aviso && (
+                <Alert severity={aviso.tipo === "exito" ? "success" : "error"} sx={{ width: "100%" }}>
+                  {aviso.texto}
+                </Alert>
+              )}
+            </Stack>
+          </Box>
+        </CardContent>
+      </Card>
 
       <BloqueImagen
         tipo="logo"

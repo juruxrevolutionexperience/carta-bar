@@ -104,14 +104,16 @@ p.sub {
   margin-bottom: 24px;
 }
 
-label {
+/* No a las de MUI (.MuiFormLabel-root / .MuiInputBase-input / .MuiButtonBase-root):
+   esos llevan su propio posicionamiento y estilo, y esto se lo rompia. */
+label:not(.MuiFormLabel-root) {
   display: block;
   font-size: 13px;
   color: var(--tinta-media);
   margin: 14px 0 6px;
 }
 
-input {
+input:not(.MuiInputBase-input) {
   width: 100%;
   padding: 12px 14px;
   border: 1px solid var(--borde);
@@ -121,12 +123,12 @@ input {
   transition: border-color 0.15s ease;
 }
 
-input:focus {
+input:not(.MuiInputBase-input):focus {
   outline: 2px solid var(--marca);
   outline-offset: 1px;
 }
 
-button {
+button:not(.MuiButtonBase-root) {
   padding: 10px 18px;
   background: var(--marca);
   color: #fff;
@@ -139,7 +141,7 @@ button {
   transition: background-color 0.15s ease;
 }
 
-button:hover {
+button:not(.MuiButtonBase-root):hover {
   background: var(--marca-viva);
 }
 

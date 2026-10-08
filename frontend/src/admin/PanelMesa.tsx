@@ -1,5 +1,21 @@
 import { useState } from "react";
 
+import { IconChevronDown, IconX } from "@tabler/icons-react";
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import Chip from "@mui/material/Chip";
+import FormControl from "@mui/material/FormControl";
+import IconButton from "@mui/material/IconButton";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+
 import type { DatosQr } from "../shared/HojaQR";
 import type { CambiosMesa, Mesa, Zona } from "./api";
 import { TIPOS, girar, tipoDe } from "./planoUtil";
@@ -60,106 +76,110 @@ export function PanelMesa({
   }
 
   return (
-    <div className={"tarjeta panel-mesa" + (abiertoEnMovil ? "" : " oculto-movil")}>
-      <div className="cabecera-panel">
-        <h3>{mesa.nombre}</h3>
-        <button type="button" className="cerrar-panel" aria-label="Cerrar" onClick={onCerrar}>
-          <svg viewBox="0 0 24 24">
-            <path d="M6 6l12 12M18 6L6 18" />
-          </svg>
-        </button>
-      </div>
+    <Card className={"panel-mesa" + (abiertoEnMovil ? "" : " oculto-movil")} sx={{ p: 2.5 }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
+        <Typography variant="h3">{mesa.nombre}</Typography>
+        <IconButton size="small" aria-label="Cerrar" onClick={onCerrar}>
+          <IconX size={18} />
+        </IconButton>
+      </Stack>
 
-      <p className={"estado-mesa" + (mesa.ocupada ? " con-clientes" : "")}>
-        {mesa.ocupada ? "Con clientes" : "Libre"} · {mesa.capacidad}{" "}
-        {mesa.capacidad === 1 ? "persona" : "personas"}
-      </p>
-
-      {editando && (
-        <>
-      <label htmlFor="mesa-nombre">Nombre</label>
-      <input
-        id="mesa-nombre"
-        value={nombre}
-        maxLength={60}
-        onChange={(e) => setNombre(e.target.value)}
-        onBlur={guardarNombre}
-        onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+      <Chip
+        label={`${mesa.ocupada ? "Con clientes" : "Libre"} · ${mesa.capacidad} ${mesa.capacidad === 1 ? "persona" : "personas"}`}
+        color={mesa.ocupada ? "primary" : "default"}
+        size="small"
+        sx={{ mb: 2 }}
       />
 
-      <label htmlFor="mesa-tipo">Tipo de mesa</label>
-      <select
-        id="mesa-tipo"
-        value={tipo?.id ?? ""}
-        disabled={ocupado}
-        onChange={(e) => cambiarTipo(e.target.value)}
-      >
-        {/* Mesas hechas antes de los tipos: se ven, pero al cambiar pasan a uno. */}
-        {!tipo && (
-          <option value="" disabled>
-            Otra ({mesa.capacidad} {mesa.capacidad === 1 ? "persona" : "personas"})
-          </option>
-        )}
-        {TIPOS.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.etiqueta}
-          </option>
-        ))}
-      </select>
+      {editando && (
+        <Stack spacing={2} sx={{ mb: 2 }}>
+          <TextField
+            label="Nombre"
+            size="small"
+            fullWidth
+            value={nombre}
+            slotProps={{ htmlInput: { maxLength: 60 } }}
+            onChange={(e) => setNombre(e.target.value)}
+            onBlur={guardarNombre}
+            onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+          />
 
-      {zonas.length > 1 && (
-        <>
-          <label htmlFor="mesa-zona">Zona</label>
-          <select
-            id="mesa-zona"
-            value={mesa.zona_id ?? ""}
-            onChange={(e) => onCambio({ zona_id: e.target.value })}
-          >
-            {zonas.map((z) => (
-              <option key={z.id} value={z.id}>
-                {z.nombre}
-              </option>
-            ))}
-          </select>
-        </>
+          <FormControl size="small" fullWidth>
+            <InputLabel id="mesa-tipo">Tipo de mesa</InputLabel>
+            <Select
+              labelId="mesa-tipo"
+              label="Tipo de mesa"
+              value={tipo?.id ?? ""}
+              disabled={ocupado}
+              onChange={(e) => cambiarTipo(e.target.value)}
+            >
+              {/* Mesas hechas antes de los tipos: se ven, pero al cambiar pasan a uno. */}
+              {!tipo && (
+                <MenuItem value="" disabled>
+                  Otra ({mesa.capacidad} {mesa.capacidad === 1 ? "persona" : "personas"})
+                </MenuItem>
+              )}
+              {TIPOS.map((t) => (
+                <MenuItem key={t.id} value={t.id}>
+                  {t.etiqueta}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {zonas.length > 1 && (
+            <FormControl size="small" fullWidth>
+              <InputLabel id="mesa-zona">Zona</InputLabel>
+              <Select
+                labelId="mesa-zona"
+                label="Zona"
+                value={mesa.zona_id ?? ""}
+                onChange={(e) => onCambio({ zona_id: e.target.value })}
+              >
+                {zonas.map((z) => (
+                  <MenuItem key={z.id} value={z.id}>
+                    {z.nombre}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="outlined"
+              fullWidth
+              disabled={ocupado}
+              onClick={() => onCambio({ rotacion: girar(mesa.rotacion, -45) })}
+            >
+              ↺ Girar
+            </Button>
+            <Button
+              variant="outlined"
+              fullWidth
+              disabled={ocupado}
+              onClick={() => onCambio({ rotacion: girar(mesa.rotacion, 45) })}
+            >
+              Girar ↻
+            </Button>
+          </Stack>
+        </Stack>
       )}
 
-      <div className="acciones-mesa">
-        <button
-          type="button"
-          className="secundario"
-          disabled={ocupado}
-          onClick={() => onCambio({ rotacion: girar(mesa.rotacion, -45) })}
-        >
-          ↺ Girar
-        </button>
-        <button
-          type="button"
-          className="secundario"
-          disabled={ocupado}
-          onClick={() => onCambio({ rotacion: girar(mesa.rotacion, 45) })}
-        >
-          Girar ↻
-        </button>
-      </div>
-        </>
-      )}
-
-      <details className="mesa-qr">
-        <summary>QR de esta mesa</summary>
-        <QrMesa mesa={mesa} qr={qr} compacta={true} ocupado={ocupado} onRegenerar={onRegenerar} />
-      </details>
+      <Accordion disableGutters elevation={0} sx={{ border: 1, borderColor: "divider", mb: 2, "&:before": { display: "none" } }}>
+        <AccordionSummary expandIcon={<IconChevronDown size={16} />}>
+          <Typography sx={{ fontSize: 14 }}>QR de esta mesa</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <QrMesa mesa={mesa} qr={qr} compacta={true} ocupado={ocupado} onRegenerar={onRegenerar} />
+        </AccordionDetails>
+      </Accordion>
 
       {editando && (
-        <button
-          type="button"
-          className="secundario peligro"
-          disabled={ocupado}
-          onClick={onEliminar}
-        >
+        <Button variant="outlined" color="error" fullWidth disabled={ocupado} onClick={onEliminar}>
           Eliminar mesa
-        </button>
+        </Button>
       )}
-    </div>
+    </Card>
   );
 }

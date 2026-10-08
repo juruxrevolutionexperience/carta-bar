@@ -1,5 +1,22 @@
 import { useEffect, useState } from "react";
 
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Checkbox from "@mui/material/Checkbox";
+import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import Select from "@mui/material/Select";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+
 import {
   cargarProductos,
   crearEspecial,
@@ -264,152 +281,193 @@ export function FormularioPlato({
   const puedeEliminar = Boolean(plato.id);
 
   return (
-    <div className="tarjeta" style={{ padding: "16px", margin: "12px 0" }}>
-      {esPlatoNormalNuevo && (
-        <>
-          <label>Categoría</label>
-          <select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-            {categoriasElegibles.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nombre}
-              </option>
-            ))}
-          </select>
-        </>
-      )}
+    <Card sx={{ my: 1.5 }}>
+      <CardContent>
+        <Stack spacing={2}>
+          {esPlatoNormalNuevo && (
+            <FormControl size="small" fullWidth>
+              <InputLabel id="categoria-plato">Categoría</InputLabel>
+              <Select
+                labelId="categoria-plato"
+                label="Categoría"
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value)}
+              >
+                {categoriasElegibles.map((c) => (
+                  <MenuItem key={c.id} value={c.id}>
+                    {c.nombre}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
 
-      <label>Nombre</label>
-      <input value={nombre} onChange={(e) => setNombre(e.target.value)} />
+          <TextField
+            label="Nombre"
+            size="small"
+            fullWidth
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+          />
 
-      <label>Descripción</label>
-      <textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
+          <TextField
+            label="Descripción"
+            size="small"
+            fullWidth
+            multiline
+            minRows={2}
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+          />
 
-      <label>Precio (vacío = a consultar)</label>
-      <input
-        type="number"
-        step="0.01"
-        min="0.01"
-        value={precioTxt}
-        onChange={(e) => setPrecioTxt(e.target.value)}
-      />
+          <TextField
+            label="Precio (vacío = a consultar)"
+            size="small"
+            type="number"
+            slotProps={{ htmlInput: { step: 0.01, min: 0.01 } }}
+            value={precioTxt}
+            onChange={(e) => setPrecioTxt(e.target.value)}
+          />
 
-      <label>Foto</label>
-      {plato.id ? (
-        <BloqueFoto plato={{ ...plato, foto: fotoActual }} onCambioFoto={setFotoActual} />
-      ) : (
-        <SelectorFotoNueva archivo={fotoNueva} onSeleccionar={setFotoNueva} />
-      )}
+          <Box>
+            <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 0.5 }}>Foto</Typography>
+            {plato.id ? (
+              <BloqueFoto plato={{ ...plato, foto: fotoActual }} onCambioFoto={setFotoActual} />
+            ) : (
+              <SelectorFotoNueva archivo={fotoNueva} onSeleccionar={setFotoNueva} />
+            )}
+          </Box>
 
-      <label>Ingredientes (uno por línea)</label>
-      <textarea value={ingredientesTxt} onChange={(e) => setIngredientesTxt(e.target.value)} />
+          <TextField
+            label="Ingredientes (uno por línea)"
+            size="small"
+            fullWidth
+            multiline
+            minRows={2}
+            value={ingredientesTxt}
+            onChange={(e) => setIngredientesTxt(e.target.value)}
+          />
 
-      <div className="grupo-campo">
-        <span>Alérgenos</span>
-        <div className="rejilla-opciones">
-          {(Object.entries(TEXTO_ALERGENO) as [Alergeno, string][]).map(([valor, texto]) => (
-            <label className="opcion" key={valor}>
-              <input
-                type="checkbox"
-                checked={alergenos.includes(valor)}
-                onChange={() => alternarAlergeno(valor)}
-              />
-              {texto}
-            </label>
-          ))}
-        </div>
-      </div>
+          <Box>
+            <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.5 }}>Alérgenos</Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+              {(Object.entries(TEXTO_ALERGENO) as [Alergeno, string][]).map(([valor, texto]) => (
+                <FormControlLabel
+                  key={valor}
+                  sx={{ width: { xs: "100%", sm: "48%" }, mr: 0 }}
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={alergenos.includes(valor)}
+                      onChange={() => alternarAlergeno(valor)}
+                    />
+                  }
+                  label={<Typography sx={{ fontSize: 14 }}>{texto}</Typography>}
+                />
+              ))}
+            </Box>
+          </Box>
 
-      <div className="grupo-campo">
-        <span>Etiqueta</span>
-        <div className="rejilla-opciones">
-          <label className="opcion">
-            <input
-              type="radio"
-              name="etiqueta"
-              checked={etiqueta === ""}
-              onChange={() => setEtiqueta("")}
+          <Box>
+            <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.5 }}>Etiqueta</Typography>
+            <RadioGroup
+              row
+              value={etiqueta}
+              onChange={(e) => setEtiqueta(e.target.value as Etiqueta | "")}
+            >
+              <FormControlLabel value="" control={<Radio size="small" />} label="Ninguna" />
+              {(Object.entries(TEXTO_ETIQUETA) as [Etiqueta, string][]).map(([valor, texto]) => (
+                <FormControlLabel
+                  key={valor}
+                  value={valor}
+                  control={<Radio size="small" />}
+                  label={texto}
+                />
+              ))}
+            </RadioGroup>
+          </Box>
+
+          <Box>
+            <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.5 }}>Dieta</Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+              {(Object.entries(TEXTO_DIETA) as [ClaveDieta, string][]).map(([valor, texto]) => (
+                <FormControlLabel
+                  key={valor}
+                  sx={{ width: { xs: "100%", sm: "48%" }, mr: 0 }}
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={dieta.includes(valor)}
+                      onChange={() => alternarDieta(valor)}
+                    />
+                  }
+                  label={<Typography sx={{ fontSize: 14 }}>{texto}</Typography>}
+                />
+              ))}
+            </Box>
+          </Box>
+
+          {pedido && productos ? (
+            <BloquePedido
+              valor={pedido}
+              onCambio={setPedido}
+              grupos={productos.grupos}
+              destinoCategoria={
+                productos.destinos_categoria[
+                  plato.id || categoriasElegibles === undefined ? plato.categoria : categoria
+                ] ?? "cocina"
+              }
             />
-            Ninguna
-          </label>
-          {(Object.entries(TEXTO_ETIQUETA) as [Etiqueta, string][]).map(([valor, texto]) => (
-            <label className="opcion" key={valor}>
-              <input
-                type="radio"
-                name="etiqueta"
-                checked={etiqueta === valor}
-                onChange={() => setEtiqueta(valor)}
-              />
-              {texto}
-            </label>
-          ))}
-        </div>
-      </div>
+          ) : (
+            errorProductos && (
+              <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
+                No se pudo cargar «Para pedir» (formatos, extras…). El resto del plato se guarda
+                igual.
+              </Typography>
+            )
+          )}
 
-      <div className="grupo-campo">
-        <span>Dieta</span>
-        <div className="rejilla-opciones">
-          {(Object.entries(TEXTO_DIETA) as [ClaveDieta, string][]).map(([valor, texto]) => (
-            <label className="opcion" key={valor}>
-              <input
-                type="checkbox"
-                checked={dieta.includes(valor)}
-                onChange={() => alternarDieta(valor)}
-              />
-              {texto}
-            </label>
-          ))}
-        </div>
-      </div>
+          <VistaPreviaPlato plato={platoPrevio} />
 
-      {pedido && productos ? (
-        <BloquePedido
-          valor={pedido}
-          onCambio={setPedido}
-          grupos={productos.grupos}
-          destinoCategoria={
-            productos.destinos_categoria[
-              plato.id || categoriasElegibles === undefined ? plato.categoria : categoria
-            ] ?? "cocina"
-          }
-        />
-      ) : (
-        errorProductos && (
-          <p className="ayuda-campo">
-            No se pudo cargar «Para pedir» (formatos, extras…). El resto del plato se guarda
-            igual.
-          </p>
-        )
-      )}
+          <Box>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={alergenosRevisados}
+                  onChange={(e) => setAlergenosRevisados(e.target.checked)}
+                />
+              }
+              label={
+                <Typography sx={{ fontSize: 14 }}>
+                  He revisado los alérgenos y la dieta de este plato
+                </Typography>
+              }
+            />
+            {!alergenosRevisados && (
+              <Typography sx={{ fontSize: 12.5, color: "text.secondary", mt: 0.5 }}>
+                Mientras no lo marques, la carta mostrará «consultar alérgenos» en este plato y el
+                chat no se lo recomendará a quien tenga alergias o siga una dieta.
+              </Typography>
+            )}
+          </Box>
 
-      <VistaPreviaPlato plato={platoPrevio} />
+          {aviso && <Alert severity="error">{aviso}</Alert>}
 
-      <label className="opcion">
-        <input
-          type="checkbox"
-          checked={alergenosRevisados}
-          onChange={(e) => setAlergenosRevisados(e.target.checked)}
-        />
-        He revisado los alérgenos y la dieta de este plato
-      </label>
-      {!alergenosRevisados && (
-        <p className="ayuda-alergenos">
-          Mientras no lo marques, la carta mostrará «consultar alérgenos» en este plato y el
-          chat no se lo recomendará a quien tenga alergias o siga una dieta.
-        </p>
-      )}
-
-      <button type="button" className="primario" disabled={guardando} onClick={guardar}>
-        Guardar
-      </button>
-      <button type="button" className="secundario" onClick={onCancelar}>
-        Cancelar
-      </button>
-      {puedeEliminar && (
-        <button type="button" className="secundario" onClick={eliminar}>
-          Eliminar plato
-        </button>
-      )}
-      {aviso && <div className="aviso visible error">{aviso}</div>}
-    </div>
+          <Stack direction="row" spacing={1}>
+            <Button variant="contained" disabled={guardando} onClick={guardar}>
+              Guardar
+            </Button>
+            <Button variant="outlined" onClick={onCancelar}>
+              Cancelar
+            </Button>
+            {puedeEliminar && (
+              <Button variant="outlined" color="error" onClick={eliminar}>
+                Eliminar plato
+              </Button>
+            )}
+          </Stack>
+        </Stack>
+      </CardContent>
+    </Card>
   );
 }

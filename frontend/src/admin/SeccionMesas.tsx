@@ -1,5 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import IconButton from "@mui/material/IconButton";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import Typography from "@mui/material/Typography";
+import { IconChevronDown, IconSettings } from "@tabler/icons-react";
+
 import type { DatosQr } from "../shared/HojaQR";
 import {
   actualizarMesa,
@@ -295,65 +309,49 @@ export function SeccionMesas() {
 
   return (
     <section className="seccion">
-      <div className="selector-vista" role="radiogroup" aria-label="Vista de las mesas">
-        <label>
-          <input
-            type="radio"
-            name="vista-mesas"
-            checked={vista === "plano"}
-            onChange={() => setVista("plano")}
-          />
-          Plano
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="vista-mesas"
-            checked={vista === "lista"}
-            onChange={() => setVista("lista")}
-          />
-          Lista de QR
-        </label>
-      </div>
+      <ToggleButtonGroup
+        value={vista}
+        exclusive
+        onChange={(_, nuevo) => nuevo && setVista(nuevo)}
+        size="small"
+        sx={{ mb: 2 }}
+        aria-label="Vista de las mesas"
+      >
+        <ToggleButton value="plano">Plano</ToggleButton>
+        <ToggleButton value="lista">Lista de QR</ToggleButton>
+      </ToggleButtonGroup>
       {aviso && <div className="aviso visible error">{aviso}</div>}
 
       {vista === "plano" && (
         <>
-          <div className="fila-zonas">
-            <div className="pestanas-zona" role="tablist">
-            {zonas.map((z) => (
-              <button
-                key={z.id}
-                type="button"
-                role="tab"
-                aria-selected={z.id === zonaId}
-                className={"pestana-zona" + (z.id === zonaId ? " activa" : "")}
-                onClick={() => {
-                  setZonaActiva(z.id);
-                  setSeleccionada(null);
-                }}
-              >
-                {z.nombre}
-                <span className="ocupacion">
-                  {mesas.filter((m) => m.zona_id === z.id && m.ocupada).length}/
-                  {mesas.filter((m) => m.zona_id === z.id).length}
-                </span>
-              </button>
-            ))}
-            </div>
-            <button
-              type="button"
-              className={"boton-zonas" + (gestionando ? " activa" : "")}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+            <Tabs
+              value={zonaId ?? false}
+              onChange={(_, nuevo) => {
+                setZonaActiva(nuevo);
+                setSeleccionada(null);
+              }}
+              variant="scrollable"
+              scrollButtons="auto"
+              sx={{ minHeight: 36, flex: 1, "& .MuiTab-root": { minHeight: 36 } }}
+            >
+              {zonas.map((z) => (
+                <Tab
+                  key={z.id}
+                  value={z.id}
+                  label={`${z.nombre} ${mesas.filter((m) => m.zona_id === z.id && m.ocupada).length}/${mesas.filter((m) => m.zona_id === z.id).length}`}
+                />
+              ))}
+            </Tabs>
+            <IconButton
               aria-label="Gestionar las zonas del local"
               aria-pressed={gestionando}
+              color={gestionando ? "primary" : "default"}
               onClick={() => setGestionando((g) => !g)}
             >
-              <svg viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="3.2" />
-                <path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5V21a2 2 0 11-4 0v-.1A1.6 1.6 0 007 19.4a1.6 1.6 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1H1a2 2 0 110-4h.1A1.6 1.6 0 002.6 7a1.6 1.6 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.6 1.6 0 001.8.3H7a1.6 1.6 0 001-1.5V1a2 2 0 114 0v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 00-.3 1.8V7a1.6 1.6 0 001.5 1H21a2 2 0 110 4h-.1a1.6 1.6 0 00-1.5 1z" />
-              </svg>
-            </button>
-          </div>
+              <IconSettings size={20} />
+            </IconButton>
+          </Box>
 
           {gestionando && (
             <OrganizarZonas
@@ -521,53 +519,54 @@ export function SeccionMesas() {
       )}
 
       {vista === "lista" && (
-        <div className="tarjeta">
-          <p>Cada mesa tiene su propio QR. Imprímelo y déjalo en esa mesa.</p>
-          {mesas.length === 0 && <p className="cargando">Todavía no hay mesas.</p>}
-          {mesas.length > 0 && (
-            <div className="selector-vista" role="radiogroup" aria-label="Tamaño del QR">
-              <label>
-                <input
-                  type="radio"
-                  name="tamano-mesa"
-                  checked={compacta}
-                  onChange={() => setCompacta(true)}
-                />
-                Tarjeta pequeña
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="tamano-mesa"
-                  checked={!compacta}
-                  onChange={() => setCompacta(false)}
-                />
-                Hoja completa
-              </label>
-            </div>
-          )}
-          {zonas.map((z) => {
-            const deLaZona = mesas.filter((m) => m.zona_id === z.id);
-            if (deLaZona.length === 0) return null;
-            return (
-              <div key={z.id}>
-                <h3 className="titulo-zona-lista">{z.nombre}</h3>
-                {deLaZona.map((m) => (
-                  <details className="mesa-qr" key={m.id}>
-                    <summary>{m.nombre}</summary>
-                    <QrMesa
-                      mesa={m}
-                      qr={qr}
-                      compacta={compacta}
-                      ocupado={ocupado}
-                      onRegenerar={regenerar}
-                    />
-                  </details>
-                ))}
-              </div>
-            );
-          })}
-        </div>
+        <Card>
+          <CardContent>
+            <Typography sx={{ fontSize: 14, color: "text.secondary", mb: 2 }}>
+              Cada mesa tiene su propio QR. Imprímelo y déjalo en esa mesa.
+            </Typography>
+            {mesas.length === 0 && <p className="cargando">Todavía no hay mesas.</p>}
+            {mesas.length > 0 && (
+              <ToggleButtonGroup
+                value={compacta ? "compacta" : "completa"}
+                exclusive
+                onChange={(_, nuevo) => nuevo && setCompacta(nuevo === "compacta")}
+                size="small"
+                sx={{ mb: 2 }}
+                aria-label="Tamaño del QR"
+              >
+                <ToggleButton value="compacta">Tarjeta pequeña</ToggleButton>
+                <ToggleButton value="completa">Hoja completa</ToggleButton>
+              </ToggleButtonGroup>
+            )}
+            {zonas.map((z) => {
+              const deLaZona = mesas.filter((m) => m.zona_id === z.id);
+              if (deLaZona.length === 0) return null;
+              return (
+                <Box key={z.id} sx={{ mb: 2 }}>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.03em", mb: 1 }}>
+                    {z.nombre.toUpperCase()}
+                  </Typography>
+                  {deLaZona.map((m) => (
+                    <Accordion key={m.id} disableGutters elevation={0} sx={{ border: 1, borderColor: "divider", mb: 0.5, "&:before": { display: "none" } }}>
+                      <AccordionSummary expandIcon={<IconChevronDown size={16} />}>
+                        <Typography sx={{ fontSize: 14 }}>{m.nombre}</Typography>
+                      </AccordionSummary>
+                      <AccordionDetails>
+                        <QrMesa
+                          mesa={m}
+                          qr={qr}
+                          compacta={compacta}
+                          ocupado={ocupado}
+                          onRegenerar={regenerar}
+                        />
+                      </AccordionDetails>
+                    </Accordion>
+                  ))}
+                </Box>
+              );
+            })}
+          </CardContent>
+        </Card>
       )}
     </section>
   );

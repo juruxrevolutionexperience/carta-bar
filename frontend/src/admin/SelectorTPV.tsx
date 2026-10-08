@@ -1,5 +1,25 @@
 import { useEffect, useState } from "react";
 
+import { IconX } from "@tabler/icons-react";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import ButtonBase from "@mui/material/ButtonBase";
+import Checkbox from "@mui/material/Checkbox";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import IconButton from "@mui/material/IconButton";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import Stack from "@mui/material/Stack";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+
 import { cargarCarta, cargarCategorias } from "./api";
 import { cargarGruposDePlato, type GrupoOpciones, type NuevaLineaComanda } from "./api";
 import { CATEGORIA_ESPECIALES, type Categoria, type Plato } from "./types";
@@ -47,50 +67,73 @@ export function SelectorTPV({ onElegir, onCerrar }: Props) {
   }
 
   return (
-    <div className="velo-tpv" onClick={onCerrar}>
-      <div className="selector-tpv" onClick={(e) => e.stopPropagation()}>
-        <div className="cabecera-panel">
-          <h3>Añadir a la mesa</h3>
-          <button type="button" className="cerrar-panel" aria-label="Cerrar" onClick={onCerrar}>
-            <svg viewBox="0 0 24 24">
-              <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="pestanas-categoria-tpv">
+    <Dialog open onClose={onCerrar} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        Añadir a la mesa
+        <IconButton size="small" aria-label="Cerrar" onClick={onCerrar}>
+          <IconX size={18} />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent>
+        <Tabs
+          value={categoriaId ?? false}
+          onChange={(_, nuevo) => setCategoriaId(nuevo)}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{ mb: 2, minHeight: 36, "& .MuiTab-root": { minHeight: 36 } }}
+        >
           {categorias.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              className={"pestana-tpv" + (categoriaId === c.id ? " activa" : "")}
-              onClick={() => setCategoriaId(c.id)}
-            >
-              {c.nombre}
-            </button>
+            <Tab key={c.id} value={c.id} label={c.nombre} />
           ))}
-        </div>
+        </Tabs>
 
         {carta === null ? (
-          <p className="explicacion">Cargando la carta…</p>
+          <Typography sx={{ fontSize: 14, color: "text.secondary" }}>Cargando la carta…</Typography>
         ) : (
-          <div className="rejilla-tpv">
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+              gap: 1.5,
+            }}
+          >
             {visibles.map((p) => (
-              <button key={p.id} type="button" className="tile-tpv" onClick={() => void tocar(p)}>
-                <span className="tile-nombre">{p.nombre}</span>
-                <span className="tile-precio">
+              <ButtonBase
+                key={p.id}
+                onClick={() => void tocar(p)}
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 0.5,
+                  minHeight: 88,
+                  p: 1.5,
+                  borderRadius: 2,
+                  border: 1,
+                  borderColor: "divider",
+                  bgcolor: "background.default",
+                  textAlign: "center",
+                }}
+              >
+                <Typography sx={{ fontSize: 13.5, fontWeight: 600 }}>{p.nombre}</Typography>
+                <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
                   {(p.formatos?.length ?? 0) > 0
                     ? "Varios precios"
                     : p.precio != null
                       ? `${p.precio.toFixed(2).replace(".", ",")} €`
                       : "—"}
-                </span>
-              </button>
+                </Typography>
+              </ButtonBase>
             ))}
-            {visibles.length === 0 && <p className="explicacion">Sin platos en esta categoría.</p>}
-          </div>
+            {visibles.length === 0 && (
+              <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
+                Sin platos en esta categoría.
+              </Typography>
+            )}
+          </Box>
         )}
-      </div>
+      </DialogContent>
 
       {eligiendo && (
         <ElegirDetallePlato
@@ -102,7 +145,7 @@ export function SelectorTPV({ onElegir, onCerrar }: Props) {
           }}
         />
       )}
-    </div>
+    </Dialog>
   );
 }
 
@@ -155,60 +198,83 @@ function ElegirDetallePlato({ plato, onCancelar, onConfirmar }: PropsDetalle) {
   }
 
   return (
-    <div className="velo-tpv" onClick={onCancelar}>
-      <div className="tarjeta editor-grupo" onClick={(e) => e.stopPropagation()}>
-        <h3>{plato.nombre}</h3>
-        {(plato.formatos?.length ?? 0) > 0 && (
-          <div className="grupo-eleccion-tpv">
-            <label>Formato</label>
-            {plato.formatos!.map((f) => (
-              <label className="opcion" key={f.nombre}>
-                <input
-                  type="radio"
-                  checked={formato === f.nombre}
-                  onChange={() => setFormato(f.nombre)}
-                />
-                {f.nombre} ({f.precio.toFixed(2).replace(".", ",")} €)
-              </label>
-            ))}
-          </div>
-        )}
-        {grupos.map((g) => (
-          <div key={g.id} className="grupo-eleccion-tpv">
-            <label>
-              {g.nombre}
-              {g.minimo > 0 && " (obligatorio)"}
-            </label>
-            {g.opciones.map((o) => (
-              <label className="opcion" key={o.nombre}>
-                <input
-                  type={g.maximo === 1 ? "radio" : "checkbox"}
-                  checked={elegidas.includes(o.nombre)}
-                  onChange={() => alternar(g, o.nombre)}
-                />
-                {o.nombre}
-                {o.precio > 0 && ` (+${o.precio.toFixed(2).replace(".", ",")} €)`}
-              </label>
-            ))}
-          </div>
-        ))}
-        <label htmlFor="cantidad-tpv">Cantidad</label>
-        <input
-          id="cantidad-tpv"
-          type="number"
-          min={1}
-          max={20}
-          value={cantidad}
-          onChange={(e) => setCantidad(Math.max(1, Number(e.target.value) || 1))}
-        />
-        <button type="button" className="primario" disabled={enviando} onClick={() => void confirmar()}>
+    <Dialog open onClose={onCancelar} maxWidth="xs" fullWidth>
+      <DialogTitle>{plato.nombre}</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2}>
+          {(plato.formatos?.length ?? 0) > 0 && (
+            <Box>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.5 }}>Formato</Typography>
+              <RadioGroup value={formato} onChange={(e) => setFormato(e.target.value)}>
+                {plato.formatos!.map((f) => (
+                  <FormControlLabel
+                    key={f.nombre}
+                    value={f.nombre}
+                    control={<Radio size="small" />}
+                    label={`${f.nombre} (${f.precio.toFixed(2).replace(".", ",")} €)`}
+                  />
+                ))}
+              </RadioGroup>
+            </Box>
+          )}
+          {grupos.map((g) => (
+            <Box key={g.id}>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.5 }}>
+                {g.nombre}
+                {g.minimo > 0 && " (obligatorio)"}
+              </Typography>
+              <Stack>
+                {g.opciones.map((o) =>
+                  g.maximo === 1 ? (
+                    <FormControlLabel
+                      key={o.nombre}
+                      control={
+                        <Radio
+                          size="small"
+                          checked={elegidas.includes(o.nombre)}
+                          onChange={() => alternar(g, o.nombre)}
+                        />
+                      }
+                      label={
+                        o.nombre + (o.precio > 0 ? ` (+${o.precio.toFixed(2).replace(".", ",")} €)` : "")
+                      }
+                    />
+                  ) : (
+                    <FormControlLabel
+                      key={o.nombre}
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={elegidas.includes(o.nombre)}
+                          onChange={() => alternar(g, o.nombre)}
+                        />
+                      }
+                      label={
+                        o.nombre + (o.precio > 0 ? ` (+${o.precio.toFixed(2).replace(".", ",")} €)` : "")
+                      }
+                    />
+                  )
+                )}
+              </Stack>
+            </Box>
+          ))}
+          <TextField
+            label="Cantidad"
+            type="number"
+            size="small"
+            slotProps={{ htmlInput: { min: 1, max: 20 } }}
+            value={cantidad}
+            onChange={(e) => setCantidad(Math.max(1, Number(e.target.value) || 1))}
+          />
+          {error && <Alert severity="error">{error}</Alert>}
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onCancelar}>Cancelar</Button>
+        <Button variant="contained" disabled={enviando} onClick={() => void confirmar()}>
           Añadir
-        </button>
-        <button type="button" className="secundario" onClick={onCancelar}>
-          Cancelar
-        </button>
-        {error && <div className="aviso visible error">{error}</div>}
-      </div>
-    </div>
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }

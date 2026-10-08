@@ -1,5 +1,15 @@
 import { useState } from "react";
 
+import { IconCheck, IconGripVertical, IconPencil, IconTrash, IconX } from "@tabler/icons-react";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+
 import { crearZona, eliminarZona, ordenarZonas, renombrarZona, type Mesa, type Zona } from "./api";
 import { useArrastreOrden } from "./useArrastreOrden";
 
@@ -97,92 +107,111 @@ export function OrganizarZonas({ zonas, mesas, onCambio, onRecargar }: Props) {
   }
 
   return (
-    <div className="tarjeta organizar">
-      <h3>Zonas del local</h3>
-      <p className="ayuda">
-        Arrastra el icono ⠿ para cambiar el orden de las pestañas. Ej.: Terraza, Barra, Salón 1.
-      </p>
+    <Card sx={{ p: 2.5, mb: 2 }}>
+      <Typography variant="h3" sx={{ mb: 0.5 }}>
+        Zonas del local
+      </Typography>
+      <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 2 }}>
+        Arrastra el icono para cambiar el orden de las pestañas. Ej.: Terraza, Barra, Salón 1.
+      </Typography>
 
-      {lista.map((z) => (
-        <div
-          key={z.id}
-          ref={refFila(z.id)}
-          className={"fila-categoria" + (arrastrandoId === z.id ? " arrastrando" : "")}
-        >
-          {editando === z.id ? (
-            <>
-              <input
-                value={nombreEditado}
-                maxLength={60}
-                autoFocus
-                aria-label="Nuevo nombre de la zona"
-                onChange={(e) => setNombreEditado(e.target.value)}
-              />
-              <button type="button" disabled={ocupado} onClick={() => guardarNombre(z.id)}>
-                OK
-              </button>
-              <button type="button" onClick={() => setEditando(null)}>
-                ✕
-              </button>
-            </>
-          ) : (
-            <>
-              <span className="nombre-categoria">
-                {z.nombre} <span className="cuenta-categoria">({cuantasMesas(z.id)})</span>
-              </span>
-              <button
-                type="button"
-                className="asa"
-                aria-label={`Arrastrar ${z.nombre} para cambiar su orden`}
-                disabled={ocupado}
-                {...asa(z.id)}
-              >
-                ⠿
-              </button>
-              <button
-                type="button"
-                aria-label={`Renombrar ${z.nombre}`}
-                disabled={ocupado}
-                onClick={() => {
-                  setEditando(z.id);
-                  setNombreEditado(z.nombre);
-                }}
-              >
-                ✎
-              </button>
-              <button
-                type="button"
-                aria-label={`Eliminar ${z.nombre}`}
-                disabled={ocupado}
-                onClick={() => borrar(z)}
-              >
-                🗑
-              </button>
-            </>
-          )}
-        </div>
-      ))}
+      <Stack spacing={1} sx={{ mb: 2 }}>
+        {lista.map((z) => (
+          <Stack
+            key={z.id}
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            ref={refFila(z.id)}
+            sx={{
+              p: 1,
+              borderRadius: 1.5,
+              bgcolor: arrastrandoId === z.id ? "action.selected" : "background.default",
+            }}
+          >
+            {editando === z.id ? (
+              <>
+                <TextField
+                  size="small"
+                  value={nombreEditado}
+                  slotProps={{ htmlInput: { maxLength: 60 } }}
+                  autoFocus
+                  aria-label="Nuevo nombre de la zona"
+                  onChange={(e) => setNombreEditado(e.target.value)}
+                  sx={{ flex: 1 }}
+                />
+                <IconButton disabled={ocupado} onClick={() => guardarNombre(z.id)}>
+                  <IconCheck size={18} />
+                </IconButton>
+                <IconButton onClick={() => setEditando(null)}>
+                  <IconX size={18} />
+                </IconButton>
+              </>
+            ) : (
+              <>
+                <Typography sx={{ flex: 1, fontSize: 14, fontWeight: 600 }}>
+                  {z.nombre}{" "}
+                  <Typography component="span" sx={{ fontWeight: 400, color: "text.secondary" }}>
+                    ({cuantasMesas(z.id)})
+                  </Typography>
+                </Typography>
+                <IconButton
+                  aria-label={`Arrastrar ${z.nombre} para cambiar su orden`}
+                  disabled={ocupado}
+                  {...asa(z.id)}
+                >
+                  <IconGripVertical size={18} />
+                </IconButton>
+                <IconButton
+                  aria-label={`Renombrar ${z.nombre}`}
+                  disabled={ocupado}
+                  onClick={() => {
+                    setEditando(z.id);
+                    setNombreEditado(z.nombre);
+                  }}
+                >
+                  <IconPencil size={18} />
+                </IconButton>
+                <IconButton
+                  aria-label={`Eliminar ${z.nombre}`}
+                  disabled={ocupado}
+                  onClick={() => borrar(z)}
+                >
+                  <IconTrash size={18} />
+                </IconButton>
+              </>
+            )}
+          </Stack>
+        ))}
+      </Stack>
 
-      <form
-        className="form-categoria-nueva"
+      <Box
+        component="form"
         onSubmit={(e) => {
           e.preventDefault();
           anadir();
         }}
+        sx={{ display: "flex", gap: 1 }}
       >
-        <input
+        <TextField
+          size="small"
           value={nuevoNombre}
-          maxLength={60}
+          slotProps={{ htmlInput: { maxLength: 60 } }}
           placeholder="Nueva zona…"
           aria-label="Nombre de la nueva zona"
           onChange={(e) => setNuevoNombre(e.target.value)}
+          sx={{ flex: 1 }}
         />
-        <button type="submit" className="primario" disabled={ocupado || !nuevoNombre.trim()}>
+        <Button type="submit" variant="contained" disabled={ocupado || !nuevoNombre.trim()}>
           Añadir
-        </button>
-      </form>
+        </Button>
+      </Box>
 
-      {aviso && <div className="aviso visible error">{aviso}</div>}
-    </div>
+      {aviso && (
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {aviso}
+        </Alert>
+      )}
+    </Card>
   );
 }

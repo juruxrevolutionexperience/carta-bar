@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
 
+import { IconX } from "@tabler/icons-react";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+
 import {
   abrirMesa,
   cargarSesionMesa,
@@ -102,132 +112,169 @@ export function PanelServicio({
   const declarados = datos?.sesion.comensales_declarados ?? null;
   const tiempo = tiempoDesde(mesa.abierta_en, ahora);
 
-  return (
-    <div
-      className={"tarjeta panel-mesa panel-servicio" + (abiertoEnMovil ? "" : " oculto-movil")}
-    >
-      <div className="cabecera-panel">
-        <h3>{mesa.nombre}</h3>
-        <button type="button" className="cerrar-panel" aria-label="Cerrar" onClick={onCerrar}>
-          <svg viewBox="0 0 24 24">
-            <path d="M6 6l12 12M18 6L6 18" />
-          </svg>
-        </button>
-      </div>
+  const colorEstado: "warning" | "info" | "primary" | "default" =
+    estado === "por_confirmar"
+      ? "warning"
+      : estado === "cuenta_pedida"
+        ? "info"
+        : estado === "abierta"
+          ? "primary"
+          : "default";
 
-      <p className={"estado-servicio estado-" + estado}>
-        {TEXTO_ESTADO[estado]}
-        {tiempo && ` · ${tiempo}`}
-      </p>
+  return (
+    <Card
+      className={"panel-mesa panel-servicio" + (abiertoEnMovil ? "" : " oculto-movil")}
+      sx={{ p: 2.5 }}
+    >
+      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
+        <Typography variant="h3">{mesa.nombre}</Typography>
+        <IconButton size="small" aria-label="Cerrar" onClick={onCerrar}>
+          <IconX size={18} />
+        </IconButton>
+      </Stack>
+
+      <Chip
+        label={tiempo ? `${TEXTO_ESTADO[estado]} · ${tiempo}` : TEXTO_ESTADO[estado]}
+        color={colorEstado}
+        size="small"
+        sx={{ mb: 2 }}
+      />
 
       {estado === "libre" && (
         <>
-          <p className="explicacion">
+          <Typography sx={{ fontSize: 14, color: "text.secondary", mb: 2 }}>
             Ábrela si se sienta alguien sin usar el QR. Si no, el primero que lo escanee la abrirá
             y te saldrá aquí para aceptarla.
-          </p>
-          <label>Comensales</label>
-          <div className="contador-comensales">
-            <button
-              type="button"
+          </Typography>
+          <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 0.5 }}>
+            Comensales
+          </Typography>
+          <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+            <IconButton
+              size="small"
               aria-label="Uno menos"
               disabled={comensales <= 1}
               onClick={() => setComensales((n) => Math.max(1, n - 1))}
+              sx={{ border: 1, borderColor: "divider" }}
             >
               −
-            </button>
-            <span>{comensales}</span>
-            <button
-              type="button"
+            </IconButton>
+            <Typography sx={{ fontSize: 18, fontWeight: 700, minWidth: 24, textAlign: "center" }}>
+              {comensales}
+            </Typography>
+            <IconButton
+              size="small"
               aria-label="Uno más"
               disabled={comensales >= MAX_COMENSALES}
               onClick={() => setComensales((n) => Math.min(MAX_COMENSALES, n + 1))}
+              sx={{ border: 1, borderColor: "divider" }}
             >
               +
-            </button>
-          </div>
-          <button
-            type="button"
-            className="primario boton-servicio"
+            </IconButton>
+          </Stack>
+          <Button
+            variant="contained"
+            fullWidth
             disabled={ocupado}
             onClick={() => void hacer(() => abrirMesa(mesa.id, comensales))}
+            sx={{ mb: 1.5 }}
           >
             Abrir mesa
-          </button>
+          </Button>
         </>
       )}
 
       {estado === "por_confirmar" && (
         <>
-          <p className="explicacion">
+          <Typography sx={{ fontSize: 14, color: "text.secondary", mb: 2 }}>
             Un cliente la ha abierto con el QR. Sal a la mesa y, si de verdad están ahí, acéptala:
             hasta entonces no llega nada a cocina.
-          </p>
-          <button
-            type="button"
-            className="primario boton-servicio"
+          </Typography>
+          <Button
+            variant="contained"
+            fullWidth
             disabled={ocupado}
             onClick={() => void hacer(() => confirmarMesa(mesa.id))}
+            sx={{ mb: 1.5 }}
           >
             Aceptar mesa
-          </button>
+          </Button>
         </>
       )}
 
       {estado !== "libre" && (
         <>
-          <h4 className="titulo-comensales">
+          <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1 }}>
             En la mesa
-            {declarados !== null && <span> · dijeron {personas(declarados)}</span>}
-          </h4>
+            {declarados !== null && (
+              <Box component="span" sx={{ fontWeight: 400, color: "text.secondary" }}>
+                {" "}
+                · dijeron {personas(declarados)}
+              </Box>
+            )}
+          </Typography>
           {datos === null ? (
-            <p className="explicacion">Cargando…</p>
+            <Typography sx={{ fontSize: 14, color: "text.secondary" }}>Cargando…</Typography>
           ) : dentro.length === 0 ? (
-            <p className="explicacion">Nadie ha escaneado el QR todavía.</p>
+            <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
+              Nadie ha escaneado el QR todavía.
+            </Typography>
           ) : (
-            <ul className="lista-comensales">
+            <Stack spacing={0.5} sx={{ mb: 1 }}>
               {dentro.map((c) => (
-                <li key={c.id}>
-                  <span className="nombre-comensal">{c.nombre}</span>
-                  {c.rol === "anfitrion" && <span className="insignia-anfitrion">anfitrión</span>}
-                  <button
-                    type="button"
-                    className="quitar-comensal"
-                    disabled={ocupado}
-                    onClick={() => quitar(c.id, c.nombre)}
-                  >
+                <Stack
+                  key={c.id}
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  sx={{ py: 0.5, borderBottom: 1, borderColor: "divider" }}
+                >
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Typography sx={{ fontSize: 14 }}>{c.nombre}</Typography>
+                    {c.rol === "anfitrion" && (
+                      <Chip label="anfitrión" size="small" variant="outlined" />
+                    )}
+                  </Stack>
+                  <Button size="small" disabled={ocupado} onClick={() => quitar(c.id, c.nombre)}>
                     Quitar
-                  </button>
-                </li>
+                  </Button>
+                </Stack>
               ))}
-            </ul>
+            </Stack>
           )}
 
           <PanelComandaMesa mesaId={mesa.id} />
 
           {estado === "cuenta_pedida" && (
-            <button
-              type="button"
-              className="primario boton-servicio"
+            <Button
+              variant="contained"
+              fullWidth
               disabled={ocupado}
               onClick={cobrar}
+              sx={{ mt: 2, mb: 1.5 }}
             >
               Cobrar y cerrar
-            </button>
+            </Button>
           )}
 
-          <button
-            type="button"
-            className="secundario peligro boton-servicio"
+          <Button
+            variant="outlined"
+            color="error"
+            fullWidth
             disabled={ocupado}
             onClick={liberar}
+            sx={{ mt: estado === "cuenta_pedida" ? 0 : 2 }}
           >
             Liberar mesa
-          </button>
+          </Button>
         </>
       )}
 
-      {aviso && <div className="aviso visible error">{aviso}</div>}
-    </div>
+      {aviso && (
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {aviso}
+        </Alert>
+      )}
+    </Card>
   );
 }

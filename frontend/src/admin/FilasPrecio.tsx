@@ -3,6 +3,12 @@
 // Se guarda como texto mientras se escribe ("2," a medias no es un número) y
 // se convierte al guardar con `filasAValores`.
 
+import { IconX } from "@tabler/icons-react";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+
 export interface FilaPrecio {
   nombre: string;
   precio: string;
@@ -31,47 +37,51 @@ export function FilasPrecio({
   }
 
   return (
-    <div className="filas-precio">
+    <Stack spacing={1}>
       {filas.map((f, i) => (
-        <div className="fila-precio" key={i}>
-          <input
+        <Stack direction="row" spacing={1} alignItems="center" key={i}>
+          <TextField
+            size="small"
             value={f.nombre}
-            maxLength={40}
+            slotProps={{ htmlInput: { maxLength: 40 } }}
             placeholder={ejemploNombre}
             aria-label="Nombre"
             onChange={(e) => cambiar(i, { nombre: e.target.value })}
+            sx={{ flex: 2 }}
           />
           {/* Texto con teclado decimal, no type="number": en un móvil en
               español se escribe "1,50" y un campo numérico lo descarta. */}
-          <input
+          <TextField
+            size="small"
             type="text"
-            inputMode="decimal"
+            slotProps={{ htmlInput: { inputMode: "decimal" } }}
             autoComplete="off"
             value={f.precio}
             placeholder={precioOpcional ? "Gratis" : "€"}
             aria-label="Precio"
             onChange={(e) => cambiar(i, { precio: e.target.value.replace(/[^0-9.,]/g, "") })}
+            sx={{ flex: 1 }}
           />
-          <button
-            type="button"
-            className="quitar-fila"
+          <IconButton
+            size="small"
             aria-label="Quitar"
             onClick={() => onCambio(filas.filter((_, j) => j !== i))}
           >
-            ✕
-          </button>
-        </div>
+            <IconX size={16} />
+          </IconButton>
+        </Stack>
       ))}
       {filas.length < maximo && (
-        <button
-          type="button"
-          className="anadir-fila"
+        <Button
+          variant="text"
+          size="small"
+          sx={{ alignSelf: "flex-start" }}
           onClick={() => onCambio([...filas, { nombre: "", precio: "" }])}
         >
           + {textoAnadir}
-        </button>
+        </Button>
       )}
-    </div>
+    </Stack>
   );
 }
 

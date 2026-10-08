@@ -1,3 +1,13 @@
+import Box from "@mui/material/Box";
+import Checkbox from "@mui/material/Checkbox";
+import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+
 import type { Destino, GrupoOpciones } from "./api";
 import { FilasPrecio, type FilaPrecio } from "./FilasPrecio";
 import { resumenGrupo } from "./textosProductos";
@@ -31,65 +41,89 @@ export function BloquePedido({ valor, onCambio, grupos, destinoCategoria }: Prop
   }
 
   return (
-    <fieldset className="bloque-pedido">
-      <legend>Para pedir desde la mesa</legend>
+    <Box sx={{ border: 1, borderColor: "divider", borderRadius: 2, p: 2 }}>
+      <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 2 }}>Para pedir desde la mesa</Typography>
 
-      <label htmlFor="pedido-destino">Dónde se prepara</label>
-      <select
-        id="pedido-destino"
-        value={valor.destino ?? ""}
-        onChange={(e) =>
-          onCambio({ ...valor, destino: e.target.value === "" ? null : (e.target.value as Destino) })
-        }
-      >
-        <option value="">Como su categoría ({TEXTO_DESTINO[destinoCategoria]})</option>
-        <option value="cocina">Cocina</option>
-        <option value="barra">Barra</option>
-      </select>
+      <Stack spacing={2}>
+        <FormControl size="small" fullWidth>
+          <InputLabel id="pedido-destino">Dónde se prepara</InputLabel>
+          <Select
+            labelId="pedido-destino"
+            label="Dónde se prepara"
+            value={valor.destino ?? ""}
+            onChange={(e) =>
+              onCambio({
+                ...valor,
+                destino: e.target.value === "" ? null : (e.target.value as Destino),
+              })
+            }
+          >
+            <MenuItem value="">Como su categoría ({TEXTO_DESTINO[destinoCategoria]})</MenuItem>
+            <MenuItem value="cocina">Cocina</MenuItem>
+            <MenuItem value="barra">Barra</MenuItem>
+          </Select>
+        </FormControl>
 
-      <label className="opcion">
-        <input
-          type="checkbox"
-          checked={valor.alcohol}
-          onChange={(e) => onCambio({ ...valor, alcohol: e.target.checked })}
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={valor.alcohol}
+              onChange={(e) => onCambio({ ...valor, alcohol: e.target.checked })}
+            />
+          }
+          label={<Typography sx={{ fontSize: 14 }}>Lleva alcohol</Typography>}
         />
-        Lleva alcohol
-      </label>
 
-      <label>Formatos (tapa, media, ración, caña, jarra…)</label>
-      <p className="ayuda-campo">
-        Sin formatos se pide a su precio de siempre. Con formatos, la carta los enseña con su
-        precio y el cliente elige uno. No se traducen: se piden por su nombre.
-      </p>
-      <FilasPrecio
-        filas={valor.formatos}
-        onCambio={(formatos) => onCambio({ ...valor, formatos })}
-        ejemploNombre="Ración"
-        maximo={10}
-        textoAnadir="Añadir formato"
-      />
+        <Box>
+          <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.5 }}>
+            Formatos (tapa, media, ración, caña, jarra…)
+          </Typography>
+          <Typography sx={{ fontSize: 12.5, color: "text.secondary", mb: 1 }}>
+            Sin formatos se pide a su precio de siempre. Con formatos, la carta los enseña con su
+            precio y el cliente elige uno. No se traducen: se piden por su nombre.
+          </Typography>
+          <FilasPrecio
+            filas={valor.formatos}
+            onCambio={(formatos) => onCambio({ ...valor, formatos })}
+            ejemploNombre="Ración"
+            maximo={10}
+            textoAnadir="Añadir formato"
+          />
+        </Box>
 
-      <label>Extras y opciones</label>
-      {grupos.length === 0 ? (
-        <p className="ayuda-campo">
-          Aún no hay grupos. Créalos en "Extras y opciones" del menú y luego márcalos aquí.
-        </p>
-      ) : (
-        <div className="rejilla-opciones">
-          {grupos.map((g) => (
-            <label className="opcion" key={g.id}>
-              <input
-                type="checkbox"
-                checked={valor.grupos.includes(g.id)}
-                onChange={() => alternarGrupo(g.id)}
-              />
-              <span>
-                {g.nombre} <span className="resumen-grupo">({resumenGrupo(g)})</span>
-              </span>
-            </label>
-          ))}
-        </div>
-      )}
-    </fieldset>
+        <Box>
+          <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.5 }}>Extras y opciones</Typography>
+          {grupos.length === 0 ? (
+            <Typography sx={{ fontSize: 12.5, color: "text.secondary" }}>
+              Aún no hay grupos. Créalos en "Extras y opciones" del menú y luego márcalos aquí.
+            </Typography>
+          ) : (
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+              {grupos.map((g) => (
+                <FormControlLabel
+                  key={g.id}
+                  sx={{ width: { xs: "100%", sm: "48%" }, mr: 0 }}
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={valor.grupos.includes(g.id)}
+                      onChange={() => alternarGrupo(g.id)}
+                    />
+                  }
+                  label={
+                    <Typography sx={{ fontSize: 14 }}>
+                      {g.nombre}{" "}
+                      <Typography component="span" sx={{ fontSize: 12.5, color: "text.secondary" }}>
+                        ({resumenGrupo(g)})
+                      </Typography>
+                    </Typography>
+                  }
+                />
+              ))}
+            </Box>
+          )}
+        </Box>
+      </Stack>
+    </Box>
   );
 }

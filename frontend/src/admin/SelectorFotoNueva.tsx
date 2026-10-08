@@ -1,5 +1,10 @@
 import { useRef, useState } from "react";
 
+import Avatar from "@mui/material/Avatar";
+import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+
 // Para un plato que todavia no existe en el servidor no hay donde subir la
 // foto (el endpoint necesita su id). Aqui solo se guarda el archivo elegido
 // y se ensena una vista previa local; FormularioPlato la sube de verdad
@@ -32,26 +37,30 @@ export function SelectorFotoNueva({ archivo, onSeleccionar }: Props) {
   }
 
   return (
-    <div className="bloque-foto">
-      {previa ? (
-        <img className="miniatura-foto" src={previa} alt="" />
-      ) : (
-        <div className="miniatura-foto vacia">Sin foto</div>
-      )}
-      <div className="acciones-foto">
-        <label className="boton-archivo">
-          Subir foto
-          <input ref={inputRef} type="file" accept="image/*" onChange={manejarCambio} />
-        </label>
-        {archivo && (
-          <button type="button" onClick={quitar}>
-            Quitar foto
-          </button>
-        )}
-        <span style={{ fontSize: "11px", color: "var(--tinta-media)" }}>
-          Se sube al guardar
-        </span>
-      </div>
-    </div>
+    <Stack direction="row" spacing={2} alignItems="center">
+      <Avatar variant="rounded" src={previa ?? undefined} sx={{ width: 72, height: 72 }}>
+        {!previa && "Sin"}
+      </Avatar>
+      <Stack spacing={1}>
+        <Stack direction="row" spacing={1}>
+          <Button component="label" variant="outlined">
+            Subir foto
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              onChange={manejarCambio}
+              style={{ position: "absolute", width: 1, height: 1, opacity: 0, overflow: "hidden" }}
+            />
+          </Button>
+          {archivo && (
+            <Button variant="outlined" color="error" onClick={quitar}>
+              Quitar foto
+            </Button>
+          )}
+        </Stack>
+        <Typography sx={{ fontSize: 11, color: "text.secondary" }}>Se sube al guardar</Typography>
+      </Stack>
+    </Stack>
   );
 }

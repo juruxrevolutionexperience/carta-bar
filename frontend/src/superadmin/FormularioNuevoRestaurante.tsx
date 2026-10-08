@@ -1,5 +1,14 @@
 import { useState, type FormEvent } from "react";
 
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+
 import { crearRestaurante, type ResumenRestaurante } from "./api";
 
 interface Props {
@@ -45,47 +54,59 @@ export function FormularioNuevoRestaurante({ onCreado }: Props) {
   }
 
   return (
-    <div className="panel-tarjeta">
-      <h2>Añadir restaurante</h2>
-      <p style={{ color: "var(--tinta-media)", fontSize: "13px" }}>
-        Crea el acceso (subdominio y contraseña). Su carta hay que cargarla aparte.
-      </p>
-      <form onSubmit={enviar}>
-        <label htmlFor="restaurante_id">Subdominio</label>
-        <input
-          id="restaurante_id"
-          placeholder="bar2"
-          pattern="[a-z0-9-]+"
-          title="Solo minúsculas, números y guiones"
-          required
-          value={restauranteId}
-          onChange={(e) => setRestauranteId(e.target.value)}
-        />
-        <label htmlFor="nombre">Nombre</label>
-        <input
-          id="nombre"
-          placeholder="Bar Pepe"
-          required
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-        />
-        <label htmlFor="clave">Contraseña inicial</label>
-        <input
-          id="clave"
-          type="password"
-          autoComplete="new-password"
-          minLength={8}
-          required
-          value={clave}
-          onChange={(e) => setClave(e.target.value)}
-        />
-        <div style={{ marginTop: "16px" }}>
-          <button type="submit" disabled={guardando}>
-            Crear restaurante
-          </button>
-        </div>
-        {aviso && <div className={`aviso ${aviso.tipo}`}>{aviso.texto}</div>}
-      </form>
-    </div>
+    <Card sx={{ mb: 2 }}>
+      <CardContent>
+        <Typography variant="h3" sx={{ mb: 0.5 }}>
+          Añadir restaurante
+        </Typography>
+        <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 2 }}>
+          Crea el acceso (subdominio y contraseña). Su carta hay que cargarla aparte.
+        </Typography>
+        <Box component="form" onSubmit={enviar}>
+          <Stack spacing={2} alignItems="flex-start">
+            <TextField
+              label="Subdominio"
+              size="small"
+              fullWidth
+              placeholder="bar2"
+              slotProps={{
+                htmlInput: { pattern: "[a-z0-9-]+", title: "Solo minúsculas, números y guiones" },
+              }}
+              required
+              value={restauranteId}
+              onChange={(e) => setRestauranteId(e.target.value)}
+            />
+            <TextField
+              label="Nombre"
+              size="small"
+              fullWidth
+              placeholder="Bar Pepe"
+              required
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+            />
+            <TextField
+              label="Contraseña inicial"
+              type="password"
+              size="small"
+              fullWidth
+              autoComplete="new-password"
+              slotProps={{ htmlInput: { minLength: 8 } }}
+              required
+              value={clave}
+              onChange={(e) => setClave(e.target.value)}
+            />
+            <Button type="submit" variant="contained" disabled={guardando}>
+              Crear restaurante
+            </Button>
+            {aviso && (
+              <Alert severity={aviso.tipo === "exito" ? "success" : "error"} sx={{ width: "100%" }}>
+                {aviso.texto}
+              </Alert>
+            )}
+          </Stack>
+        </Box>
+      </CardContent>
+    </Card>
   );
 }

@@ -1,3 +1,6 @@
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+
 import { useAvisosPersonal } from "./useAvisosPersonal";
 
 const TEXTO: Record<string, string> = {
@@ -13,12 +16,25 @@ export function AvisosPersonal() {
   if (avisos.length === 0) return null;
 
   return (
-    <div className="avisos-personal" role="status" aria-live="polite">
+    <Box
+      role="status"
+      aria-live="polite"
+      sx={{
+        position: "fixed",
+        top: 64,
+        right: 12,
+        zIndex: (t) => t.zIndex.snackbar,
+        display: "flex",
+        flexDirection: "column",
+        gap: 1,
+        maxWidth: { xs: "calc(100vw - 24px)", sm: 320 },
+      }}
+    >
       {avisos.map((a) => (
-        <div key={a.clave} className={"aviso-personal tipo-" + a.tipo}>
+        <Alert key={a.clave} severity={a.tipo === "nueva" ? "warning" : "info"} variant="filled">
           <strong>{a.nombre}</strong> · {TEXTO[a.tipo]}
-        </div>
+        </Alert>
       ))}
-    </div>
+    </Box>
   );
 }

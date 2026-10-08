@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
 
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Typography from "@mui/material/Typography";
+
 import { HojaQR, type DatosQr } from "../shared/HojaQR";
 import { cargarQrRestaurante } from "./api";
 
@@ -21,14 +26,18 @@ export function PanelQr({ restauranteId, onCerrar }: Props) {
   }, [restauranteId]);
 
   return (
-    <div className="panel-tarjeta">
-      <h2>QR de {restauranteId}</h2>
-      {error && <p className="cargando">No se pudo cargar el QR.</p>}
-      {!error && !datos && <p className="cargando">Cargando…</p>}
-      {datos && <HojaQR url={datos.url} nombre={datos.nombre} texto={datos.texto} />}
-      <button type="button" className="secundario" onClick={onCerrar}>
-        Cerrar
-      </button>
-    </div>
+    <Card sx={{ mb: 2 }}>
+      <CardContent>
+        <Typography variant="h3" sx={{ mb: 1.5 }}>
+          QR de {restauranteId}
+        </Typography>
+        {error && <p className="cargando">No se pudo cargar el QR.</p>}
+        {!error && !datos && <p className="cargando">Cargando…</p>}
+        {datos && <HojaQR url={datos.url} nombre={datos.nombre} texto={datos.texto} />}
+        <Button variant="outlined" onClick={onCerrar} sx={{ mt: 2 }}>
+          Cerrar
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

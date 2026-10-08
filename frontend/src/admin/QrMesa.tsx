@@ -1,3 +1,6 @@
+import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
+
 import { HojaQR, type DatosQr } from "../shared/HojaQR";
 import type { Mesa } from "./api";
 
@@ -20,21 +23,16 @@ interface Props {
 
 export function QrMesa({ mesa, qr, compacta, ocupado, onRegenerar }: Props) {
   return (
-    <div className="mesa-qr-cuerpo">
+    <Stack spacing={1.5}>
       <HojaQR
         url={urlDeMesa(qr.url, mesa.token_qr)}
         nombre={mesa.nombre}
         texto={qr.texto}
         compacta={compacta}
       />
-      <button
-        type="button"
-        className="secundario"
-        disabled={ocupado}
-        onClick={() => onRegenerar(mesa)}
-      >
+      <Button variant="outlined" disabled={ocupado} onClick={() => onRegenerar(mesa)}>
         Cambiar el QR de esta mesa
-      </button>
-    </div>
+      </Button>
+    </Stack>
   );
 }

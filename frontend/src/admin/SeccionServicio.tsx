@@ -1,5 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
 
+import Badge from "@mui/material/Badge";
+import Box from "@mui/material/Box";
+import ButtonBase from "@mui/material/ButtonBase";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import Typography from "@mui/material/Typography";
+
+const COLOR_ESTADO: Record<string, string> = {
+  por_confirmar: "warning.main",
+  cuenta_pedida: "info.main",
+  abierta: "primary.main",
+  libre: "divider",
+};
+
 import { cargarMesas, cargarZonas, type Mesa, type Zona } from "./api";
 import { PanelServicio } from "./PanelServicio";
 import {
@@ -66,18 +83,24 @@ export function SeccionServicio() {
 
   if (zonas === null) {
     return (
-      <div className="tarjeta">
-        <p>{error ? "No se pudieron cargar las mesas." : "Cargando mesas…"}</p>
-      </div>
+      <Card>
+        <CardContent>
+          <p>{error ? "No se pudieron cargar las mesas." : "Cargando mesas…"}</p>
+        </CardContent>
+      </Card>
     );
   }
 
   if (mesas.length === 0) {
     return (
-      <div className="tarjeta">
-        <h2>Aún no hay mesas</h2>
-        <p>Monta el local en "Mesas" (el plano) y aquí aparecerán para el servicio.</p>
-      </div>
+      <Card>
+        <CardContent>
+          <Typography variant="h3" sx={{ mb: 1 }}>
+            Aún no hay mesas
+          </Typography>
+          <p>Monta el local en "Mesas" (el plano) y aquí aparecerán para el servicio.</p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -89,56 +112,67 @@ export function SeccionServicio() {
 
   return (
     <div className="servicio">
-      <div className="resumen-servicio" aria-live="polite">
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }} aria-live="polite">
         {cuenta.por_confirmar > 0 && (
-          <span className="chip-resumen estado-por_confirmar">
-            {cuenta.por_confirmar} por aceptar
-          </span>
+          <Chip
+            label={`${cuenta.por_confirmar} por aceptar`}
+            color="warning"
+            variant="outlined"
+            size="small"
+          />
         )}
         {cuenta.cuenta_pedida > 0 && (
-          <span className="chip-resumen estado-cuenta_pedida">
-            {cuenta.cuenta_pedida} piden la cuenta
-          </span>
+          <Chip
+            label={`${cuenta.cuenta_pedida} piden la cuenta`}
+            color="info"
+            variant="outlined"
+            size="small"
+          />
         )}
-        <span className="chip-resumen estado-abierta">
-          {cuenta.abierta} {cuenta.abierta === 1 ? "abierta" : "abiertas"}
-        </span>
-        <span className="chip-resumen estado-libre">
-          {cuenta.libre} {cuenta.libre === 1 ? "libre" : "libres"}
-        </span>
-        {error && <span className="chip-resumen sin-conexion">Sin conexión</span>}
-      </div>
+        <Chip
+          label={`${cuenta.abierta} ${cuenta.abierta === 1 ? "abierta" : "abiertas"}`}
+          color="primary"
+          variant="outlined"
+          size="small"
+        />
+        <Chip
+          label={`${cuenta.libre} ${cuenta.libre === 1 ? "libre" : "libres"}`}
+          variant="outlined"
+          size="small"
+        />
+        {error && <Chip label="Sin conexión" color="error" variant="outlined" size="small" />}
+      </Box>
 
       {zonas.length > 1 && (
-        <div className="pestanas-zona" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={filtro === TODAS}
-            className={"pestana-zona" + (filtro === TODAS ? " activa" : "")}
-            onClick={() => setFiltro(TODAS)}
-          >
-            Todas
-          </button>
+        <Tabs
+          value={filtro}
+          onChange={(_, valor) => setFiltro(valor)}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{ mb: 2, minHeight: 36, "& .MuiTab-root": { minHeight: 36 } }}
+        >
+          <Tab value={TODAS} label="Todas" />
           {zonas.map((z) => {
             const avisos = mesas.filter(
               (m) => m.zona_id === z.id && estadoDe(m) === "por_confirmar"
             ).length;
             return (
-              <button
+              <Tab
                 key={z.id}
-                type="button"
-                role="tab"
-                aria-selected={filtro === z.id}
-                className={"pestana-zona" + (filtro === z.id ? " activa" : "")}
-                onClick={() => setFiltro(z.id)}
-              >
-                {z.nombre}
-                {avisos > 0 && <span className="punto-aviso" aria-label={`${avisos} por aceptar`} />}
-              </button>
+                value={z.id}
+                label={
+                  avisos > 0 ? (
+                    <Badge color="warning" variant="dot">
+                      <Box sx={{ pr: 1 }}>{z.nombre}</Box>
+                    </Badge>
+                  ) : (
+                    z.nombre
+                  )
+                }
+              />
             );
           })}
-        </div>
+        </Tabs>
       )}
 
       <div className="zona-trabajo">
@@ -157,27 +191,39 @@ export function SeccionServicio() {
                   {deLaZona.map((m) => {
                     const estado = estadoDe(m);
                     const tiempo = tiempoDesde(m.abierta_en, ahora);
+                    const elegida = m.id === seleccionada;
                     return (
-                      <button
+                      <ButtonBase
                         key={m.id}
-                        type="button"
-                        className={
-                          "tarjeta-mesa estado-" +
-                          estado +
-                          (m.id === seleccionada ? " elegida" : "")
-                        }
                         onClick={() => setSeleccionada(m.id)}
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-start",
+                          gap: 0.5,
+                          p: 1.5,
+                          borderRadius: 2,
+                          bgcolor: "background.paper",
+                          border: 2,
+                          borderColor: elegida ? "primary.main" : COLOR_ESTADO[estado],
+                          boxShadow: elegida ? 3 : 0,
+                          textAlign: "left",
+                        }}
                       >
-                        <span className="nombre-mesa">{m.nombre}</span>
-                        <span className="estado-tarjeta">{TEXTO_ESTADO[estado]}</span>
-                        <span className="detalle-tarjeta">
+                        <Typography sx={{ fontSize: 14.5, fontWeight: 700 }}>
+                          {m.nombre}
+                        </Typography>
+                        <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: COLOR_ESTADO[estado] }}>
+                          {TEXTO_ESTADO[estado]}
+                        </Typography>
+                        <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
                           {estado === "libre"
                             ? `${m.capacidad} ${m.capacidad === 1 ? "plaza" : "plazas"}`
                             : [m.comensales ? personas(m.comensales) : "", tiempo]
                                 .filter(Boolean)
                                 .join(" · ")}
-                        </span>
-                      </button>
+                        </Typography>
+                      </ButtonBase>
                     );
                   })}
                 </div>
@@ -195,9 +241,11 @@ export function SeccionServicio() {
             onCerrar={() => setSeleccionada(null)}
           />
         ) : (
-          <div className="tarjeta panel-vacio">
-            <p>Toca una mesa para abrirla, aceptarla o liberarla.</p>
-          </div>
+          <Card className="panel-vacio">
+            <CardContent>
+              <p>Toca una mesa para abrirla, aceptarla o liberarla.</p>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

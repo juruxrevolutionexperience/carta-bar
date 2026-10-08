@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
 
+import { IconCheck, IconGripVertical, IconPencil, IconTrash, IconX } from "@tabler/icons-react";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+
 import { colorCategoria } from "../carta/iconos";
 import {
   cargarProductos,
@@ -130,68 +140,80 @@ export function OrganizarCategorias({ categorias, platos, onCambio }: Props) {
   }
 
   return (
-    <div className="organizar">
-        <p className="ayuda">Arrastra con el dedo el icono ⠿ para cambiar el orden de las categorías.</p>
-        {destinos !== null && (
-          <p className="ayuda">
-            «Cocina» o «Barra» dice dónde se preparan sus platos al pedir desde la mesa. Toca para
-            cambiarlo; un plato suelto puede llevar otro en su «Para pedir».
-          </p>
-        )}
-        {lista.length === 0 && <p className="cargando">Todavía no hay categorías.</p>}
+    <Box sx={{ mt: 2 }}>
+      <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 0.5 }}>
+        Arrastra el icono para cambiar el orden de las categorías.
+      </Typography>
+      {destinos !== null && (
+        <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 2 }}>
+          «Cocina» o «Barra» dice dónde se preparan sus platos al pedir desde la mesa. Toca para
+          cambiarlo; un plato suelto puede llevar otro en su «Para pedir».
+        </Typography>
+      )}
+      {lista.length === 0 && <p className="cargando">Todavía no hay categorías.</p>}
 
+      <Stack spacing={1} sx={{ mb: 2 }}>
         {lista.map((c) => {
           const total = cuantosPlatos(c.id);
           return (
-            <div
+            <Stack
               key={c.id}
+              direction="row"
+              alignItems="center"
+              spacing={1}
               ref={refFila(c.id)}
-              className={"fila-categoria" + (arrastrandoId === c.id ? " arrastrando" : "")}
-              style={{ borderLeftColor: colorCategoria(c.id) }}
+              sx={{
+                p: 1,
+                borderRadius: 1.5,
+                borderLeft: 4,
+                borderLeftColor: colorCategoria(c.id),
+                bgcolor: arrastrandoId === c.id ? "action.selected" : "background.default",
+              }}
             >
               {editando === c.id ? (
                 <>
-                  <input
+                  <TextField
+                    size="small"
                     value={nombreEditado}
-                    maxLength={60}
+                    slotProps={{ htmlInput: { maxLength: 60 } }}
                     autoFocus
                     aria-label="Nuevo nombre de la categoría"
                     onChange={(e) => setNombreEditado(e.target.value)}
+                    sx={{ flex: 1 }}
                   />
-                  <button type="button" disabled={ocupado} onClick={() => guardarNombre(c.id)}>
-                    OK
-                  </button>
-                  <button type="button" onClick={() => setEditando(null)}>
-                    ✕
-                  </button>
+                  <IconButton disabled={ocupado} onClick={() => guardarNombre(c.id)}>
+                    <IconCheck size={18} />
+                  </IconButton>
+                  <IconButton onClick={() => setEditando(null)}>
+                    <IconX size={18} />
+                  </IconButton>
                 </>
               ) : (
                 <>
-                  <span className="nombre-categoria">
-                    {c.nombre} <span className="cuenta-categoria">({total})</span>
-                  </span>
+                  <Typography sx={{ flex: 1, fontSize: 14, fontWeight: 600 }}>
+                    {c.nombre}{" "}
+                    <Typography component="span" sx={{ fontWeight: 400, color: "text.secondary" }}>
+                      ({total})
+                    </Typography>
+                  </Typography>
                   {destinos !== null && (
-                    <button
-                      type="button"
-                      className={"destino-categoria destino-" + (destinos[c.id] ?? "cocina")}
-                      aria-label={`${c.nombre} se prepara en ${destinos[c.id] ?? "cocina"}. Cambiar`}
+                    <Chip
+                      label={(destinos[c.id] ?? "cocina") === "cocina" ? "Cocina" : "Barra"}
+                      color={(destinos[c.id] ?? "cocina") === "cocina" ? "primary" : "secondary"}
+                      size="small"
                       disabled={ocupado}
                       onClick={() => cambiarDestino(c)}
-                    >
-                      {(destinos[c.id] ?? "cocina") === "cocina" ? "Cocina" : "Barra"}
-                    </button>
+                      aria-label={`${c.nombre} se prepara en ${destinos[c.id] ?? "cocina"}. Cambiar`}
+                    />
                   )}
-                  <button
-                    type="button"
-                    className="asa"
+                  <IconButton
                     aria-label={`Arrastrar ${c.nombre} para cambiar su orden`}
                     disabled={ocupado}
                     {...asa(c.id)}
                   >
-                    ⠿
-                  </button>
-                  <button
-                    type="button"
+                    <IconGripVertical size={18} />
+                  </IconButton>
+                  <IconButton
                     aria-label={`Renombrar ${c.nombre}`}
                     disabled={ocupado}
                     onClick={() => {
@@ -199,43 +221,50 @@ export function OrganizarCategorias({ categorias, platos, onCambio }: Props) {
                       setNombreEditado(c.nombre);
                     }}
                   >
-                    ✎
-                  </button>
-                  <button
-                    type="button"
+                    <IconPencil size={18} />
+                  </IconButton>
+                  <IconButton
                     aria-label={`Eliminar ${c.nombre}`}
                     title={total > 0 ? "Solo se pueden eliminar categorías vacías" : undefined}
                     disabled={ocupado || total > 0}
                     onClick={() => borrar(c)}
                   >
-                    🗑
-                  </button>
+                    <IconTrash size={18} />
+                  </IconButton>
                 </>
               )}
-            </div>
+            </Stack>
           );
         })}
+      </Stack>
 
-        <form
-          className="form-categoria-nueva"
-          onSubmit={(e) => {
-            e.preventDefault();
-            anadir();
-          }}
-        >
-          <input
-            value={nuevoNombre}
-            maxLength={60}
-            placeholder="Nueva categoría…"
-            aria-label="Nombre de la nueva categoría"
-            onChange={(e) => setNuevoNombre(e.target.value)}
-          />
-          <button type="submit" className="primario" disabled={ocupado || !nuevoNombre.trim()}>
-            Añadir
-          </button>
-        </form>
+      <Box
+        component="form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          anadir();
+        }}
+        sx={{ display: "flex", gap: 1 }}
+      >
+        <TextField
+          size="small"
+          value={nuevoNombre}
+          slotProps={{ htmlInput: { maxLength: 60 } }}
+          placeholder="Nueva categoría…"
+          aria-label="Nombre de la nueva categoría"
+          onChange={(e) => setNuevoNombre(e.target.value)}
+          sx={{ flex: 1 }}
+        />
+        <Button type="submit" variant="contained" disabled={ocupado || !nuevoNombre.trim()}>
+          Añadir
+        </Button>
+      </Box>
 
-        {aviso && <div className="aviso visible error">{aviso}</div>}
-      </div>
+      {aviso && (
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {aviso}
+        </Alert>
+      )}
+    </Box>
   );
 }

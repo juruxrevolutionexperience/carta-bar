@@ -1,5 +1,10 @@
 import { useRef, useState } from "react";
 
+import Alert from "@mui/material/Alert";
+import Avatar from "@mui/material/Avatar";
+import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
+
 import { borrarFoto, subirFoto } from "./api";
 import { comprimirImagen } from "./comprimirImagen";
 import type { Plato } from "./types";
@@ -43,24 +48,30 @@ export function BloqueFoto({ plato, onCambioFoto }: Props) {
   }
 
   return (
-    <div className="bloque-foto">
-      {plato.foto ? (
-        <img className="miniatura-foto" src={plato.foto} alt="" />
-      ) : (
-        <div className="miniatura-foto vacia">Sin foto</div>
-      )}
-      <div className="acciones-foto">
-        <label className="boton-archivo">
-          Subir foto
-          <input ref={inputRef} type="file" accept="image/*" onChange={subir} />
-        </label>
-        {plato.foto && (
-          <button type="button" onClick={quitar}>
-            Quitar foto
-          </button>
-        )}
-        {error && <div className="aviso visible error">{error}</div>}
-      </div>
-    </div>
+    <Stack direction="row" spacing={2} alignItems="center">
+      <Avatar variant="rounded" src={plato.foto ?? undefined} sx={{ width: 72, height: 72 }}>
+        {!plato.foto && "Sin"}
+      </Avatar>
+      <Stack spacing={1}>
+        <Stack direction="row" spacing={1}>
+          <Button component="label" variant="outlined">
+            Subir foto
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              onChange={subir}
+              style={{ position: "absolute", width: 1, height: 1, opacity: 0, overflow: "hidden" }}
+            />
+          </Button>
+          {plato.foto && (
+            <Button variant="outlined" color="error" onClick={quitar}>
+              Quitar foto
+            </Button>
+          )}
+        </Stack>
+        {error && <Alert severity="error">{error}</Alert>}
+      </Stack>
+    </Stack>
   );
 }

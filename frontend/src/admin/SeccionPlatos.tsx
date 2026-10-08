@@ -1,5 +1,18 @@
 import { useMemo, useState } from "react";
 
+import { IconChevronDown, IconPlus } from "@tabler/icons-react";
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+
 import { colorCategoria } from "../carta/iconos";
 import { FilaPlato } from "./FilaPlato";
 import { FormularioPlato } from "./FormularioPlato";
@@ -79,101 +92,134 @@ export function SeccionPlatos({
 
   return (
     <section className="seccion">
-      <div className="tarjeta">
-        <div className="cabecera-seccion">
-          <h2>Platos</h2>
-          {!error && platos !== null && (
-            <button
-              type="button"
-              className="secundario"
-              onClick={() => {
-                setOrganizando((o) => !o);
-                setAnadiendo(false);
-              }}
-            >
-              {organizando ? "Hecho" : "Organizar categorías"}
-            </button>
+      <Card>
+        <CardContent>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
+            <Typography variant="h3">Platos</Typography>
+            {!error && platos !== null && (
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  setOrganizando((o) => !o);
+                  setAnadiendo(false);
+                }}
+              >
+                {organizando ? "Hecho" : "Organizar categorías"}
+              </Button>
+            )}
+          </Stack>
+          {organizando && (
+            <OrganizarCategorias
+              categorias={categorias}
+              platos={platos}
+              onCambio={onCambioCategorias}
+            />
           )}
-        </div>
-        {organizando && (
-          <OrganizarCategorias
-            categorias={categorias}
-            platos={platos}
-            onCambio={onCambioCategorias}
-          />
-        )}
-        {!error && platos !== null && categoriasElegibles.length === 0 && !organizando && (
-          <p className="cargando">Crea primero una categoría para poder añadir platos.</p>
-        )}
-        {!error && platos !== null && categoriasElegibles.length > 0 && !anadiendo && !organizando && (
-          <button type="button" className="primario" onClick={() => setAnadiendo(true)}>
-            + Añadir plato
-          </button>
-        )}
-        {anadiendo && (
-          <FormularioPlato
-            plato={platoVacio()}
-            categoriasElegibles={categoriasElegibles}
-            onCancelar={() => setAnadiendo(false)}
-            onEliminado={() => setAnadiendo(false)}
-            onGuardado={(creado) => {
-              setAnadiendo(false);
-              onCreado(creado);
-              // Que el gerente vea donde ha quedado el plato nuevo.
-              alternar(creado.categoria, true);
-            }}
-          />
-        )}
-        {!error && !organizando && platos !== null && platos.length > 0 && (
-          <input
-            type="search"
-            placeholder="Buscar un plato…"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            aria-label="Buscar un plato"
-          />
-        )}
+          {!error && platos !== null && categoriasElegibles.length === 0 && !organizando && (
+            <p className="cargando">Crea primero una categoría para poder añadir platos.</p>
+          )}
+          {!error &&
+            platos !== null &&
+            categoriasElegibles.length > 0 &&
+            !anadiendo &&
+            !organizando && (
+              <Button
+                variant="contained"
+                startIcon={<IconPlus size={18} />}
+                onClick={() => setAnadiendo(true)}
+                sx={{ mb: 2 }}
+              >
+                Añadir plato
+              </Button>
+            )}
+          {anadiendo && (
+            <FormularioPlato
+              plato={platoVacio()}
+              categoriasElegibles={categoriasElegibles}
+              onCancelar={() => setAnadiendo(false)}
+              onEliminado={() => setAnadiendo(false)}
+              onGuardado={(creado) => {
+                setAnadiendo(false);
+                onCreado(creado);
+                // Que el gerente vea donde ha quedado el plato nuevo.
+                alternar(creado.categoria, true);
+              }}
+            />
+          )}
+          {!error && !organizando && platos !== null && platos.length > 0 && (
+            <TextField
+              type="search"
+              placeholder="Buscar un plato…"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              aria-label="Buscar un plato"
+              size="small"
+              fullWidth
+              sx={{ mb: 2 }}
+            />
+          )}
 
-        {error && <p className="cargando">No se pudo cargar la carta.</p>}
-        {!error && platos === null && <p className="cargando">Cargando…</p>}
-        {!error && platos !== null && platos.length === 0 && (
-          <p className="cargando">No hay platos.</p>
-        )}
-        {!error && grupos !== null && grupos.length === 0 && busqueda.trim() && (
-          <p className="cargando">Ningún plato coincide con "{busqueda.trim()}".</p>
-        )}
+          {error && <p className="cargando">No se pudo cargar la carta.</p>}
+          {!error && platos === null && <p className="cargando">Cargando…</p>}
+          {!error && platos !== null && platos.length === 0 && (
+            <p className="cargando">No hay platos.</p>
+          )}
+          {!error && grupos !== null && grupos.length === 0 && busqueda.trim() && (
+            <p className="cargando">Ningún plato coincide con "{busqueda.trim()}".</p>
+          )}
 
-        {!organizando &&
-          grupos?.map((grupo) => (
-          <details
-            key={grupo.id}
-            className="grupo-categoria"
-            // Buscando, se fuerza abierto para que un resultado nunca quede
-            // escondido dentro de una categoria cerrada; al borrar la
-            // busqueda vuelve a lo que el gerente tenia puesto a mano.
-            open={buscando || abiertas.has(grupo.id)}
-            onToggle={(e) => alternar(grupo.id, e.currentTarget.open)}
-          >
-            <summary
-              className="titulo-categoria"
-              style={{ borderLeftColor: colorCategoria(grupo.id) }}
-            >
-              {grupo.nombre} <span className="cuenta-categoria">({grupo.platos.length})</span>
-            </summary>
-            <div className="platos-categoria">
-              {grupo.platos.map((p) => (
-                <FilaPlato
-                  key={p.id}
-                  plato={p}
-                  nombreCategoria={grupo.nombre}
-                  onCambiado={(nuevo) => onActualizar(p, nuevo)}
-                  onQuitarDeLista={() => onQuitar(p)}
-                />
-              ))}
-            </div>
-          </details>
-        ))}
-      </div>
+          {!organizando &&
+            grupos?.map((grupo) => (
+              <Accordion
+                key={grupo.id}
+                // Buscando, se fuerza abierto para que un resultado nunca quede
+                // escondido dentro de una categoria cerrada; al borrar la
+                // busqueda vuelve a lo que el gerente tenia puesto a mano.
+                expanded={buscando || abiertas.has(grupo.id)}
+                onChange={(_, abierta) => alternar(grupo.id, abierta)}
+                disableGutters
+                elevation={0}
+                sx={{
+                  "&:before": { display: "none" },
+                  background: "transparent",
+                  border: 1,
+                  borderColor: "divider",
+                  borderRadius: 1.5,
+                  mb: 1,
+                  "&.Mui-expanded": { mb: 1 },
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={<IconChevronDown size={16} />}
+                  sx={{
+                    borderLeft: 4,
+                    borderLeftColor: colorCategoria(grupo.id),
+                    borderRadius: 1.5,
+                  }}
+                >
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.03em" }}>
+                    {grupo.nombre.toUpperCase()}
+                  </Typography>
+                  <Chip label={grupo.platos.length} size="small" sx={{ ml: 1 }} />
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Box sx={{ pt: 0.5 }}>
+                    {grupo.platos.map((p) => (
+                      <FilaPlato
+                        key={p.id}
+                        plato={p}
+                        nombreCategoria={grupo.nombre}
+                        onCambiado={(nuevo) => onActualizar(p, nuevo)}
+                        onQuitarDeLista={() => onQuitar(p)}
+                      />
+                    ))}
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
+            ))}
+        </CardContent>
+      </Card>
     </section>
   );
 }

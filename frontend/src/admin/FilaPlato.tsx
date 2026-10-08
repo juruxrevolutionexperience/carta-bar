@@ -1,5 +1,13 @@
 import { useState } from "react";
 
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
+import Typography from "@mui/material/Typography";
+
 import { actualizarDisponibilidad } from "./api";
 import { FormularioPlato } from "./FormularioPlato";
 import { TEXTO_DIETA, TEXTO_ETIQUETA, type ClaveDieta } from "./textos";
@@ -78,39 +86,48 @@ export function FilaPlato({ plato, nombreCategoria, onCambiado, onQuitarDeLista 
   }
 
   return (
-    <div className={"fila-plato" + (agotado ? " agotado" : "")}>
+    <Stack
+      direction="row"
+      alignItems="center"
+      spacing={1.5}
+      sx={{
+        py: 1.5,
+        borderBottom: 1,
+        borderColor: "divider",
+        opacity: agotado ? 0.6 : 1,
+      }}
+    >
       {plato.foto ? (
-        <img className="miniatura-foto miniatura-fila" src={plato.foto} alt="" />
+        <Avatar variant="rounded" src={plato.foto} alt="" sx={{ width: 56, height: 56 }} />
       ) : (
-        <div className="miniatura-foto miniatura-fila vacia">Sin foto</div>
+        <Avatar variant="rounded" sx={{ width: 56, height: 56, fontSize: 11 }}>
+          Sin foto
+        </Avatar>
       )}
-      <div className="info">
-        <div className="nombre">
-          {plato.nombre}
-          {agotado && <span className="etiqueta-agotado">Agotado hoy</span>}
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+          <Typography sx={{ fontSize: 14.5, fontWeight: 600 }}>{plato.nombre}</Typography>
+          {agotado && <Chip label="Agotado hoy" size="small" color="error" variant="outlined" />}
           {plato.alergenos_confirmados === false && (
-            <span className="etiqueta-sin-confirmar">Alérgenos sin confirmar</span>
+            <Chip label="Alérgenos sin confirmar" size="small" color="warning" variant="outlined" />
           )}
-        </div>
-        <div className="detalle">
+        </Stack>
+        <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
           {nombreCategoria || plato.categoria} · {formatoPrecio(plato.precio)}
-        </div>
-        {extra && <div className="detalle-extra">{extra}</div>}
-        {falta.length > 0 && (
-          <div className="detalle-falta">Falta: {falta.join(", ")}</div>
+        </Typography>
+        {extra && (
+          <Typography sx={{ fontSize: 12.5, color: "text.secondary" }}>{extra}</Typography>
         )}
-      </div>
-      <label className="interruptor">
-        <input
-          type="checkbox"
-          checked={!agotado}
-          onChange={(e) => alternarDisponible(e.target.checked)}
-        />
-        <span className="riel"></span>
-      </label>
-      <button type="button" onClick={() => setEditando(true)}>
+        {falta.length > 0 && (
+          <Typography sx={{ fontSize: 12.5, color: "warning.dark", fontWeight: 600 }}>
+            Falta: {falta.join(", ")}
+          </Typography>
+        )}
+      </Box>
+      <Switch checked={!agotado} onChange={(e) => alternarDisponible(e.target.checked)} />
+      <Button variant="outlined" size="small" onClick={() => setEditando(true)}>
         Editar
-      </button>
-    </div>
+      </Button>
+    </Stack>
   );
 }

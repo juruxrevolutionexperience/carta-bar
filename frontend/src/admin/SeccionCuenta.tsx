@@ -1,5 +1,14 @@
 import { useState, type FormEvent } from "react";
 
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+
 import { cambiarClave, cerrarSesion } from "./api";
 
 export function SeccionCuenta() {
@@ -35,45 +44,54 @@ export function SeccionCuenta() {
 
   return (
     <section className="seccion">
-      <div className="tarjeta">
-        <h2>Cambiar contraseña</h2>
-        <form onSubmit={enviar}>
-          <label htmlFor="actual">Contraseña actual</label>
-          <input
-            type="password"
-            id="actual"
-            autoComplete="current-password"
-            required
-            value={claveActual}
-            onChange={(e) => setClaveActual(e.target.value)}
-          />
-          <label htmlFor="nueva">Contraseña nueva</label>
-          <input
-            type="password"
-            id="nueva"
-            autoComplete="new-password"
-            minLength={8}
-            required
-            value={claveNueva}
-            onChange={(e) => setClaveNueva(e.target.value)}
-          />
-          <button type="submit" className="primario" disabled={guardando}>
-            Guardar
-          </button>
-          {aviso && <div className={`aviso visible ${aviso.tipo}`}>{aviso.texto}</div>}
-        </form>
-      </div>
+      <Card sx={{ mb: 2 }}>
+        <CardContent>
+          <Typography variant="h3" sx={{ mb: 1.5 }}>
+            Cambiar contraseña
+          </Typography>
+          <Box component="form" onSubmit={enviar}>
+            <Stack spacing={2} alignItems="flex-start">
+              <TextField
+                label="Contraseña actual"
+                type="password"
+                size="small"
+                fullWidth
+                autoComplete="current-password"
+                required
+                value={claveActual}
+                onChange={(e) => setClaveActual(e.target.value)}
+              />
+              <TextField
+                label="Contraseña nueva"
+                type="password"
+                size="small"
+                fullWidth
+                autoComplete="new-password"
+                slotProps={{ htmlInput: { minLength: 8 } }}
+                required
+                value={claveNueva}
+                onChange={(e) => setClaveNueva(e.target.value)}
+              />
+              <Button type="submit" variant="contained" disabled={guardando}>
+                Guardar
+              </Button>
+              {aviso && (
+                <Alert severity={aviso.tipo === "exito" ? "success" : "error"} sx={{ width: "100%" }}>
+                  {aviso.texto}
+                </Alert>
+              )}
+            </Stack>
+          </Box>
+        </CardContent>
+      </Card>
 
-      <div className="tarjeta">
-        <button
-          type="button"
-          className="secundario"
-          style={{ margin: 0, width: "100%" }}
-          onClick={cerrarSesion}
-        >
-          Cerrar sesión
-        </button>
-      </div>
+      <Card>
+        <CardContent>
+          <Button variant="outlined" color="error" fullWidth onClick={cerrarSesion}>
+            Cerrar sesión
+          </Button>
+        </CardContent>
+      </Card>
     </section>
   );
 }

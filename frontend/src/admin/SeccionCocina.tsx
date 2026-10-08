@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Link from "@mui/material/Link";
+import Stack from "@mui/material/Stack";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import Typography from "@mui/material/Typography";
+
 import { anularLinea, cambiarEstadoTicket, cargarTickets, type Destino, type Ticket } from "./api";
 
 const REFRESCO_MS = 5000;
@@ -70,9 +81,11 @@ export function SeccionCocina() {
 
   if (tickets === null) {
     return (
-      <div className="tarjeta">
-        <p>{error ? "No se pudieron cargar las comandas." : "Cargando…"}</p>
-      </div>
+      <Card>
+        <CardContent>
+          <p>{error ? "No se pudieron cargar las comandas." : "Cargando…"}</p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -83,29 +96,26 @@ export function SeccionCocina() {
 
   return (
     <div className="cocina">
-      <div className="pestanas-zona" role="tablist">
-        {([TODOS, "cocina", "barra"] as const).map((d) => (
-          <button
-            key={d}
-            type="button"
-            role="tab"
-            aria-selected={filtro === d}
-            className={"pestana-zona" + (filtro === d ? " activa" : "")}
-            onClick={() => setFiltro(d)}
-          >
-            {d === TODOS ? "Todo" : TEXTO_DESTINO[d]}
-          </button>
-        ))}
-        {error && <span className="chip-resumen sin-conexion">Sin conexión</span>}
-        <a href="/admin/impresion" target="_blank" rel="noreferrer" className="enlace-impresion">
+      <Stack direction="row" alignItems="center" flexWrap="wrap" gap={1} mb={1}>
+        <Tabs
+          value={filtro}
+          onChange={(_, valor) => setFiltro(valor)}
+          sx={{ minHeight: 36, "& .MuiTab-root": { minHeight: 36 } }}
+        >
+          {([TODOS, "cocina", "barra"] as const).map((d) => (
+            <Tab key={d} value={d} label={d === TODOS ? "Todo" : TEXTO_DESTINO[d]} />
+          ))}
+        </Tabs>
+        {error && <Chip label="Sin conexión" color="error" variant="outlined" size="small" />}
+        <Link href="/admin/impresion" target="_blank" rel="noreferrer" sx={{ ml: "auto", fontSize: 13 }}>
           Pantalla de impresión ↗
-        </a>
-      </div>
+        </Link>
+      </Stack>
 
-      <p className="ayuda-campo">
+      <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 2 }}>
         Para imprimir solas en cocina y barra, hace falta un aparato aparte dedicado a esto —
         nunca el TPV principal del bar. Ver "Pantalla de impresión" arriba.
-      </p>
+      </Typography>
 
       {visibles.length === 0 && <p className="cargando">Sin comandas pendientes.</p>}
 
@@ -133,49 +143,74 @@ interface PropsTarjeta {
 
 function TarjetaTicket({ ticket, ocupado, onLista, onAnular }: PropsTarjeta) {
   return (
-    <article className={"tarjeta-ticket destino-" + ticket.destino}>
-      <div className="cabecera-ticket">
-        <span className="mesa-ticket">{ticket.mesa_nombre}</span>
-        <span className="numero-ticket">Comanda {ticket.numero_comanda}</span>
-      </div>
-      <ul className="lineas-ticket">
-        {ticket.lineas.map((l) => (
-          <li
-            key={l.id}
-            className={(l.alcohol ? "con-alcohol " : "") + (l.anulada ? "anulada" : "")}
-          >
-            <span className="cantidad-linea">{l.cantidad}×</span>
-            <span className="texto-linea">
-              {lineaTexto(l)}
-              {l.alcohol && <span className="chip-alcohol">alcohol</span>}
-            </span>
-            {l.anulada ? (
-              <span className="nota-linea">Anulada: {l.motivo_anulacion}</span>
-            ) : (
-              <>
-                {l.nota && <span className="nota-linea">{l.nota}</span>}
-                <button
-                  type="button"
-                  className="anular-linea"
-                  disabled={ocupado}
-                  onClick={() => onAnular(ticket, l.id)}
-                >
-                  Anular
-                </button>
-              </>
-            )}
-            <span className="quien-linea">{l.pedido_por_nombre}</span>
-          </li>
-        ))}
-      </ul>
-      <button
-        type="button"
-        className="primario boton-avanzar"
-        disabled={ocupado}
-        onClick={() => onLista(ticket)}
-      >
-        Listo
-      </button>
-    </article>
+    <Card
+      component="article"
+      className={"destino-" + ticket.destino}
+      sx={{
+        borderLeft: 4,
+        borderLeftColor: ticket.destino === "cocina" ? "primary.main" : "secondary.main",
+      }}
+    >
+      <CardContent>
+        <Stack direction="row" justifyContent="space-between" alignItems="baseline" mb={1}>
+          <Typography sx={{ fontSize: 16, fontWeight: 700 }}>{ticket.mesa_nombre}</Typography>
+          <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
+            Comanda {ticket.numero_comanda}
+          </Typography>
+        </Stack>
+        <Stack component="ul" sx={{ listStyle: "none", m: 0, p: 0, mb: 1.5 }} spacing={1}>
+          {ticket.lineas.map((l) => (
+            <Box
+              component="li"
+              key={l.id}
+              sx={{ opacity: l.anulada ? 0.6 : 1, borderBottom: 1, borderColor: "divider", pb: 1 }}
+            >
+              <Typography sx={{ fontSize: 14 }}>
+                <Box component="span" sx={{ fontWeight: 700 }}>
+                  {l.cantidad}×{" "}
+                </Box>
+                {lineaTexto(l)}
+                {l.alcohol && (
+                  <Chip label="alcohol" size="small" color="warning" sx={{ ml: 1 }} />
+                )}
+              </Typography>
+              {l.anulada ? (
+                <Typography sx={{ fontSize: 12.5, color: "error.main", fontWeight: 600 }}>
+                  Anulada: {l.motivo_anulacion}
+                </Typography>
+              ) : (
+                <>
+                  {l.nota && (
+                    <Typography sx={{ fontSize: 12.5, fontStyle: "italic", color: "text.secondary" }}>
+                      {l.nota}
+                    </Typography>
+                  )}
+                  <Button
+                    size="small"
+                    color="error"
+                    disabled={ocupado}
+                    onClick={() => onAnular(ticket, l.id)}
+                    sx={{ minWidth: 0, p: 0, fontSize: 12 }}
+                  >
+                    Anular
+                  </Button>
+                </>
+              )}
+              <Typography sx={{ fontSize: 11.5, color: "text.secondary" }}>
+                {l.pedido_por_nombre}
+              </Typography>
+            </Box>
+          ))}
+        </Stack>
+        <Button
+          variant="contained"
+          fullWidth
+          disabled={ocupado}
+          onClick={() => onLista(ticket)}
+        >
+          Listo
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

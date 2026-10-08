@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { IconCheck } from "@tabler/icons-react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+
 import {
   ajustarPrecioLinea,
   anadirAComanda,
@@ -107,96 +116,99 @@ export function PanelComandaMesa({ mesaId }: Props) {
   const pendientes = activas.filter((p) => p.estado === "pendiente");
 
   return (
-    <div className="panel-comanda-mesa">
-      <h4 className="titulo-comensales">Comanda</h4>
+    <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: "divider" }}>
+      <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1 }}>Comanda</Typography>
 
-      {activas.length === 0 && <p className="explicacion">Nada pedido todavía.</p>}
+      {activas.length === 0 && (
+        <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
+          Nada pedido todavía.
+        </Typography>
+      )}
 
       {activas.length > 0 && (
-        <ul className="lineas-comanda-mesa">
+        <Stack spacing={1} sx={{ mb: 1.5 }}>
           {activas.map((p) => (
-            <li key={p.id}>
-              <div className="fila-linea-comanda">
-                <span>
+            <Box key={p.id} sx={{ pb: 1, borderBottom: 1, borderColor: "divider" }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography sx={{ fontSize: 14 }}>
                   {p.cantidad}× {lineaTexto(p)}
-                  {p.estado === "confirmada" && <span className="chip-confirmada"> · pedido</span>}
-                </span>
+                  {p.estado === "confirmada" && (
+                    <Chip label="pedido" size="small" color="primary" variant="outlined" sx={{ ml: 0.5 }} />
+                  )}
+                </Typography>
                 {editando === p.id ? (
-                  <span className="editor-precio-linea">
-                    <input
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    <TextField
                       type="number"
-                      step="0.01"
-                      min={0}
+                      size="small"
+                      autoFocus
+                      slotProps={{ htmlInput: { step: 0.01, min: 0 } }}
                       value={precioEditado}
                       onChange={(e) => setPrecioEditado(e.target.value)}
-                      autoFocus
+                      sx={{ width: 90 }}
                     />
-                    <button type="button" onClick={() => void guardarPrecio(p.id)}>
-                      OK
-                    </button>
-                  </span>
+                    <IconButton size="small" onClick={() => void guardarPrecio(p.id)}>
+                      <IconCheck size={18} />
+                    </IconButton>
+                  </Stack>
                 ) : (
-                  <button
-                    type="button"
-                    className="precio-linea-editable"
+                  <Button
+                    size="small"
                     onClick={() => {
                       setEditando(p.id);
                       setPrecioEditado(String(p.precio_unitario));
                     }}
                   >
                     {importe(p.total)}
-                  </button>
+                  </Button>
                 )}
-              </div>
-              <div className="fila-linea-comanda-quien">
-                <span>{p.comensal_nombre}</span>
+              </Stack>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography sx={{ fontSize: 12.5, color: "text.secondary" }}>
+                  {p.comensal_nombre}
+                </Typography>
                 {p.estado === "pendiente" && (
-                  <button type="button" disabled={ocupado} onClick={() => void quitar(p.id)}>
+                  <Button size="small" color="error" disabled={ocupado} onClick={() => void quitar(p.id)}>
                     Quitar
-                  </button>
+                  </Button>
                 )}
-              </div>
-            </li>
+              </Stack>
+            </Box>
           ))}
-        </ul>
+        </Stack>
       )}
 
       {comanda.por_persona.length > 1 && (
-        <ul className="por-persona-comanda">
+        <Stack spacing={0.25} sx={{ mb: 1.5 }}>
           {comanda.por_persona.map((r) => (
-            <li key={r.nombre}>
-              <span>{r.nombre}</span>
-              <span>{importe(r.total)}</span>
-            </li>
+            <Stack key={r.nombre} direction="row" justifyContent="space-between">
+              <Typography sx={{ fontSize: 13, color: "text.secondary" }}>{r.nombre}</Typography>
+              <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
+                {importe(r.total)}
+              </Typography>
+            </Stack>
           ))}
-        </ul>
+        </Stack>
       )}
 
-      <div className="total-comanda-mesa">
-        <span>Total</span>
-        <strong>{importe(comanda.total)}</strong>
-      </div>
+      <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 1.5 }}>
+        <Typography sx={{ fontSize: 15 }}>Total</Typography>
+        <Typography sx={{ fontSize: 16, fontWeight: 700 }}>{importe(comanda.total)}</Typography>
+      </Stack>
 
-      <button
-        type="button"
-        className="secundario boton-servicio"
-        onClick={() => setAnadiendo(true)}
-      >
-        Añadir a la mesa
-      </button>
+      <Stack spacing={1}>
+        <Button variant="outlined" onClick={() => setAnadiendo(true)}>
+          Añadir a la mesa
+        </Button>
 
-      {pendientes.length > 0 && (
-        <button
-          type="button"
-          className="primario boton-servicio"
-          disabled={ocupado}
-          onClick={() => void confirmar()}
-        >
-          Confirmar comanda ({pendientes.length})
-        </button>
-      )}
+        {pendientes.length > 0 && (
+          <Button variant="contained" disabled={ocupado} onClick={() => void confirmar()}>
+            Confirmar comanda ({pendientes.length})
+          </Button>
+        )}
+      </Stack>
 
       {anadiendo && <SelectorTPV onElegir={anadir} onCerrar={() => setAnadiendo(false)} />}
-    </div>
+    </Box>
   );
 }

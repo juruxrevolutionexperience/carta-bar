@@ -1,5 +1,17 @@
 import { useEffect, useState, type FormEvent } from "react";
 
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+
 import { cargarQr, guardarTextoQr } from "./api";
 import { HojaQR, type DatosQr } from "../shared/HojaQR";
 
@@ -49,64 +61,75 @@ export function SeccionQr() {
 
   return (
     <section className="seccion">
-      <div className="tarjeta">
-        <h2>Código QR de tu carta</h2>
-        <p>
-          Escanéalo con tu móvil para probar la carta, o imprime la hoja y ponla en las mesas.
-        </p>
-        <div className="rejilla-opciones" style={{ marginBottom: 14 }}>
-          <label className="opcion">
-            <input
-              type="radio"
-              name="tamano-qr"
-              checked={!compacta}
-              onChange={() => setCompacta(false)}
-            />
-            Hoja completa (nombre + QR + enlace)
-          </label>
-          <label className="opcion">
-            <input
-              type="radio"
-              name="tamano-qr"
-              checked={compacta}
-              onChange={() => setCompacta(true)}
-            />
-            Tarjeta pequeña (para soporte de mesa)
-          </label>
-        </div>
-        <HojaQR
-          url={datos.url}
-          nombre={datos.nombre}
-          texto={texto.trim() || datos.texto}
-          compacta={compacta}
-        />
-      </div>
-
-      <div className="tarjeta">
-        <h2>Texto de la hoja</h2>
-        <form onSubmit={enviar}>
-          <label htmlFor="texto-qr">Lo que se lee bajo el QR</label>
-          <input
-            type="text"
-            id="texto-qr"
-            maxLength={120}
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-          />
-          <button type="submit" className="primario" disabled={guardando}>
-            Guardar
-          </button>
-          <button
-            type="button"
-            className="secundario"
-            disabled={guardando}
-            onClick={() => void guardar("")}
+      <Card sx={{ mb: 2 }}>
+        <CardContent>
+          <Typography variant="h3" sx={{ mb: 1 }}>
+            Código QR de tu carta
+          </Typography>
+          <Typography sx={{ fontSize: 14, color: "text.secondary", mb: 2 }}>
+            Escanéalo con tu móvil para probar la carta, o imprime la hoja y ponla en las mesas.
+          </Typography>
+          <RadioGroup
+            value={compacta ? "compacta" : "completa"}
+            onChange={(e) => setCompacta(e.target.value === "compacta")}
+            sx={{ mb: 2 }}
           >
-            Volver al texto original
-          </button>
-          {aviso && <div className={`aviso visible ${aviso.tipo}`}>{aviso.texto}</div>}
-        </form>
-      </div>
+            <FormControlLabel
+              value="completa"
+              control={<Radio size="small" />}
+              label="Hoja completa (nombre + QR + enlace)"
+            />
+            <FormControlLabel
+              value="compacta"
+              control={<Radio size="small" />}
+              label="Tarjeta pequeña (para soporte de mesa)"
+            />
+          </RadioGroup>
+          <HojaQR
+            url={datos.url}
+            nombre={datos.nombre}
+            texto={texto.trim() || datos.texto}
+            compacta={compacta}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent>
+          <Typography variant="h3" sx={{ mb: 1.5 }}>
+            Texto de la hoja
+          </Typography>
+          <Box component="form" onSubmit={enviar}>
+            <Stack spacing={2} alignItems="flex-start">
+              <TextField
+                label="Lo que se lee bajo el QR"
+                size="small"
+                fullWidth
+                slotProps={{ htmlInput: { maxLength: 120 } }}
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+              />
+              <Stack direction="row" spacing={1}>
+                <Button type="submit" variant="contained" disabled={guardando}>
+                  Guardar
+                </Button>
+                <Button
+                  variant="outlined"
+                  disabled={guardando}
+                  onClick={() => void guardar("")}
+                >
+                  Volver al texto original
+                </Button>
+              </Stack>
+              {aviso && (
+                <Alert severity={aviso.tipo === "exito" ? "success" : "error"} sx={{ width: "100%" }}>
+                  {aviso.texto}
+                </Alert>
+              )}
+            </Stack>
+          </Box>
+        </CardContent>
+      </Card>
     </section>
   );
 }

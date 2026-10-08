@@ -1,5 +1,17 @@
 import { useEffect, useState } from "react";
 
+import { IconPlus } from "@tabler/icons-react";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+
 import {
   actualizarGrupo,
   asignarGrupoAPlatos,
@@ -49,27 +61,37 @@ export function SeccionExtras() {
 
   if (config === null) {
     return (
-      <div className="tarjeta">
-        <p>{error ? "No se pudieron cargar los extras." : "Cargando…"}</p>
-      </div>
+      <Card>
+        <CardContent>
+          <p>{error ? "No se pudieron cargar los extras." : "Cargando…"}</p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <section className="seccion">
-      <div className="tarjeta">
-        <h2>Extras y opciones</h2>
-        <p>
-          Crea aquí cada grupo una sola vez y márcalo luego en los platos que lo lleven (al
-          editar el plato, en «Para pedir»). Obligatorio es lo que el camarero preguntaría
-          siempre, como el punto de la carne; opcional, los extras.
-        </p>
-        {editando !== "nuevo" && (
-          <button type="button" className="primario" onClick={() => setEditando("nuevo")}>
-            + Nuevo grupo
-          </button>
-        )}
-      </div>
+      <Card sx={{ mb: 2 }}>
+        <CardContent>
+          <Typography variant="h3" sx={{ mb: 1 }}>
+            Extras y opciones
+          </Typography>
+          <Typography sx={{ fontSize: 14, color: "text.secondary", mb: 2 }}>
+            Crea aquí cada grupo una sola vez y márcalo luego en los platos que lo lleven (al
+            editar el plato, en «Para pedir»). Obligatorio es lo que el camarero preguntaría
+            siempre, como el punto de la carne; opcional, los extras.
+          </Typography>
+          {editando !== "nuevo" && (
+            <Button
+              variant="contained"
+              startIcon={<IconPlus size={18} />}
+              onClick={() => setEditando("nuevo")}
+            >
+              Nuevo grupo
+            </Button>
+          )}
+        </CardContent>
+      </Card>
 
       {editando === "nuevo" && (
         <EditorGrupo
@@ -97,55 +119,65 @@ export function SeccionExtras() {
             onCancelar={() => setEditando(null)}
           />
         ) : (
-          <div className="tarjeta tarjeta-grupo" key={g.id}>
-            <div className="cabecera-grupo">
-              <h2>{g.nombre}</h2>
-              <span className="resumen-grupo">{resumenGrupo(g)}</span>
-            </div>
-            <ul className="opciones-grupo">
-              {g.opciones.map((o) => (
-                <li key={o.nombre}>
-                  <span>{o.nombre}</span>
-                  <span className="precio-opcion">{textoPrecio(o.precio)}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="uso-grupo">
-              {platosCon(g.id) === 0
-                ? "No está en ningún plato todavía."
-                : `En ${platosCon(g.id)} ${platosCon(g.id) === 1 ? "plato" : "platos"}.`}
-            </p>
-            <div className="acciones-grupo">
-              <button type="button" className="secundario" onClick={() => setEditando(g.id)}>
-                Editar
-              </button>
-              <button
-                type="button"
-                className="secundario"
-                onClick={() => setAsignando(asignando === g.id ? null : g.id)}
-              >
-                {asignando === g.id ? "Cerrar" : "Asignar a platos"}
-              </button>
-            </div>
-            {asignando === g.id && (
-              <AsignarPlatos
-                grupo={g}
-                carta={carta}
-                categorias={categorias}
-                asignados={
-                  new Set(
-                    Object.entries(config.platos)
-                      .filter(([, p]) => p.grupos.includes(g.id))
-                      .map(([id]) => id)
-                  )
-                }
-                onGuardado={(nuevaConfig) => {
-                  setConfig(nuevaConfig);
-                  setAsignando(null);
-                }}
-              />
-            )}
-          </div>
+          <Card sx={{ mb: 2 }} key={g.id}>
+            <CardContent>
+              <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
+                <Typography variant="h4">{g.nombre}</Typography>
+                <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
+                  {resumenGrupo(g)}
+                </Typography>
+              </Stack>
+              <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0, mb: 1 }}>
+                {g.opciones.map((o) => (
+                  <Stack
+                    component="li"
+                    direction="row"
+                    justifyContent="space-between"
+                    key={o.nombre}
+                    sx={{ py: 0.5, fontSize: 14 }}
+                  >
+                    <span>{o.nombre}</span>
+                    <span>{textoPrecio(o.precio)}</span>
+                  </Stack>
+                ))}
+              </Box>
+              <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 1.5 }}>
+                {platosCon(g.id) === 0
+                  ? "No está en ningún plato todavía."
+                  : `En ${platosCon(g.id)} ${platosCon(g.id) === 1 ? "plato" : "platos"}.`}
+              </Typography>
+              <Stack direction="row" spacing={1}>
+                <Button variant="outlined" size="small" onClick={() => setEditando(g.id)}>
+                  Editar
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setAsignando(asignando === g.id ? null : g.id)}
+                >
+                  {asignando === g.id ? "Cerrar" : "Asignar a platos"}
+                </Button>
+              </Stack>
+              {asignando === g.id && (
+                <AsignarPlatos
+                  grupo={g}
+                  carta={carta}
+                  categorias={categorias}
+                  asignados={
+                    new Set(
+                      Object.entries(config.platos)
+                        .filter(([, p]) => p.grupos.includes(g.id))
+                        .map(([id]) => id)
+                    )
+                  }
+                  onGuardado={(nuevaConfig) => {
+                    setConfig(nuevaConfig);
+                    setAsignando(null);
+                  }}
+                />
+              )}
+            </CardContent>
+          </Card>
         )
       )}
     </section>
@@ -198,31 +230,43 @@ function AsignarPlatos({ grupo, carta, categorias, asignados, onGuardado }: Prop
   }
 
   return (
-    <div className="asignar-platos">
+    <Box sx={{ mt: 2 }}>
       {carta.length === 0 ? (
         <p className="ayuda-campo">Cargando la carta…</p>
       ) : (
         [...porCategoria.entries()].map(([catId, platos]) => (
-          <div key={catId} className="asignar-categoria">
-            <h3>{nombreCategoria.get(catId) ?? catId}</h3>
-            {platos.map((p) => (
-              <label className="opcion" key={p.id}>
-                <input
-                  type="checkbox"
-                  checked={p.id !== null && elegidos.has(p.id)}
-                  onChange={() => p.id && alternar(p.id)}
+          <Box key={catId} sx={{ mb: 1.5 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.5 }}>
+              {nombreCategoria.get(catId) ?? catId}
+            </Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+              {platos.map((p) => (
+                <FormControlLabel
+                  key={p.id}
+                  sx={{ width: { xs: "100%", sm: "48%" }, mr: 0 }}
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={p.id !== null && elegidos.has(p.id)}
+                      onChange={() => p.id && alternar(p.id)}
+                    />
+                  }
+                  label={<Typography sx={{ fontSize: 14 }}>{p.nombre}</Typography>}
                 />
-                {p.nombre}
-              </label>
-            ))}
-          </div>
+              ))}
+            </Box>
+          </Box>
         ))
       )}
-      <button type="button" className="primario" disabled={ocupado} onClick={guardar}>
+      <Button variant="contained" disabled={ocupado} onClick={guardar}>
         Guardar ({elegidos.size} {elegidos.size === 1 ? "plato" : "platos"})
-      </button>
-      {aviso && <div className="aviso visible error">{aviso}</div>}
-    </div>
+      </Button>
+      {aviso && (
+        <Alert severity="error" sx={{ mt: 1 }}>
+          {aviso}
+        </Alert>
+      )}
+    </Box>
   );
 }
 
@@ -305,57 +349,73 @@ function EditorGrupo({ grupo, onGuardado, onCancelar }: PropsEditor) {
   }
 
   return (
-    <div className="tarjeta editor-grupo">
-      <label htmlFor="grupo-nombre">Nombre del grupo</label>
-      <input
-        id="grupo-nombre"
-        value={nombre}
-        maxLength={60}
-        placeholder="Extras de hamburguesa"
-        onChange={(e) => setNombre(e.target.value)}
-      />
+    <Card sx={{ mb: 2 }}>
+      <CardContent>
+        <Stack spacing={2}>
+          <TextField
+            label="Nombre del grupo"
+            size="small"
+            fullWidth
+            value={nombre}
+            slotProps={{ htmlInput: { maxLength: 60 } }}
+            placeholder="Extras de hamburguesa"
+            onChange={(e) => setNombre(e.target.value)}
+          />
 
-      <label className="opcion">
-        <input
-          type="checkbox"
-          checked={obligatorio}
-          onChange={(e) => setObligatorio(e.target.checked)}
-        />
-        Obligatorio (el cliente tiene que elegir)
-      </label>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={obligatorio}
+                onChange={(e) => setObligatorio(e.target.checked)}
+              />
+            }
+            label={
+              <Typography sx={{ fontSize: 14 }}>
+                Obligatorio (el cliente tiene que elegir)
+              </Typography>
+            }
+          />
 
-      <label htmlFor="grupo-maximo">Cuántas se pueden elegir como mucho</label>
-      <input
-        id="grupo-maximo"
-        type="number"
-        min={1}
-        max={30}
-        value={maximo}
-        onChange={(e) => setMaximo(Math.max(1, Number(e.target.value) || 1))}
-      />
+          <TextField
+            label="Cuántas se pueden elegir como mucho"
+            size="small"
+            type="number"
+            slotProps={{ htmlInput: { min: 1, max: 30 } }}
+            value={maximo}
+            onChange={(e) => setMaximo(Math.max(1, Number(e.target.value) || 1))}
+          />
 
-      <label>Opciones (precio vacío = gratis)</label>
-      <FilasPrecio
-        filas={filas}
-        onCambio={setFilas}
-        ejemploNombre="Queso"
-        precioOpcional={true}
-        maximo={30}
-        textoAnadir="Añadir opción"
-      />
+          <Box>
+            <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 0.5 }}>
+              Opciones (precio vacío = gratis)
+            </Typography>
+            <FilasPrecio
+              filas={filas}
+              onCambio={setFilas}
+              ejemploNombre="Queso"
+              precioOpcional={true}
+              maximo={30}
+              textoAnadir="Añadir opción"
+            />
+          </Box>
 
-      <button type="button" className="primario" disabled={ocupado} onClick={guardar}>
-        Guardar
-      </button>
-      <button type="button" className="secundario" onClick={onCancelar}>
-        Cancelar
-      </button>
-      {grupo && (
-        <button type="button" className="secundario peligro" disabled={ocupado} onClick={borrar}>
-          Eliminar grupo
-        </button>
-      )}
-      {aviso && <div className="aviso visible error">{aviso}</div>}
-    </div>
+          {aviso && <Alert severity="error">{aviso}</Alert>}
+
+          <Stack direction="row" spacing={1}>
+            <Button variant="contained" disabled={ocupado} onClick={guardar}>
+              Guardar
+            </Button>
+            <Button variant="outlined" onClick={onCancelar}>
+              Cancelar
+            </Button>
+            {grupo && (
+              <Button variant="outlined" color="error" disabled={ocupado} onClick={borrar}>
+                Eliminar grupo
+              </Button>
+            )}
+          </Stack>
+        </Stack>
+      </CardContent>
+    </Card>
   );
 }
