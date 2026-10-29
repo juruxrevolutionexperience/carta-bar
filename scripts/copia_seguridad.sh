@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Copia de seguridad diaria: base de datos (Supabase) y fotos subidas desde el panel.
+# Copia de seguridad diaria: base de datos y fotos subidas desde el panel.
 #
 # Se ejecuta EN EL SERVIDOR, con cron (ver docs/COPIAS-DE-SEGURIDAD.md):
-#   bash /home/xele/cartaBar/scripts/copia_seguridad.sh
+#   DIR_PROYECTO=/ruta/al/proyecto DESTINO=/ruta/de/copias bash scripts/copia_seguridad.sh
 #
 # Deja en $DESTINO, un par de ficheros por dia:
 #   bd-AAAA-MM-DD.sql.gz       el esquema "public" entero (carta, claves, gasto, metricas)
@@ -14,8 +14,8 @@
 
 set -euo pipefail
 
-DIR_PROYECTO="${DIR_PROYECTO:-/home/xele/cartaBar}"
-DESTINO="${DESTINO:-/home/xele/copias-carta}"
+DIR_PROYECTO="${DIR_PROYECTO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+DESTINO="${DESTINO:-$DIR_PROYECTO/copias}"
 CONSERVAR_DIAS="${CONSERVAR_DIAS:-14}"
 # pg_dump 17 sabe volcar servidores mas antiguos; al reves no.
 IMAGEN_POSTGRES="${IMAGEN_POSTGRES:-postgres:17-alpine}"
@@ -25,8 +25,8 @@ PING_URL="${PING_URL:-}"
 
 FECHA="$(date +%F)"
 
-# Sin "source": el .env lleva simbolos '$' (el hash del superadmin) que el
-# shell intentaria expandir. Solo se leen las variables que hacen falta.
+# Sin "source": el .env puede llevar simbolos '$' que el shell intentaria
+# expandir. Solo se leen las variables que hacen falta.
 valor() {
     # "|| true": si la variable no esta, que devuelva vacio y salte el mensaje
     # de mas abajo; con "set -e" el grep fallido pararia el script sin decir nada.
@@ -56,9 +56,9 @@ trap 'rm -f "$BD_TMP" "${FOTOS_TMP:-}"' EXIT
 
 # PGPASSWORD se pasa sin valor (-e VARIABLE): asi no aparece en la lista de procesos.
 #
-# El sed quita "CREATE SCHEMA public;": toda base de Postgres nueva (y todo
-# proyecto nuevo de Supabase) ya trae ese esquema, y al restaurar con
-# ON_ERROR_STOP esa linea paraba la restauracion antes de crear ninguna tabla.
+# El sed quita "CREATE SCHEMA public;": toda base de Postgres nueva ya trae ese
+# esquema, y al restaurar con ON_ERROR_STOP esa linea paraba la restauracion
+# antes de crear ninguna tabla.
 export PGPASSWORD="$PG_PASS"
 docker run --rm -e PGPASSWORD "$IMAGEN_POSTGRES" \
     pg_dump -h "$PG_HOST" -p "${PG_PORT:-5432}" -U "$PG_USER" -d "$PG_DB" \
