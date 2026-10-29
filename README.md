@@ -20,8 +20,8 @@ las restricciones en Python **antes** de que el modelo redacte nada.
 | Docker | opcional (Postgres local) | opcional |
 
 Docker es opcional: sin base de datos la app arranca igual y contabiliza el
-gasto en memoria. Para persistirlo, lo más cómodo es Supabase, que no necesita
-Docker — ver [docs/BASE-DE-DATOS.md](docs/BASE-DE-DATOS.md).
+gasto en memoria. Para persistirlo sirve cualquier Postgres gestionado — ver
+[docs/BASE-DE-DATOS.md](docs/BASE-DE-DATOS.md).
 
 ## Puesta en marcha
 
@@ -110,7 +110,7 @@ puede depender de que el LLM interprete bien una frase.
 | `ANTHROPIC_API_KEY` | — | **Obligatoria.** Clave del modelo |
 | `POSTGRES_*` | vacías | Sin ellas, el gasto se contabiliza en memoria |
 | `TOPE_DIARIO_USD` | `5.0` | Corte de gasto diario por restaurante |
-| `CONFIAR_PROXY` | `false` | A `true` **solo** detrás de nginx o Cloudflare |
+| `CONFIAR_PROXY` | `false` | A `true` **solo** detrás de un proxy inverso |
 | `LOGS_JSON` | `false` | A `true` en producción |
 
 > `CONFIAR_PROXY` a `true` sin un proxy delante permite falsificar
@@ -139,8 +139,13 @@ lee de `response.usage` y queda en el log y en la tabla `uso_llm`.
 
 ## Documentación
 
-- [docs/PENDIENTE.md](docs/PENDIENTE.md) — qué falta, por orden de urgencia
-- [docs/BASE-DE-DATOS.md](docs/BASE-DE-DATOS.md) — conectar Supabase paso a paso
+- [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) — cómo está montado el sistema,
+  cómo se despliega y qué está cogido con pinzas
+- [docs/PEDIDO-EN-MESA.md](docs/PEDIDO-EN-MESA.md) — especificación del pedido
+  desde la mesa: modelo de datos, máquinas de estado, API y reglas de negocio
+- [docs/BASE-DE-DATOS.md](docs/BASE-DE-DATOS.md) — conectar un Postgres paso a paso
+- [docs/COPIAS-DE-SEGURIDAD.md](docs/COPIAS-DE-SEGURIDAD.md) — qué se guarda,
+  cómo se comprueba y cómo se restaura
 
 ## Decisiones
 
