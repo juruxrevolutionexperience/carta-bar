@@ -1,7 +1,6 @@
 # Aparcado · Reducir coste del chat por niveles
 
-**No construir aún.** Decidir con el coste real medido en Fase 2 (prueba
-con La CatedRal).
+**No construir aún.** Decidir con el coste real medido en Fase 2 
 
 ## Idea central
 
