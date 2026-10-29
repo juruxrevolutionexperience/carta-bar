@@ -81,7 +81,7 @@ class Combo(BaseModel):          # menú del día
     pasos: list[PasoCombo]
 ```
 
-La CatedRal seguiría funcionando igual: sus platos serían platos con una
+El Restaurante X seguiría funcionando igual: sus platos serían platos con una
 sola variante y sin modificadores.
 
 Los atributos (picante, crudo, alcohol...) no se programan: cada negocio
@@ -136,10 +136,10 @@ Reglas importantes:
 
 ## Cómo comprobar que de verdad es genérico
 
-Crear 3-4 cartas de prueba inventadas (pizzería, japonés, cafetería) dentro
-de `datos/`, y pasar los mismos tests y el mismo conjunto de preguntas de
+Se creo 3-4 cartas de prueba inventadas (pizzería, japonés, cafetería) dentro
+de `datos/`, se realizo  los mismos tests y el mismo conjunto de preguntas de
 evaluación por todas. Lo que falle con la pizzería es la parte del código
-que tiene La CatedRal metida dentro sin darse cuenta. Aprovechar para
+que tiene el Bar X metida dentro sin darse cuenta. Aproveche para
 añadir tests de aislamiento: una petición de un restaurante nunca debe
 devolver platos de otro.
 
