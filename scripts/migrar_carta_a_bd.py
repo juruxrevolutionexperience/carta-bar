@@ -7,7 +7,7 @@ por si las tablas nuevas todavia no existen.
 Uso:
     python scripts/migrar_carta_a_bd.py [restaurante_id]
 
-Si no se pasa restaurante_id, usa RESTAURANTE_ID del entorno o "la-catedral".
+Si no se pasa restaurante_id, usa RESTAURANTE_ID del entorno.
 """
 
 import json
@@ -160,6 +160,8 @@ def migrar(restaurante_id: str) -> None:
 
 
 if __name__ == "__main__":
-    _por_defecto = os.getenv("RESTAURANTE_ID", "la-catedral")
-    _restaurante_id = sys.argv[1] if len(sys.argv) > 1 else _por_defecto
+    _restaurante_id = sys.argv[1] if len(sys.argv) > 1 else os.getenv("RESTAURANTE_ID")
+    if not _restaurante_id:
+        print("Indica el restaurante: python scripts/migrar_carta_a_bd.py <restaurante_id>")
+        sys.exit(1)
     migrar(_restaurante_id)
