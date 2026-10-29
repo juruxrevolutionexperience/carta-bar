@@ -74,17 +74,7 @@ bares, no con uno. Tu tiempo de alta es el coste que más pesa al principio.
   gestoría.
 - Seguro de responsabilidad civil profesional: **(a valorar)**.
 
-## 7. Decisiones que te tocan a ti
-
-1. ¿Autónomo o sociedad? Afecta al IVA, a VeriFactu y a la cuota fija.
-2. ¿Base de datos en Supabase o en el servidor propio? Implica copias y
-   seguridad vuestras si cambiáis.
-3. ¿Cuota de alta y mensualidad? Y ¿incluye la IA o se cobra aparte por encima
-   de un límite?
-4. ¿Un servidor para todos los bares o uno por bar grande?
-5. ¿Cómo cobrar: transferencia, domiciliación, tarjeta?
-
-## 8. Lo que falta medir
+##  7. Lo que falta medir
 
 - Consumo real de IA por bar (los primeros 2-3 bares).
 - Tiempo real de alta por bar (anotarlo en el primero).
