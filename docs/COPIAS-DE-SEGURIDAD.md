@@ -7,11 +7,11 @@ documento dice qué se guarda, cómo se instala y **cómo se comprueba que sirve
 
 | Qué | Dónde vive | ¿Lo cubre el script? |
 |---|---|---|
-| Base de datos: cartas, platos, traducciones, claves de gerentes (hash), gasto, métricas | Supabase (plan gratuito: **sin copias propias**) | Sí, `bd-AAAA-MM-DD.sql.gz` |
-| Fotos, logos y portadas subidos desde el panel | `datos/fotos/` en el servidor, fuera de git | Sí, `fotos-AAAA-MM-DD.tar.gz` |
-| Código | GitHub | No hace falta |
-| `.env` (claves de Anthropic y Supabase, `SESION_SECRETO`, hash del superadmin) | Solo en el servidor | **No, a propósito**: contiene secretos y no debe viajar sin cifrar. Guárdalo aparte, en tu gestor de contraseñas |
-| Token de Cloudflare del certificado comodín | `/etc/letsencrypt/cloudflare.ini` | No. Se puede volver a crear en Cloudflare |
+| Base de datos: cartas, platos, traducciones, credenciales de gerentes (solo hashes), gasto, métricas | Postgres gestionado (en plan gratuito, **sin copias del proveedor**) | Sí, `bd-AAAA-MM-DD.sql.gz` |
+| Fotos, logos y portadas subidos desde el panel | Directorio de datos del servidor, fuera de git | Sí, `fotos-AAAA-MM-DD.tar.gz` |
+| Código | Repositorio git | No hace falta |
+| `.env` | Solo en el servidor | **No, a propósito**: contiene secretos y no debe viajar sin cifrar. Se guarda aparte, en un gestor de contraseñas |
+| Credenciales del certificado comodín | Fuera del directorio de la app | No. Se pueden volver a emitir desde el proveedor de DNS |
 
 ## El límite de esta solución
 
@@ -22,28 +22,29 @@ Para eso hay que sacarlas de ahí; ver "Sacar las copias del servidor".
 
 ## Instalarlo (una vez, en el servidor)
 
+Desde el directorio de la aplicación:
+
 ```bash
-cd /home/xele/cartaBar
 git pull
 
 # Prueba a mano, antes de programar nada:
 bash scripts/copia_seguridad.sh
-ls -lh /home/xele/copias-carta
+ls -lh "$DIR_COPIAS"
 ```
 
 Debe imprimir `copia hecha: … de BD, … de fotos` y dejar dos ficheros. La
 primera vez tarda un poco más: Docker descarga la imagen de Postgres (~100 MB).
 
-Después, que se ejecute solo cada día a las 04:30 (el bar está cerrado):
+Después, que se ejecute solo cada día de madrugada, con el negocio cerrado:
 
 ```bash
 crontab -e
 ```
 
-y añade esta línea:
+y añadir una línea con esta forma:
 
 ```
-30 4 * * * bash /home/xele/cartaBar/scripts/copia_seguridad.sh >> /home/xele/copias-carta/copia.log 2>&1
+30 4 * * * bash <DIR_APP>/scripts/copia_seguridad.sh >> <DIR_COPIAS>/copia.log 2>&1
 ```
 
 Cada día se guardan 14 copias y se borran las anteriores.
@@ -53,77 +54,76 @@ Cada día se guardan 14 copias y se borran las anteriores.
 Al día siguiente:
 
 ```bash
-tail -3 /home/xele/copias-carta/copia.log
-ls -lh /home/xele/copias-carta
+tail -3 "$DIR_COPIAS/copia.log"
+ls -lh "$DIR_COPIAS"
 ```
 
 Si el script falla, **no lo hace en silencio**: escribe `ERROR: …` en el log y no
 deja una copia a medias. Pero el cron no avisa por sí solo de que ha fallado:
-alguien tiene que mirar. Para que te llegue un correo cuando un día no se
-ejecute, crea un monitor gratuito en <https://healthchecks.io> y pasa su
-dirección al script con `PING_URL` en la línea del cron:
+alguien tiene que mirar. Para recibir un aviso cuando un día no se ejecute,
+sirve un monitor gratuito tipo *dead man's switch* (por ejemplo
+<https://healthchecks.io>), pasándole su dirección al script con `PING_URL` en
+la línea del cron:
 
 ```
-30 4 * * * PING_URL=https://hc-ping.com/tu-codigo bash /home/xele/cartaBar/scripts/copia_seguridad.sh >> /home/xele/copias-carta/copia.log 2>&1
+30 4 * * * PING_URL=<url-del-monitor> bash <DIR_APP>/scripts/copia_seguridad.sh >> <DIR_COPIAS>/copia.log 2>&1
 ```
 
 ## Comprobar que se puede restaurar
 
-Hazlo una vez ahora y cada pocos meses. Se restaura en una base de datos
-desechable, sin tocar Supabase:
+Hazlo una vez al montarlo y cada pocos meses. Se restaura en una base de datos
+desechable, sin tocar la de producción:
 
 ```bash
 docker run -d --name prueba-restauracion -e POSTGRES_PASSWORD=prueba postgres:17-alpine
 sleep 5
-gunzip -c /home/xele/copias-carta/bd-AAAA-MM-DD.sql.gz \
+gunzip -c "$DIR_COPIAS/bd-AAAA-MM-DD.sql.gz" \
   | docker exec -i prueba-restauracion psql -U postgres -v ON_ERROR_STOP=1
 docker exec prueba-restauracion psql -U postgres \
   -c "SELECT (SELECT count(*) FROM public.restaurantes) AS restaurantes, (SELECT count(*) FROM public.platos) AS platos;"
 docker rm -f prueba-restauracion
 ```
 
-Deben salir tus restaurantes y tus 28 platos (y los que hayas añadido). Si
-`psql` da un error, la copia no sirve y hay que arreglarlo antes de fiarse de ella.
+Deben salir los restaurantes y los platos esperados. Si `psql` da un error, la
+copia no sirve y hay que arreglarlo antes de fiarse de ella.
 
 ## Restaurar de verdad
 
 **Fotos** (por ejemplo, tras perder el servidor y volver a montarlo):
 
 ```bash
-tar -xzf /home/xele/copias-carta/fotos-AAAA-MM-DD.tar.gz -C /home/xele/cartaBar/datos
+tar -xzf "$DIR_COPIAS/fotos-AAAA-MM-DD.tar.gz" -C <DIR_APP>/datos
 ```
 
 **Base de datos:** el volcado crea las tablas desde cero, así que se restaura
-en una base **vacía** (un proyecto nuevo de Supabase, por ejemplo). Restaurarlo
-encima de tablas que ya existen da errores de "ya existe". Con las credenciales
-de la base nueva:
+en una base **vacía** (un proyecto nuevo del proveedor, por ejemplo).
+Restaurarlo encima de tablas que ya existen da errores de "ya existe". Con las
+credenciales de la base nueva:
 
 ```bash
-export PGPASSWORD='la-contraseña'
+export PGPASSWORD='...'
 gunzip -c bd-AAAA-MM-DD.sql.gz | docker run --rm -i -e PGPASSWORD postgres:17-alpine \
-  psql -h HOST -p 5432 -U USUARIO -d postgres -v ON_ERROR_STOP=1
+  psql -h <HOST> -p 5432 -U <USUARIO> -d <BASE> -v ON_ERROR_STOP=1
 ```
 
-Luego se actualizan las variables `POSTGRES_*` del `.env` y se reinicia el contenedor.
+Luego se actualizan las variables `POSTGRES_*` del `.env` y se reinicia el
+contenedor.
 
 ## Sacar las copias del servidor
 
-Sin esto, perder el servidor es perder también las copias. Esto vale para todo
-el servidor, no solo para carta-bar: la app `cuentas` ya tiene su propia copia
-diaria (`/opt/backups/backup.sh`, 7 días), pero también en el mismo disco.
-Opciones, de más simple a menos:
+Sin esto, perder el servidor es perder también las copias. Opciones, de más
+simple a menos:
 
-1. **Copias del propio Hetzner** (Cloud Console → el servidor → *Backups*):
-   una imagen diaria del disco entero, que incluye fotos, `.env`, las copias de
-   `/opt/backups` y `/home/xele/copias-carta`, y el resto de apps. Se activa con
-   un clic y cuesta el 20 % de lo que cuesta el servidor. Encaja con lo que ya
-   hay: los scripts dejan ficheros consistentes en disco y Hetzner los saca de
-   ahí (una imagen de un disco con una base de datos en marcha, por sí sola, no
-   garantiza una copia limpia).
-2. **Bajarlas a tu PC** de vez en cuando, con `scp` (gratis, pero manual):
-   `scp -r xele@178.104.233.131:/home/xele/copias-carta .`
-3. **Subirlas cada noche a un almacenamiento externo** (Backblaze B2,
-   Cloudflare R2, un Storage Box de Hetzner) con `rclone`. Es lo más sólido, pero
-   pide crear una cuenta y configurarla.
+1. **Copias del propio proveedor del VPS**: una imagen diaria del disco
+   entero, que incluye las fotos, el `.env` y las copias del script. Suele
+   activarse con un clic por un porcentaje del coste del servidor. Encaja bien
+   con lo que ya hay: el script deja ficheros consistentes en disco y la imagen
+   los saca de ahí (una imagen de un disco con una base de datos en marcha, por
+   sí sola, no garantiza una copia limpia).
+2. **Descargarlas periódicamente** con `scp` o `rsync`: gratis, pero manual y
+   fácil de olvidar.
+3. **Subirlas cada noche a un almacenamiento de objetos externo** (S3, B2, R2,
+   un storage box) con `rclone`. Es lo más sólido, pero exige crear y
+   configurar una cuenta aparte.
 
-Ninguna está montada todavía: falta decidir cuál.
+La opción elegida se documenta aquí cuando se monte.
