@@ -1,18 +1,19 @@
-# Base de datos — lo que tienes que hacer tú
+# Base de datos — puesta en marcha
 
-Estado: **el código está listo y probado; falta conectarlo a un Postgres real.**
+Estado: **el código está listo y probado; solo hay que conectarlo a un Postgres real.**
 
 Lo que ya funciona sin base de datos: la app arranca, avisa por log de que no
 hay persistencia y contabiliza el gasto en memoria. Se pierde al reiniciar.
 
-Lo que falta: que ese gasto se guarde de verdad, que el corte por presupuesto
-sobreviva a un reinicio, y poder consultar cuánto gasta cada restaurante.
+Lo que aporta conectarla: que ese gasto se guarde de verdad, que el corte por
+presupuesto sobreviva a un reinicio, y poder consultar cuánto gasta cada
+restaurante.
 
 ---
 
-## Por qué Supabase y no otra cosa
+## Por qué Postgres y no MySQL
 
-| | Postgres / Supabase | MySQL + phpMyAdmin |
+| | Postgres | MySQL + phpMyAdmin |
 |---|---|---|
 | pgvector (embeddings) | Nativo | No hay equivalente maduro |
 | RLS (aislar restaurantes) | En el motor, por fila | No existe |
@@ -20,21 +21,25 @@ sobreviva a un reinicio, y poder consultar cuánto gasta cada restaurante.
 
 Las dos primeras son decisivas: el corazón de la app son embeddings, y RLS es
 lo que impide que el restaurante A vea datos del B **aunque haya un fallo en el
-código Python**. Supabase es Postgres gestionado, así que en local vale el
-contenedor de `docker-compose.yml` y en producción Supabase, con el mismo SQL.
+código Python**.
 
-phpMyAdmin no es una base de datos: es un panel de administración de MySQL. Y
-un panel así expuesto a internet es un blanco clásico de bots.
+Cualquier Postgres gestionado sirve. En local vale el contenedor de
+`docker-compose.yml` y en producción un proveedor gestionado, con el mismo SQL.
+Estas instrucciones usan Supabase como ejemplo porque tiene plan gratuito y no
+pide tarjeta.
+
+phpMyAdmin, de paso, no es una base de datos: es un panel de administración de
+MySQL. Y un panel así expuesto a internet es un blanco clásico de bots.
 
 ---
 
-## Paso 1 — Crear el proyecto (5 minutos, gratis, sin tarjeta)
+## Paso 1 — Crear el proyecto
 
 1. Entra en <https://supabase.com> y pulsa **Start your project**.
 2. Crea una organización y luego un proyecto.
-3. Elige región **europea** (Frankfurt o Londres): los datos de tus clientes
-   son europeos y la latencia desde España es mucho menor.
-4. Te pedirá una **contraseña de base de datos**. Apúntala en tu gestor de
+3. Elige una región cercana a tus usuarios. Para clientes europeos, una región
+   europea: menos latencia y los datos no salen de la UE.
+4. Te pedirá una **contraseña de base de datos**. Guárdala en un gestor de
    contraseñas: **no se puede recuperar después**, solo restablecer.
 5. Espera 1-2 minutos a que el proyecto termine de aprovisionarse.
 
@@ -42,29 +47,30 @@ un panel así expuesto a internet es un blanco clásico de bots.
 
 En el panel: **Project Settings → Database → Connection string → URI**.
 
-Verás algo así:
+Tendrá esta forma:
 
 ```
-postgresql://postgres:[TU-PASSWORD]@db.abcdefghijkl.supabase.co:5432/postgres
+postgresql://USUARIO:CONTRASEÑA@HOST:PUERTO/BASE_DE_DATOS
 ```
 
-De ahí salen los cinco valores. Ponlos en tu `.env` (el fichero que NO se sube
-a git):
+De ahí salen los cinco valores. Ponlos en tu `.env` (el fichero que **no** se
+sube a git):
 
 ```
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=la-que-elegiste-en-el-paso-1
-POSTGRES_DB=postgres
-POSTGRES_HOST=db.abcdefghijkl.supabase.co
+POSTGRES_USER=
+POSTGRES_PASSWORD=
+POSTGRES_DB=
+POSTGRES_HOST=
 POSTGRES_PORT=5432
 ```
 
-> **La contraseña no se la mandes a nadie, tampoco por chat.** Va en tu `.env`
-> y ahí se queda. Para verificar la conexión basta con el host.
+> La contraseña va en tu `.env` y ahí se queda: no se manda por chat, ni por
+> correo, ni se pega en un issue. Para que alguien te ayude a verificar la
+> conexión basta con el host y el mensaje de error.
 
 ## Paso 3 — Arrancar
 
-```
+```bash
 uv run uvicorn carta_bar.api:app --reload
 ```
 
@@ -73,15 +79,15 @@ detecta las credenciales y aplica `sql/esquema.sql` solo (es idempotente).
 
 **Cómo saber si ha funcionado.** En los logs del arranque:
 
-- `uso_persistente destino=db.xxxx.supabase.co:5432/postgres` → conectado
+- `uso_persistente destino=<host>:<puerto>/<base>` → conectado
 - `uso_sin_persistencia motivo=...` → algo falla; el motivo lo dice la línea
 
 ## Paso 4 — Comprobar que se está guardando
 
-Haz una pregunta en el chat y luego, en Supabase, **SQL Editor**:
+Haz una pregunta en el chat y luego, en el editor SQL del proveedor:
 
 ```sql
--- Las ultimas llamadas registradas
+-- Las últimas llamadas registradas
 SELECT llamada, tokens_entrada, tokens_salida, coste_usd, creado_en
 FROM uso_llm ORDER BY creado_en DESC LIMIT 10;
 
@@ -105,31 +111,31 @@ Cada pregunta del chat debe generar **dos filas**: `interprete` y `respuesta`.
 | Síntoma | Causa y arreglo |
 |---|---|
 | `uso_sin_persistencia`, faltan credenciales | Alguna variable `POSTGRES_*` vacía en `.env` |
-| `password authentication failed` | Contraseña mal copiada; restablécela en Supabase |
-| `could not translate host name` | Host mal escrito, o falta `db.` delante |
-| `connection timed out` | Cortafuegos o VPN bloqueando el puerto 5432 |
-| Arranca bien pero `uso_llm` vacía | ¿Has hecho alguna pregunta en el chat? |
+| `password authentication failed` | Contraseña mal copiada; restablécela en el panel |
+| `could not translate host name` | Host mal escrito o incompleto |
+| `connection timed out` | Cortafuegos o VPN bloqueando el puerto de Postgres |
+| Arranca bien pero `uso_llm` vacía | ¿Se ha hecho alguna pregunta en el chat? |
 
 ---
 
-## Después de esto: el paso 4 de verdad
+## Lo que viene después
 
-Conectar la base de datos es solo el principio. Lo que viene, por orden:
+Conectar la base de datos es solo el principio. Por orden:
 
-1. **Mover los JSON a tablas.** Hoy `datos/<restaurante>/` son ficheros:
-   `platos`, `categorias`, `traducciones` y `config` pasan a tablas.
-2. ✅ **RLS.** Activada el 2026-09-23 en las 10 tablas, sin políticas: la
-   clave pública de Supabase (`anon`) no puede leer ni escribir nada. La app
-   sigue funcionando porque entra como `postgres`, que se salta RLS
-   (`rolbypassrls = true`, comprobado; la web se probó tras activarla). Las
-   sentencias están al final de `sql/esquema.sql`: toda tabla nueva añade ahí
-   su `ENABLE ROW LEVEL SECURITY`.
-3. **Resolución del restaurante por subdominio** (`lacatedral.tuapp.com`).
-   Regla que no se salta nunca: **jamás fiarse de un `restaurante_id` que
-   venga en el cuerpo de la petición**.
+1. **Mover los JSON a tablas.** Los ficheros de cada restaurante (`platos`,
+   `categorias`, `traducciones`, `config`) pasan a tablas.
+2. ✅ **RLS.** Activada en las 10 tablas, sin políticas: la clave pública del
+   proveedor no puede leer ni escribir nada. La app sigue funcionando porque
+   entra con un rol que se salta RLS (`rolbypassrls = true`, comprobado; la web
+   se probó tras activarla). Las sentencias están al final de
+   `sql/esquema.sql`: toda tabla nueva añade ahí su
+   `ENABLE ROW LEVEL SECURITY`.
+3. **Resolución del restaurante por subdominio.** Regla que no se salta nunca:
+   **jamás fiarse de un `restaurante_id` que venga en el cuerpo de la
+   petición**.
 4. **Embeddings a pgvector**, calculados al guardar un plato. Hoy se calculan
-   al arrancar la app (`indexar()` en `api.py`), lo cual con 200 restaurantes
-   es inviable.
+   al arrancar la app (`indexar()` en `api.py`), lo cual con cientos de
+   restaurantes es inviable.
 5. **Sesiones de chat en el servidor.** Hoy el historial lo custodia el
    navegador: un cliente podría fabricar turnos falsos del asistente.
 
@@ -144,4 +150,5 @@ Conectar la base de datos es solo el principio. Lo que viene, por orden:
 - Si la base de datos se cae, la app **sigue sirviendo** y lo registra como
   ERROR. Es una decisión deliberada: dejar la carta muerta por un fallo de
   métricas es peor que un sobregasto acotado, y el límite por IP sigue puesto.
-  Si prefieres que corte, es cambiar un `return True` en `presupuesto.py`.
+  Para que corte en su lugar, basta cambiar un `return True` en
+  `presupuesto.py`.
