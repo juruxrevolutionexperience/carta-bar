@@ -7,7 +7,7 @@ que no quede en el historial de la terminal.
 Uso:
     python scripts/establecer_clave_admin.py [restaurante_id]
 
-Si no se pasa restaurante_id, usa RESTAURANTE_ID del entorno o "la-catedral".
+Si no se pasa restaurante_id, usa RESTAURANTE_ID del entorno o "barX".
 """
 
 import getpass
@@ -37,6 +37,9 @@ def main(restaurante_id: str) -> None:
 
 
 if __name__ == "__main__":
-    _por_defecto = os.getenv("RESTAURANTE_ID", "la-catedral")
+    _por_defecto = os.getenv("RESTAURANTE_ID")
     _restaurante_id = sys.argv[1] if len(sys.argv) > 1 else _por_defecto
+    if not _restaurante_id:
+        print("Indica el restaurante: python scripts/establecer_clave_admin.py <restaurante_id>")
+        sys.exit(1)
     main(_restaurante_id)
