@@ -1,241 +1,6 @@
-# Pedido en Mesa · Especificación y plan de desarrollo
+# Pedido en Mesa · Especificación
 
-Documento base del sistema de pedido desde la mesa, construido encima de la carta digital
-existente.
-
-**Estado: en marcha desde el 2026-09-23, saltando el requisito 3 a propósito.**
-
-Requisito de entrada original:
-1. ✅ Carta digital desplegada en producción con HTTPS.
-2. ✅ Panel de gestión funcionando (el restaurante edita su carta solo).
-3. ⬜ Al menos un restaurante usándolo de verdad durante un mes — **no
-   cumplido**. El QR físico en las mesas ni siquiera está puesto todavía
-   (previsto para la semana del 2026-09-28); el mes de uso real no ha
-   empezado a contar.
-
-**Por qué se empieza igual:** decisión explícita del dueño del producto el
-2026-09-23, tras que se lo planteara dos veces en la misma conversación. Sus
-palabras: "son reglas que yo pongo, eso significa que si digo que avanzamos
-es por algo". No es que el requisito 3 se cumpliera, es que decidió saltarlo
-a sabiendas. Queda anotado aquí para que quien retome esto no piense que fue
-un despiste.
-
-**Plan revisado con el dueño del producto (2026-09-23):** se repasó en la
-conversación, bloque a bloque — el modelo de anfitrión/invitados, el
-recorrido completo del cliente (secciones 5.1-5.7) y la parte del
-restaurante (alta de mesas, pantalla de cocina/barra, móvil del camarero,
-configuración por restaurante, secciones 11-12). Confirmado que coincide con
-la idea que tenía: "sí, es que me gusta". Vale como plantilla para empezar;
-se irá afinando con el tiempo, no es definitivo.
-
-**Primer bloque — ✅ hecho, probado y desplegado (2026-09-23, commit
-`eb8d668`):**
-1. ✅ Tablas `mesas`, `sesiones_mesa`, `comensales` (sección 6, con el índice
-   único que evita dos sesiones para la misma mesa si dos personas escanean
-   a la vez). Se crean solas al arrancar, como el resto del esquema.
-2. ✅ Endpoint para entrar por QR (`POST /api/mesa/entrar`): crea sesión y
-   hace anfitrión al primero, une como invitado a partir del segundo.
-   Maneja la carrera si dos personas escanean a la vez.
-3. ✅ Cookie firmada de comensal (`sesion_comensal`, como ya existe para
-   gerente/superadmin).
-4. ✅ `GET`/`POST /admin/api/mesas` para que el gerente dé de alta mesas.
-5. 12 tests nuevos + los 330 de la suite, todos en verde (verificado con
-   `mypy`/`pytest` reales, no solo revisado a ojo — Python está bloqueado en
-   el PC de trabajo, se verificó en un entorno aparte).
-
-**Todavía sin pantalla:** estos endpoints no tienen ningún botón en el panel
-todavía. El gerente de `demo` no puede dar de alta una mesa a golpe de clic
-hasta el siguiente bloque.
-
-**Decisión pendiente de confirmar antes de seguir — roles gerente/camarero:**
-al plantear cómo probar esto desde el panel, salió que hace falta poder
-entrar como "solo camarero" (ve mesas/comandas, no ve Marca/QR/Cuenta) sin
-montar cuentas individuales por persona. Propuesta hecha el 2026-09-23: dos
-contraseñas por restaurante (una de gerente, una de personal), mismo sitio
-de login, panel distinto según cuál se use — pendiente de que el dueño la
-confirme antes de tocar el modelo de sesión de admin.
-
-**Segundo bloque — plano del local (2026-09-23): 🔍 hecho en local, falta
-desplegar y probar en el móvil.** Decidido con el dueño del producto:
-- **Zonas sin límite** (Terraza, Barra, Salón 1...), como pestañas; se crean,
-  renombran, reordenan arrastrando y borran. Un bar sin zonas recibe "Sala".
-- **Mesas con forma y tamaño:** redonda, cuadrada, rectangular, barril y
-  taburete. Se colocan con el dedo sobre una cuadrícula (24 × 18 casillas, con
-  imán), se redimensionan con un tirador, se giran de 45° en 45° y se mueven
-  de zona. El nombre es libre y el número no es obligatorio ("Barril 1",
-  "Terraza 4" o solo "4"); al crear una se propone "Mesa N".
-- **Se pueden borrar mesas y zonas.** Sin historial se borran del todo; con
-  historial de sesiones se archivan (`activa = false`) y dejan de verse y de
-  abrir con su QR. Con clientes sentados no se borra nada (409).
-- **La barra es una mesa más.** Los taburetes no llevan QR propio.
-- Cada mesa sigue con su QR y "Cambiar el QR de esta mesa"; la vista "Lista de
-  QR" queda para imprimirlos todos.
-
-Hecho con tests (`tests/test_plano.py`, 45), SQL verificado contra un Postgres
-real y la interfaz probada con un DOM simulado (43 comprobaciones: añadir,
-arrastrar, tirador, límites del plano, giro, zonas, borrar). **No** se ha
-visto en un navegador real: el tacto en el móvil y el aspecto visual quedan
-por confirmar. Los nombres de las tablas nuevas y su RLS se crean solos al
-arrancar (`zonas` y las columnas nuevas de `mesas`, en `sql/esquema.sql`).
-
-**Rediseño del panel (2026-09-23), tras ver un TPV de la competencia:** la
-primera versión funcionaba pero parecía una maqueta. Decidido con el dueño:
-- **Panel oscuro entero.** El fondo es la misma tinta cálida de la carta
-  (`#121110`): la carta del cliente sigue clara, el panel es su reverso. Toda
-  la paleta vive en `:root` de `frontend/src/admin/estilos.css`.
-- **Menú lateral que se despliega** (`MenuLateral.tsx`) en vez de la barra
-  inferior de iconos: con mesas, comandas, cocina y camarero no caben cinco
-  huecos. En escritorio (≥860px) se queda fijo y desaparece la hamburguesa.
-  Las secciones se declaran una sola vez en `secciones.tsx`.
-- **Plano legible:** cuadrícula de 12×9 casillas de 56px (antes 24×18 de 32px,
-  que en un móvil obligaba a un zoom del 43% y dejaba los nombres en "T…").
-- **Texto a tamaño de pantalla:** el plano se escala con `transform: scale()`,
-  pero nombre, aforo y tirador se dividen por `--z` (el zoom) para conservar su
-  tamaño real. Sin eso, al alejar, el texto se volvía ilegible.
-- **Detalle según el sitio** (`detalleVisible` en `planoUtil.ts`): con poco
-  espacio en pantalla se oculta el aforo y queda solo el nombre.
-- **Herramientas del plano:** zoom, "ver el plano entero" (ajusta a lo ancho y
-  a lo alto) y **candado**, para que el gerente pueda mirar sin mover mesas de
-  un roce.
-- **Ocupación en cada pestaña de zona** (TERRAZA 12, SALÓN 6...).
-
-Probado con un Chromium de verdad (capturas en móvil y escritorio) además de
-las 55 comprobaciones de comportamiento. Para volver a sacar capturas, ver
-"Cómo probar la interfaz" en [ARQUITECTURA.md](ARQUITECTURA.md).
-
-**Segunda vuelta del plano (2026-09-23), con Turbopos como referencia.** El
-dueño pasó una foto de un TPV real y de ahí salió lo que faltaba:
-- **Sillas dibujadas alrededor de cada mesa** según su aforo (`SillasMesa.tsx`,
-  reparto en `repartirSillas`). Es el cambio que más se nota: de un vistazo se
-  ve si una mesa es de 2 o de 6 sin leer ningún número. Una mesa de 2 las pone
-  enfrentadas, no en esquina; una alargada, casi todas arriba y abajo.
-- **Tres aparatos, no uno encogido** (bloque "TRES APARATOS" en `estilos.css`):
-  el reparto de pantalla se decide por el **ancho** y el tamaño de lo que se
-  toca por el **tipo de puntero** (`pointer: coarse` = dedo).
-  - *Móvil:* plano a lo ancho y los datos de la mesa subiendo desde abajo.
-  - *Ordenador:* dos columnas, plano a la izquierda y datos fijos a la derecha.
-  - *TPV táctil del bar (todos los bares tienen uno):* lo mismo, con botones,
-    pestañas y tirador bastante más grandes.
-- **El hueco del panel se reserva siempre** en pantalla ancha: si apareciera
-  solo al elegir una mesa, el plano se encogería de golpe. El dueño pidió
-  expresamente que se viera "más estable".
-- **Las mesas no se montan unas sobre otras:** al arrastrar, si ahí no cabe, la
-  mesa se queda en la última posición buena.
-- **Barriles y taburetes se llaman solo con el número** ("1", "2"): ocupan una
-  casilla y "Mesa 6" no cabía, salía "Mes…".
-
-**Tercera vuelta del plano (2026-09-24): escala Turbopos.** El dueño comparó
-lado a lado una captura de Turbopos y la nuestra: "no está desarrollado, quiero
-lo mismo que Turbopos a nuestro estilo" (no habla de color ni de interfaz, solo
-del panel de mesas). La causa era una decisión de la segunda vuelta: cuadrícula
-gorda de 12×9 casillas de 56 px, "a propósito" para que en el móvil se leyera el
-nombre. Con eso una mesa ocupaba 1/6 del plano, cinco mesas lo llenaban y había
-que hacer scroll. **Regla del dueño: ante cualquier duda de diseño de esta
-pantalla, hacerlo como Turbopos.** Cambios:
-- **Plano fino de 48×30 unidades** (`COLUMNAS`/`FILAS`/`CELDA = 20` en
-  `planoUtil.ts`). Mesa de 4 = 3×3, rectangular 6×3, barril 2×2, taburete 1×1
-  (`DISENO_POR_FORMA` en `mesas.py`, mismos valores). Al abrir se ve el local
-  entero (zoom que cabe); en móvil se acerca con el zoom (0,2–3, cada pulsación
-  ×1,25).
-- **Dos modos, ojo y lápiz** (arriba a la izquierda del plano, como Turbopos).
-  *Ojo (servicio):* sin paleta, sin cuadrícula, las mesas solo se tocan para ver
-  su estado y su QR. *Lápiz (edición):* paleta de formas, guía cada 4 unidades,
-  mover, tirador de tamaño, girar, borrar. Un local sin mesas se abre en edición;
-  uno montado, en servicio. Sustituye al candado, que ya no existe.
-- **Ocupación real:** `Mesa.ocupada` (se calcula al listar: hay una sesión sin
-  cerrar) pinta la mesa en rojo con el icono de personas, y la pestaña de zona
-  muestra `ocupadas/total` (TERRAZA 5/20). Se refresca cada 8 s sin tocar lo que
-  se esté moviendo. **Todavía no se provoca escaneando el QR**: la carta aún no
-  lee `?mesa=` ni llama a `/api/mesa/entrar` (siguiente bloque). Para probarlo a
-  mano: `curl -X POST https://<bar>.jurux.app/api/mesa/entrar -H "Content-Type:
-  application/json" -d '{"token_qr":"<lo que va tras ?mesa= en el enlace del QR>"}'`.
-  Ojo: una mesa con sesión abierta no se puede borrar (409) y aún no hay forma de
-  cerrarla desde la pantalla; en pruebas, con SQL:
-  `UPDATE sesiones_mesa SET estado='cerrada', cerrada_en=now() WHERE restaurante_id='demo' AND estado!='cerrada';`
-- **Mesa limpia:** contorno fino y el nombre centrado (sin la etiqueta con
-  fondo); el aforo solo en las mesas grandes; en las diminutas nada hasta
-  acercar (`detalleVisible`). Sillas finas a escala de la mesa.
-- **Migración:** las zonas guardadas en el plano viejo se convierten una sola
-  vez al arrancar (`zonas.plano_version`: posiciones ×4 en x y ×3 en y, tamaños
-  ×1,5 hacia arriba; ninguna mesa se sale ni se monta sobre otra). Las zonas
-  nuevas nacen ya en la versión 2.
-- Visto con un Chromium sin cabeza (PC, edición y móvil de 500 px de ancho) con
-  datos de prueba. **Sin ver aún en un móvil real ni en el TPV.**
-- **Sigue pendiente de Turbopos** (por orden): elementos del local (barra
-  rayada, plantas, puertas, baños; necesitan tabla nueva), pellizco para hacer
-  zoom en el móvil, líneas guía al alinear, duplicar mesa.
-
-**Cuarta vuelta del plano (2026-09-24), tras probarlo en un móvil y un PC reales:**
-- **Tema claro por defecto** con botón sol/luna en la barra superior (`tema.ts`),
-  guardado en cada navegador. Toda la paleta, incluida la del plano, vive en
-  variables de `:root` / `:root[data-tema="oscuro"]` en `estilos.css`.
-- **PC:** sin botones de zoom (el plano se reajusta solo al cambiar la ventana,
-  `ResizeObserver`), resumen de la zona en la columna derecha mientras no hay mesa
-  elegida, sin texto seleccionable en el plano, **menú escondido** en la pantalla
-  de Mesas (clase `plano-completo` en `body`; se abre con la hamburguesa) y plano
-  a pantalla completa que cabe sin scroll (`max-height` = alto de pantalla − 310).
-- **Móvil:** el zoom flota sobre el plano en vez de ocupar una fila; **tocar una
-  mesa al editar solo la elige** (el panel de datos ya no salta y deja arrastrar),
-  un segundo toque o el botón "Datos de «…»" sobre el plano abre la hoja. En modo
-  ojo, un toque abre los datos como antes.
-- Etiqueta en el plano: solo el número si el nombre es "Mesa N" (`etiquetaPlano`);
-  el nombre completo sigue en el panel.
-- **Pendiente (móvil):** pellizcar para hacer zoom y abrir ya con más zoom.
-- **Decisión en curso, elementos del local:** seis tipos propuestos (barra rayada,
-  pared, puerta, baños, planta, texto libre), manejados igual que una mesa desde el
-  lápiz, solo decoración en modo ojo, tabla nueva `elementos_plano` aparte de las
-  mesas. Pendiente de que el dueño confirme los tipos (y si la barra es elemento o
-  mesa grande; recomendado: elemento).
-
-**Quinta vuelta (2026-09-24), y con esto el frontend del plano queda así por
-ahora** (palabras del dueño: "no hay que ser tan perfecto… he visto otras apps y
-son horribles y funcionan"):
-- **Tipos de mesa fijos, sin tirador de tamaño** (`TIPOS` en `planoUtil.ts`):
-  Redonda 2, Redonda 4, Cuadrada 2, Cuadrada 4, Larga 6, Larga 8, Barril y
-  Taburete. Forma, tamaño y aforo van juntos; en el panel de la mesa se cambia
-  el "Tipo de mesa" (ya no hay campos de forma y personas sueltos). Las mesas
-  hechas antes se ven como "Otra (N personas)" hasta que se les pone un tipo.
-  El backend no cambia: sigue guardando forma, tamaño y aforo.
-- **Mover mesas con el dedo o el ratón** (lápiz) igual en PC, móvil y TPV.
-  Recorrer el plano con un dedo y acercar con dos (**pellizco**) lo hace el propio
-  plano (`touch-action: none` en `.plano-scroll`, gestos en `PlanoZona.tsx`); en
-  servicio, un dedo sobre una mesa recorre el plano y el toque sin arrastre la abre.
-- **Móvil:** abre con zoom legible (hasta 70 %) llenando el alto libre y centrado
-  en las mesas; "ver todo" vuelve al local entero. El zoom va en la fila del
-  ojo/lápiz en servicio (flotante solo al editar), más aire en la cabecera y un
-  aviso "Gira el móvil para ver el local más grande" en vertical.
-- Probado en Chromium con un marco de 390 px (el navegador sin cabeza no baja de
-  ~496 px de ventana) y a 1920×1080. **El pellizco y el arrastre con el dedo no se
-  pueden simular ahí: sin probar en un móvil real.**
-
-**Aviso de migración (segunda vuelta, ya superado por la tercera):** el plano
-pasó de 24×18 casillas a 12×9 (más grandes).
-Una mesa guardada con el plano viejo puede caer fuera del nuevo; al cargar la
-pantalla se trae dentro y se guarda corregida (`corregirSiSeSale`). De paso
-salió un fallo real: `limitarTamano` devolvía anchos negativos para una mesa
-fuera de la cuadrícula.
-
-**Pendiente de esta línea** (por orden acordado): elementos del local (puerta,
-barra, baños, columnas, plantas — necesitan tabla nueva), tema claro/oscuro
-elegible, y el resto de mejoras del plano (líneas guía al alinear, duplicar
-mesa, tamaño del local por zona).
-
-**Decisión para el paso 3 (juntar mesas en servicio, sin hacer):** lo hace el
-camarero durante el servicio y se deshace al cobrar; **no** toca el plano
-fijo. Si las dos mesas tienen comandas, **las cuentas se fusionan en una**; si
-están vacías, se juntan sin más. Ojo: si las dos tienen comandas de comida o
-bebida, hay que decidir cómo se ven los tickets ya enviados (siguen siendo los
-de cada mesa original, con la cuenta común).
-
-**Siguiente bloque** (sin empezar): que la carta lea `?mesa=`, llame a
-`/api/mesa/entrar` y muestre la barra inferior; después propuestas desde la
-carta + panel del anfitrión con el resumen y el total.
-
-**Para probarlo ahora mismo en `demo.jurux.app`:** el restaurante `demo` no
-tiene contraseña de gerente establecida. En el servidor:
-`docker exec -it carta-bar uv run --no-sync python scripts/establecer_clave_admin.py demo`
-
-Leyenda de tareas: ✅ hecho y probado · 🔍 hecho, falta verificar · ⬜ pendiente
+Sistema de pedido desde la mesa, construido sobre la carta digital existente.
 
 ---
 
@@ -258,7 +23,7 @@ Leyenda de tareas: ✅ hecho y probado · 🔍 hecho, falta verificar · ⬜ pen
 15. [Fases de desarrollo](#15-fases-de-desarrollo)
 16. [Pruebas](#16-pruebas)
 17. [Métricas](#17-métricas)
-18. [Decisiones pendientes](#18-decisiones-pendientes)
+18. [Estado de implementación](#18-estado-de-implementación)
 19. [Fuera de alcance](#19-fuera-de-alcance)
 
 ---
@@ -381,7 +146,7 @@ personal desatasca.
 
 ### 5.1 Primera persona que llega a la mesa
 
-1. Escanea el QR de la mesa 7.
+1. Escanea el QR de la mesa.
 2. El sistema comprueba si hay sesión abierta en esa mesa. No la hay, así que crea una.
 3. Se le asigna el rol de anfitrión y se le da un identificador de comensal en una cookie.
 4. Ve la carta de siempre, más una barra inferior nueva con su pedido.
@@ -393,15 +158,14 @@ personal desatasca.
 2. Ya hay sesión abierta, así que entran como invitados.
 3. Eligen un nombre corto o se les asigna uno ("Comensal 2"), para el reparto de la cuenta.
 4. Añaden platos, que van a propuestas.
-5. El anfitrión recibe aviso: "Ana quiere unas croquetas".
+5. El anfitrión recibe aviso de cada propuesta nueva.
 
 ### 5.3 Confirmar el primer pedido
 
 1. El anfitrión ve todas las propuestas agrupadas, con quién pidió cada cosa y el total.
 2. Ajusta: quita, cambia cantidades, añade lo suyo.
 3. Pulsa confirmar.
-4. Se abre la ventana de agrupación (60-90 s) con cuenta atrás visible y un botón de enviar
-   ya.
+4. Se abre la ventana de agrupación (60-90 s) con cuenta atrás visible y un botón de enviar ya.
 5. Al cerrarse la ventana se crea la comanda y se divide en tickets por destino.
 6. Barra recibe las bebidas; cocina, los platos.
 7. Todos ven el estado: recibido.
@@ -480,9 +244,9 @@ class RolComensal(str, Enum):
 
 
 class Mesa(BaseModel):
-    id: str                      # "mesa-07"
+    id: str
     restaurante_id: str
-    nombre: str                  # "Terraza 7"
+    nombre: str
     token_qr: str                # secreto, va en la URL del QR
     activa: bool = True
 
@@ -490,7 +254,7 @@ class Mesa(BaseModel):
 class Comensal(BaseModel):
     id: str
     sesion_id: str
-    nombre: str                  # "Ana" o "Comensal 2"
+    nombre: str
     rol: RolComensal
     idioma: str = "es"
     creado_en: datetime
@@ -557,9 +321,9 @@ class Ticket(BaseModel):
 Es la decisión más importante del modelo. `nombre_plato` y `precio_unitario` se guardan en
 la línea; no se leen del plato al mostrar la cuenta.
 
-Si el gerente sube el precio del pulpo a media tarde, las comandas de la mañana tienen que
-seguir valiendo lo que valían. Referenciar el plato vivo haría que las cuentas cambiaran
-solas, y eso es un problema contable y legal, no un detalle.
+Si el gerente sube un precio a media tarde, las comandas de la mañana tienen que seguir
+valiendo lo que valían. Referenciar el plato vivo haría que las cuentas cambiaran solas, y
+eso es un problema contable y legal, no un detalle.
 
 ### 6.3 Tablas
 
@@ -675,8 +439,8 @@ plato que desaparece sin rastro es una discusión con el cliente que no se puede
                                      nadie puede pedir con esa sesión
 ```
 
-Desde `CUENTA_PEDIDA` se puede volver a `ABIERTA`: alguien pide un chupito de última hora y
-el camarero reabre. Hay que preverlo, porque pasa constantemente.
+Desde `CUENTA_PEDIDA` se puede volver a `ABIERTA`: alguien pide algo de última hora y el
+camarero reabre. Hay que preverlo, porque pasa constantemente.
 
 ### Ticket
 
@@ -686,12 +450,12 @@ el camarero reabre. Hay que preverlo, porque pasa constantemente.
         └───────────────────┴──► [ ANULADA ]   (solo camarero, con motivo)
 ```
 
-**Cambiado el 2026-10-04, tras probar el flujo en el bar:** en cocina ya no hay paso
-"Empezar". La comanda llega y un solo botón, "Listo", la pasa a servida. Obligar a alguien a
-pulsar cada comanda al llegar era tiempo perdido en hora punta. El cliente ve "en
-preparación" desde que se envía hasta que cocina la marca lista. El estado `en_preparacion`
-sigue existiendo en los datos (por los tickets antiguos), pero la pantalla no lo usa. Una vez
-servida no se anula: se corrige en la cuenta.
+**Revisado tras probar el flujo en un local real:** en cocina ya no hay paso "Empezar". La
+comanda llega y un solo botón, "Listo", la pasa a servida. Obligar a alguien a pulsar cada
+comanda al llegar era tiempo perdido en hora punta. El cliente ve "en preparación" desde que
+se envía hasta que cocina la marca lista. El estado `en_preparacion` sigue existiendo en los
+datos (por los tickets antiguos), pero la pantalla no lo usa. Una vez servida no se anula: se
+corrige en la cuenta.
 
 ### Propuesta
 
@@ -714,8 +478,8 @@ Al confirmar, no sale nada inmediatamente. Se abre una ventana de N segundos (po
 - La mesa ve una cuenta atrás y un botón "enviar ya".
 - Al terminar, se crea la comanda y se reparten los tickets.
 
-Sirve para lo típico: se confirma, y dos segundos después alguien dice "ponme otra caña".
-Sin la ventana, eso son dos comandas y dos viajes.
+Sirve para lo típico: se confirma, y dos segundos después alguien pide una cosa más. Sin la
+ventana, eso son dos comandas y dos viajes.
 
 Con la ventana a 0, el sistema se comporta como uno normal.
 
@@ -730,12 +494,11 @@ def hay_demora(sesion, config) -> bool:
     return pendientes >= config.umbral_demora_cocina
 ```
 
-Cuando se supera el umbral, los platos de cocina muestran un aviso ("La cocina va con
-retraso, este plato puede tardar más de lo normal"). **No se bloquea nada.** Las bebidas no
-se ven afectadas, porque van a barra.
+Cuando se supera el umbral, los platos de cocina muestran un aviso de posible retraso.
+**No se bloquea nada.** Las bebidas no se ven afectadas, porque van a barra.
 
-El umbral lo fija el restaurante. El valor por defecto (por ejemplo 12) es un punto de
-partida que hay que ajustar viendo un servicio real.
+El umbral lo fija el restaurante. El valor por defecto es un punto de partida que hay que
+ajustar viendo un servicio real.
 
 Mejora para cuando haya histórico: usar el tiempo medio de los últimos tickets servidos en
 vez del número de pendientes.
@@ -755,9 +518,8 @@ lo ignora es un sistema que no puede instalar.
 
 ### 8.4 Importe máximo por comanda
 
-Umbral configurable (por defecto 150 €). Por encima, la comanda entra igual pero marcada
-para que el camarero la valide antes de que cocina empiece. Protege de un dedo torpe y de
-una broma.
+Umbral configurable. Por encima, la comanda entra igual pero marcada para que el camarero la
+valide antes de que cocina empiece. Protege de un dedo torpe y de una broma.
 
 ### 8.5 Reparto de la cuenta
 
@@ -772,8 +534,8 @@ def repartir(sesion) -> dict[str, Decimal]:
     return totales
 ```
 
-Lo compartido (una paella para cuatro) necesita marcarse como compartido y repartirse entre
-los comensales indicados. Es la parte más fácil de subestimar: decidirlo en la Fase C, no
+Lo compartido (un plato para cuatro) necesita marcarse como compartido y repartirse entre los
+comensales indicados. Es la parte más fácil de subestimar: decidirlo en la Fase C, no
 improvisarlo.
 
 ---
@@ -855,9 +617,9 @@ las cosas que más enfadan al personal.
 | **SSE (Server-Sent Events)** | Simple, reconexión automática del navegador, va sobre HTTP normal | Solo servidor → cliente |
 | WebSocket | Bidireccional | Más infraestructura, reconexión a mano |
 
-**Recomendación: SSE.** Todo lo que necesita empuje va en una dirección (el servidor avisa de
-un ticket nuevo o de un cambio de estado). Las acciones del cliente son POST normales.
-FastAPI lo sirve sin dependencias extra y el navegador reconecta solo.
+**Elegido: SSE.** Todo lo que necesita empuje va en una dirección (el servidor avisa de un
+ticket nuevo o de un cambio de estado). Las acciones del cliente son POST normales. FastAPI
+lo sirve sin dependencias extra y el navegador reconecta solo.
 
 La pantalla de cocina debe además:
 
@@ -872,12 +634,11 @@ La pantalla de cocina debe además:
 
 ### 11.1 Cliente (sobre la carta actual)
 
-**Barra inferior fija.** Número de líneas y total. Al tocar, se abre el pedido. Ojo con no
-tapar el último plato ni el botón del chat.
+**Barra inferior fija.** Número de líneas y total. Al tocar, se abre el pedido. Cuidado con
+no tapar el último plato ni el botón del chat.
 
 **Panel de pedido.** Propuestas agrupadas por persona, con quién pidió qué. Si eres
-anfitrión, botón de confirmar. Si eres invitado, un texto claro: "Ana confirma los pedidos
-de la mesa".
+anfitrión, botón de confirmar. Si eres invitado, un texto claro indicando quién confirma.
 
 **Cuenta atrás de la ventana.** Discreta pero visible, con "enviar ya".
 
@@ -908,6 +669,39 @@ manos sucias y a dos metros de distancia.
 - Marcar plato agotado.
 - Reasignar anfitrión, unir mesas, cerrar sesión.
 
+### 11.4 Plano del local
+
+El plano es la pantalla de montaje del local, y se diseñó para tres aparatos distintos:
+el móvil del camarero, el ordenador del gerente y una pantalla táctil fija. El reparto de
+pantalla se decide por el **ancho** y el tamaño de lo que se toca por el **tipo de puntero**
+(`pointer: coarse` = dedo).
+
+- **Zonas sin límite** (terraza, barra, salón…) como pestañas: se crean, renombran,
+  reordenan arrastrando y borran. Un local sin zonas recibe una por defecto.
+- **Tipos de mesa fijos**, con forma, tamaño y aforo juntos (redonda de 2 o 4, cuadrada de 2
+  o 4, larga de 6 u 8, barril, taburete). Se colocan sobre una cuadrícula con imán, se giran
+  y se mueven de zona.
+- **Sillas dibujadas alrededor** de cada mesa según su aforo: de un vistazo se ve si una mesa
+  es de 2 o de 6 sin leer ningún número.
+- **Dos modos, ojo y lápiz.** *Ojo (servicio):* sin paleta ni cuadrícula, las mesas solo se
+  tocan para ver su estado. *Lápiz (edición):* paleta de formas, guías, mover, girar, borrar.
+  Un local sin mesas se abre en edición; uno montado, en servicio.
+- **El texto conserva su tamaño real al alejar:** el plano se escala con `transform: scale()`,
+  pero nombre y aforo se dividen por el factor de zoom. Sin eso, al alejar el texto se
+  volvía ilegible.
+- **Detalle según el espacio disponible:** con poco sitio se oculta el aforo y queda solo el
+  nombre; en las mesas diminutas, nada hasta acercar.
+- **Las mesas no se montan unas sobre otras:** al arrastrar, si ahí no cabe, la mesa se queda
+  en la última posición válida.
+- **Ocupación por zona** en cada pestaña (ocupadas/total), refrescada sin interrumpir lo que
+  se esté moviendo.
+- **Borrado seguro:** sin historial se borra; con historial de sesiones se archiva
+  (`activa = false`); con clientes sentados no se borra nada (409).
+- **Migración de versiones del plano:** al cambiar la escala de la cuadrícula, las zonas
+  guardadas se convierten una sola vez al arrancar, verificando que ninguna mesa se sale ni
+  se monta sobre otra. Una mesa fuera de la cuadrícula destapó un fallo real: la función que
+  limitaba el tamaño devolvía anchos negativos.
+
 ---
 
 ## 12. Configuración por restaurante
@@ -936,8 +730,7 @@ manos sucias y a dos metros de distancia.
 }
 ```
 
-El horario evita que alguien pida a las tres de la mañana desde la calle con un QR
-fotografiado.
+El horario evita que alguien pida de madrugada desde la calle con un QR fotografiado.
 
 ---
 
@@ -945,7 +738,7 @@ fotografiado.
 
 | Riesgo | Mitigación |
 |---|---|
-| Alguien fotografía el QR y pide desde casa | Sesión ligada a la mesa, caducidad por inactividad, horario de pedidos y cierre al cobrar |
+| Alguien fotografía el QR y pide desde fuera | Sesión ligada a la mesa, caducidad por inactividad, horario de pedidos y cierre al cobrar |
 | Un gracioso pide 40 platos | Importe máximo por comanda y validación del camarero por encima del umbral |
 | Un invitado se hace pasar por anfitrión | El rol vive en el servidor, nunca en el cliente |
 | Un comensal ve otra mesa | Todo endpoint filtra por la sesión de la cookie, nunca por un id que venga del cliente |
@@ -953,6 +746,7 @@ fotografiado.
 | Manipular precios desde el navegador | El precio se toma siempre del servidor. El cliente solo manda `plato_id` y cantidad |
 | Spam de propuestas | Límite de peticiones por comensal |
 | Token de QR filtrado | Se puede regenerar por mesa desde el panel |
+| Un comensal expulsado reutiliza su cookie | El servidor marca la expulsión; la cookie deja de servir (403) |
 
 **Datos personales.** El nombre del comensal es un apodo para la mesa. No se piden ni
 teléfono ni correo. Al cerrar la sesión, los nombres se pueden anonimizar conservando solo
@@ -980,9 +774,9 @@ que proteger.
 | Mesa que no paga | La sesión queda abierta hasta que el camarero la cierra, y queda registrada | C |
 
 **Sobre las alergias escritas en una nota:** es el punto más delicado de todo el sistema. Una
-nota de texto libre no sustituye a la conversación con el camarero. La app debe mostrar un
-aviso al cliente ("comunícaselo también al personal") y destacar la nota en el ticket, pero
-la responsabilidad sigue siendo del restaurante y así debe quedar reflejado.
+nota de texto libre no sustituye a la conversación con el camarero. La app muestra un aviso
+al cliente y destaca la nota en el ticket, pero la responsabilidad sigue siendo del
+restaurante y así debe quedar reflejado.
 
 ---
 
@@ -992,18 +786,10 @@ la responsabilidad sigue siendo del restaurante y así debe quedar reflejado.
 
 Sin cocina, sin pagos. Valida el modelo de anfitrión con el mínimo trabajo.
 
-- ⬜ Tabla de mesas y generación de QR/NFC por mesa
-- ⬜ Entrar por QR: crear sesión o unirse
-- ⬜ Asignación de rol y cookie firmada de comensal
-- ⬜ Índice único de sesión abierta por mesa
-- ⬜ Nombre de comensal
-- ⬜ Añadir propuestas desde la carta
-- ⬜ Panel del anfitrión con las propuestas agrupadas
-- ⬜ Aceptar y rechazar propuestas
-- ⬜ Resumen de mesa con total estimado
-- ⬜ Cada comensal lo ve en su idioma
-- ⬜ Caducidad por inactividad y cierre manual
-- ⬜ Cesión del rol de anfitrión
+Tabla de mesas y generación de QR por mesa · entrar por QR creando o uniéndose a la sesión ·
+asignación de rol y cookie firmada · índice único de sesión abierta · nombre de comensal ·
+propuestas desde la carta · panel del anfitrión · aceptar y rechazar · resumen de mesa con
+total · cada comensal en su idioma · caducidad y cierre manual · cesión del rol.
 
 **Terminada cuando:** una mesa real de cuatro o más personas usa el resumen para pedir al
 camarero, y el camarero confirma que le ha servido de algo.
@@ -1011,53 +797,30 @@ camarero, y el camarero confirma que le ha servido de algo.
 Este es el punto de decisión de todo el proyecto. Si aquí la gente no usa el modelo de
 anfitrión, las fases B, C y D no se construyen.
 
----
-
 ### FASE B · Comanda real
 
-- ⬜ Comandas, tickets y división por destino
-- ⬜ Ventana de agrupación
-- ⬜ Pantalla de cocina y barra, con SSE
-- ⬜ Aviso sonoro y color por antigüedad
-- ⬜ Cambios de estado
-- ⬜ Freno por carga
-- ⬜ Marcado y confirmación de alcohol
-- ⬜ Importe máximo por comanda
-- ⬜ Móvil del camarero: anular, agotar, cerrar
-- ⬜ Idempotencia en confirmar y en cambios de estado
-- ⬜ Reconexión y recuperación de estado
-- ⬜ Numeración correlativa diaria de comandas
+Comandas, tickets y división por destino · ventana de agrupación · pantalla de cocina y barra
+con SSE · aviso sonoro y color por antigüedad · cambios de estado · freno por carga · marcado
+y confirmación de alcohol · importe máximo · móvil del camarero · idempotencia · reconexión y
+recuperación de estado · numeración correlativa diaria.
 
 **Terminada cuando:** un servicio completo sale sin que nadie mire el papel, y el camarero
 prefiere el sistema al cuaderno.
 
----
-
 ### FASE C · Cuenta
 
-- ⬜ Cuenta en tiempo real
-- ⬜ Reparto por comensal
-- ⬜ Platos compartidos
-- ⬜ Pedir la cuenta con forma de pago
-- ⬜ Cierre de sesión al cobrar
-- ⬜ Reapertura de sesión
-- ⬜ Unir y dividir mesas
-- ⬜ Histórico de sesiones cerradas
+Cuenta en tiempo real · reparto por comensal · platos compartidos · pedir la cuenta con forma
+de pago · cierre de sesión al cobrar · reapertura · unir y dividir mesas · histórico.
 
 **Terminada cuando:** el camarero llega a la mesa sabiendo el importe y la forma de pago sin
 preguntar.
-
----
 
 ### FASE D · Pago desde el móvil
 
 Solo si un cliente de pago lo exige. **Decidir antes quién emite el ticket.**
 
-- ⬜ Proveedor de pagos, con el dinero yendo del cliente al restaurante
-- ⬜ Pago parcial y propina
-- ⬜ Devoluciones
-- ⬜ Conciliación con la cuenta
-- ⬜ Emisión de factura simplificada y cumplimiento de VeriFactu
+Proveedor de pagos · pago parcial y propina · devoluciones · conciliación · emisión de
+factura simplificada y cumplimiento de VeriFactu.
 
 Esta fase multiplica el trabajo y añade obligaciones legales. Todo lo anterior aporta valor
 sin ella.
@@ -1089,6 +852,13 @@ test_reparto_suma_exactamente_el_total
 
 Las dos de aislamiento (comensal y restaurante) son obligatorias antes de tocar producción.
 
+**Niveles de prueba de interfaz.** Un cambio de pantalla no se da por bueno sin mirar una
+captura: el primer diseño del plano compilaba, pasaba los tests y aun así dejaba los nombres
+de las mesas cortados. Por eso hay dos niveles: comportamiento con un DOM simulado sobre el
+paquete real, y aspecto con un navegador sin cabeza haciendo capturas en móvil y escritorio.
+El pellizco y el arrastre con el dedo no se pueden simular ahí y requieren un dispositivo
+real.
+
 ---
 
 ## 17. Métricas
@@ -1097,26 +867,75 @@ Las dos de aislamiento (comensal y restaurante) son obligatorias antes de tocar 
 pedidos por franja horaria, tiempo medio de ticket por destino, líneas anuladas y su motivo,
 porcentaje de mesas que usan el sistema.
 
-**Para ti:** sesiones por restaurante, tasa de escaneo por mesa, invitados por sesión,
+**Operativas:** sesiones por restaurante, tasa de escaneo por mesa, invitados por sesión,
 porcentaje de propuestas aceptadas, errores y desconexiones de la pantalla.
-
-El dato que mejor vende es el ticket medio. Si sube, la conversación con el dueño deja de ser
-sobre el precio.
 
 ---
 
-## 18. Decisiones pendientes
+## 18. Estado de implementación
 
-Cerrarlas antes de empezar la fase indicada.
+Construido: mesas, sesiones y comensales; entrada por QR con resolución de la carrera entre
+dos escaneos simultáneos; plano del local con zonas, tipos de mesa y los dos modos; productos
+con destino por categoría, formatos y grupos de extras reutilizables; propuestas con
+confirmación del anfitrión y aviso por SSE; comandas repartidas en tickets por destino con
+numeración correlativa diaria; pantalla de cocina y barra; estado de la comanda visible para
+el cliente; gestión de la comanda desde el panel (añadir en nombre de la mesa, ajustar
+precio, confirmar); pedir la cuenta y cobrar; anulación de líneas con motivo; e impresión
+automática de tickets y del resumen de cuenta.
 
-- ⬜ **(B)** ¿SSE o recarga periódica? Recomendado SSE.
-- ⬜ **(B)** ¿La cocina usa tablet, pantalla fija o también impresora de tickets?
-- ⬜ **(B)** ¿Qué pasa con una comanda si la pantalla está apagada?
-- ⬜ **(A)** ¿Los datos van en las mismas tablas que la carta o en un esquema aparte?
-- ⬜ **(C)** ¿Cómo se reparten los platos compartidos?
-- ⬜ **(D)** ¿Quién emite el ticket fiscal?
-- ⬜ **(—)** ¿Esto se cobra aparte o va incluido en la cuota mensual?
-- ⬜ **(—)** ¿Se ofrece a restaurantes que ya tienen TPV con pedido propio?
+Pendiente: rol de camarero con acceso propio y permisos limitados; aviso sonoro en cocina;
+pellizco para hacer zoom en el plano; elementos decorativos del local; unir y dividir mesas;
+y platos compartidos en el reparto.
+
+### Impresión en cocina y barra
+
+El personal de cocina no usa una pantalla táctil: trabaja con el ticket de papel, como en
+cualquier TPV. Y el TPV del local es la máquina crítica donde se cierran las mesas, así que
+no se toca para nada de esto.
+
+La solución es un aparato aparte y dedicado (un mini PC barato o una tablet vieja) con una
+pantalla de impresión abierta todo el servicio, una por destino. El servidor está en la nube
+y las impresoras en la red del local, así que hace falta ese intermediario dentro de la
+propia red: no se puede imprimir directamente desde el servidor.
+
+La pantalla es una página aparte y ligera (no carga el paquete del panel), escucha el SSE de
+tickets filtrado por destino e imprime cada uno con `window.print()`, formateado a 80 mm. Los
+ids ya impresos se guardan localmente para no repetir un ticket al recargar. Para impresión
+silenciosa de verdad, el navegador de ese aparato se abre con `--kiosk-printing`; sin ese
+flag sale el diálogo del sistema.
+
+**Un fallo que encontró la revisión:** `window.print()` no permite saber desde JavaScript si
+el usuario imprimió o canceló — es una limitación del navegador, no del código. El código
+marcaba el ticket como impreso en cualquier caso, así que un clic en Cancelar hacía
+desaparecer la comanda de la cola sin rastro. La solución no fue intentar detectarlo, sino no
+depender de detectarlo: la pantalla guarda un historial de las últimas 50 impresiones con un
+botón de reimprimir, y el control queda en manos del personal sin tocar nada técnico.
+
+Otro fallo, encontrado al revisar el recibo generado en PDF: sin fondo blanco explícito en el
+área impresa, el texto salía negro sobre el fondo oscuro de la pantalla, invisible en el
+papel.
+
+### Dos bugs reales que merecen contarse
+
+**Las comandas con extras no llegaban a cocina.** Al confirmar, las propuestas se marcaban
+como pedidas pero la pantalla de cocina se quedaba vacía. La causa: al insertar cada línea,
+las opciones se mandaban como lista de Python directa a una columna JSONB, sin serializar.
+psycopg3 no sabe adaptar una lista de diccionarios a JSONB e intenta tratarla como ARRAY.
+Esto ocurría *después* de que otra sentencia ya hubiera marcado las propuestas como
+confirmadas, así que el fallo quedaba a medias: propuestas confirmadas, comanda nunca creada,
+y el cliente sin ver ningún error. Solo afectaba a líneas con opciones no vacías, por eso no
+saltaba con un pedido cualquiera.
+
+Lo relevante no es el arreglo (serializar antes del INSERT), sino **por qué no lo detectaron
+los 469 tests que ya existían**: toda la suite corre con el repositorio en memoria, que no
+pasa por psycopg ni por tipos de columna reales, y la validación de SQL solo comprueba la
+sintaxis sin ejecutarla. De ahí salió una suite nueva contra un Postgres real, que falla
+contra el código viejo con el error exacto de producción y pasa con el arreglo.
+
+**Anular una línea no la quitaba de la cuenta.** Anular en cocina marcaba el ticket pero
+nunca tocaba la propuesta de la que nació, y el resumen de cuenta filtra por el estado de la
+propuesta: una línea anulada se seguía cobrando. Apareció al construir el resumen impreso, no
+antes. Arreglado marcando también la propuesta, con un test que falla contra el código viejo.
 
 ---
 
@@ -1136,434 +955,3 @@ No entran. Si alguien los pide, se apuntan aquí sin empezarlos:
 **Sobre el pulido visual:** importa, y mucho, pero se hace con lo que ya hay (animaciones
 suaves, transiciones, tipografía y fotos reales). No requiere un motor 3D y va **después** de
 tener las comandas funcionando.
-
----
-
-## Recordatorio final
-
-Este documento es un plan, no una lista de tareas para mañana. Se empezó el 2026-09-23 saltando
-a propósito el requisito 3 (ver arriba) — eso ya está decidido y no hay que replanteárselo cada
-vez. Lo que sí sigue en pie: **una fase no se empieza hasta cerrar la anterior** (principio 8).
-Antes de tocar la Fase B, comprobar que la Fase A cumple de verdad su "Terminada cuando".
-
-## Flujo de mesa y pedidos (planteado 2026-09-24, se resuelve por bloques)
-
-Principio: no resolver todo ahora; cada bloque se plantea a fondo justo antes de desarrollarlo.
-
-Estados de mesa: libre, por confirmar (la abrió un cliente), abierta, pidiendo cuenta, cerrada.
-
-- Abre el cliente (QR) o el camarero. Si abre el cliente, el primer pedido necesita un toque de confirmación del camarero.
-- Enviar una comanda pide confirmación al cliente ("¿seguro?"). Una vez enviada, SOLO el personal autorizado (camarero/gerente) puede deshacerla o cancelarla; el cliente no.
-- El cliente puede pedir la cuenta desde la carta. El cierre y el cobro los hace siempre el camarero.
-- Sesiones abandonadas o falsas: el camarero o gerente puede liberar la mesa en cualquier momento (cierra la sesión y la vuelve a verde). Cierre automático de mesas olvidadas tras N horas (por decidir).
-- Abuso (alguien pide cosas sin sentido): el pedido de un cliente sin confirmar no llega a cocina; el camarero puede expulsar a un comensal y bloquear el código de la sesión. Límites de peticiones por sesión y por IP (por decidir al llegar a ese bloque).
-- Camarero: segunda contraseña por restaurante; ve solo acceso rápido y comandas.
-
-Bloques: 1) estados y abrir/unirse/confirmar/liberar, 2) pedidos, rondas y cuenta, 3) rol camarero y acceso rápido.
-
-### Productos: lo que le falta a un plato para pedirlo
-
-**Estado (2026-09-27): 🔍 hecho en local, falta desplegar.** Decidido con el
-usuario ese día:
-- **Destino (cocina/barra) por categoría**, en "Organizar categorías" (se
-  toca el botón Cocina/Barra). Un plato puede cambiarlo en su «Para pedir».
-  Sin nada, cocina. `destino_de()` en `productos.py`.
-- **Formatos** con su precio (Tapa, Media, Ración, Caña, Jarra…). **No se
-  traducen**, igual que el nombre. Se ven ya en la carta del cliente, en
-  lugar del precio único.
-- **Grupos de extras y opciones reutilizables** (sección "Extras y
-  opciones"): nombre, opciones con precio (vacío = gratis), obligatorio o no
-  y cuántas se pueden elegir. Se marcan en cada plato. Borrar un grupo lo
-  quita de sus platos. Aún no se ven en la carta: llegan con el pedido.
-- **Lleva alcohol**, por plato.
-- Todo en tablas aparte (`destinos_categoria`, `pedido_platos`,
-  `grupos_opciones`): la carta del restaurante no se toca.
-- Precios en el panel como texto con teclado decimal: un `type="number"`
-  descarta "1,50" escrito con coma en un móvil en español.
-
-Tests en `tests/test_productos.py`; SQL probado contra un Postgres 16 real y
-la interfaz en Chromium (crear grupos, destino de categoría, formatos, extras,
-alcohol, formato a medias rechazado, carta en español e inglés).
-
-### Bloque 1 en detalle: estados, abrir, unirse, confirmar, liberar
-
-**Estado (2026-09-26): 🔍 hecho en local, falta desplegar.** Cambios sobre
-el plan de abajo, decididos con el usuario ese día:
-- **Sin código de 4 cifras** (ni `codigo` en la tabla, ni `nuevo-codigo`).
-  Quien escanea entra: el primero sin anfitrión activo es anfitrión y los
-  demás, invitados. La protección es la aceptación del camarero. Si alguien
-  molesta: quitarlo (expulsar) o "Cambiar el QR de esta mesa".
-- Volver a escanear con la cookie devuelve el mismo comensal (no crea
-  "Comensal 3"). Un expulsado con cookie recibe 403.
-- Si quitan al anfitrión, pasa a serlo el invitado más antiguo.
-- Mirar el estado (`GET /api/mesa/yo`) **no** cuenta como actividad: un
-  móvil olvidado con la carta abierta no mantiene viva la mesa.
-- **Pantalla "Servicio"** en el panel (`SeccionServicio.tsx`,
-  `PanelServicio.tsx`): tarjetas por zona con su estado, filtro por zona y
-  panel para abrir (con comensales), aceptar, quitar y liberar. Refresca
-  cada 5 s. Es la primera sección del menú; el plano sigue en "Mesas".
-- Lógica en `mesas.py` (funciones con `ahora` inyectable), tests en
-  `tests/test_flujo_mesa.py`.
-
-Plan original:
-
-Se apoya en lo que ya existe (`sesiones_mesa`, `comensales`, `/api/mesa/entrar`, el índice único de una sesión abierta por mesa). No se sustituye nada.
-
-Base de datos (ALTER idempotentes en `sql/esquema.sql`):
-- `sesiones_mesa.estado` admite además `por_confirmar` (hoy: abierta, cuenta_pedida, cerrada).
-- `sesiones_mesa`: `abierta_por` (cliente/personal), `comensales_declarados`, `codigo` (4 cifras), `confirmada_en`, `ultima_actividad`, `motivo_cierre` (cobrada/liberada/automatica).
-- `comensales.expulsado_en`: un comensal expulsado pierde el acceso aunque conserve la cookie.
-
-Cliente (carta):
-- `POST /api/mesa/entrar` {token_qr, nombre, idioma, comensales?, codigo?}
-  - Mesa libre: crea la sesión `por_confirmar`, entra como anfitrión y recibe el código para compartirlo.
-  - Mesa abierta sin clientes dentro (la abrió el camarero): el primero entra como anfitrión, sin código.
-  - Mesa con clientes: hace falta el código para unirse como invitado. Sin él o con un código erróneo, error y límite de intentos.
-- `GET /api/mesa/yo`: estado de mi sesión (mesa, estado, comensales; el código solo si soy anfitrión). Si la mesa se cerró o me expulsaron, 401 y la carta lo olvida.
-
-Personal (`/admin`, hoy la cookie del gerente; con el bloque 3, también el camarero):
-- `POST /admin/api/mesas/{id}/abrir` {comensales}: la deja `abierta`. Si ya estaba `por_confirmar`, la confirma y no crea otra (fusión).
-- `POST /admin/api/mesas/{id}/confirmar`
-- `POST /admin/api/mesas/{id}/liberar`: la cierra con motivo `liberada` y vuelve a verde.
-- `GET /admin/api/mesas/{id}/sesion`: estado, código y comensales.
-- `POST /admin/api/mesas/{id}/nuevo-codigo` y `POST /admin/api/comensales/{id}/expulsar`.
-- El listado de mesas devuelve el `estado` de cada una (libre/por_confirmar/abierta/cuenta_pedida), además de `ocupada`.
-
-Cierre automático (se aplica al leer, sin procesos aparte): `por_confirmar` sin confirmar tras 30 min y cualquier sesión sin actividad tras 4 h se cierran con motivo `automatica`.
-
-Tests: cada transición, la fusión cliente/camarero, código correcto/erróneo, expulsado sin acceso, liberar, cierres automáticos (con reloj inyectado), y que un restaurante no pueda tocar mesas de otro.
-
-Fuera del bloque 1: pedidos y cuenta (bloque 2), rol camarero y acceso rápido (bloque 3), colores nuevos en el plano (con el bloque 3).
-
-### Bloque 2 en detalle: propuestas y confirmacion del anfitrion (implementado 2026-09-29)
-
-Backend completo (`src/carta_bar/propuestas.py` + endpoints en `api.py`), con la logica de
-permisos probada en memoria y el recorrido completo por la API (`tests/test_propuestas.py`,
-19 tests). Falta la pantalla: la carta aun no tiene boton de proponer ni panel del anfitrion
-(ver "Pendiente" mas abajo).
-
-**Decidido con el usuario (2026-09-29):** las propuestas llevan ya formato y extras (grupos
-de `productos.py`), no una version simplificada; el aviso al anfitrion es en tiempo real
-por SSE, no solo con el refresco de 5 s.
-
-**Modelo:** tabla `propuestas` (sesion, comensal, plato, formato, precio_unitario, cantidad,
-opciones elegidas, nota, total, estado). Copia nombre/precio en el momento de proponer, igual
-que el diseño original (seccion 6.2): un cambio de precio a media tarde no debe alterar lo ya
-propuesto. `total = (precio_unitario + suma de opciones) * cantidad`.
-
-**Endpoints** (todos con la cookie de comensal del bloque 1):
-- `POST /api/mesa/propuestas` — valida que el plato existe y esta disponible, el formato (si
-  se pide) existe para ese plato, y las opciones elegidas respetan el minimo/maximo de cada
-  grupo asignado. 404/400 segun el fallo.
-- `GET /api/mesa/propuestas` — todas las de la sesion (incluidas las retiradas: la carta las
-  tacha, no las oculta).
-- `DELETE /api/mesa/propuestas/{id}` — un invitado solo quita las suyas; el anfitrion,
-  cualquiera. Solo mientras siga "pendiente".
-- `POST /api/mesa/propuestas/confirmar` — solo el anfitrion (403 si no lo es). Marca todas
-  las pendientes de la sesion como "confirmada". No genera comanda ni sale a cocina: eso es
-  el bloque 3.
-- `GET /api/mesa/propuestas/eventos` — SSE, sondea cada 1,5 s y solo envia cuando cambia; se
-  corta a los 15 min y el navegador reconecta solo (seccion 10 de este documento). La logica
-  del generador vive en `_eventos_propuestas()` (api.py), aparte de la ruta, para poder
-  probarla llamandola directamente sin abrir un stream HTTP de verdad.
-
-**Camarero:** de momento solo el anfitrion desatasca una mesa desde la propia carta (quitar
-cualquiera, confirmar). El camarero podra hacer lo mismo cuando exista su rol (bloque 3).
-
-**Pantalla (implementada el mismo dia):** boton "Pedir" en cada plato (solo visible con una
-mesa abierta, `PlatoCard.tsx`); al pulsarlo, `FormularioPropuesta.tsx` pide el formato de la
-carta y los grupos de extras del plato (`GET /platos/{id}/grupos`, publico y aparte de
-`/carta` a proposito: no se cargan con toda la carta, solo al pedir uno concreto), respetando
-el minimo/maximo de cada grupo con radios o checkboxes segun su `maximo`. `PanelPedidoMesa.tsx`
-sustituye a "Mi lista" mientras hay una mesa abierta: propuestas de todos con quien pidio que,
-quitar (la propia, o cualquiera si eres anfitrion) y "Confirmar pedido" (solo el anfitrion).
-Todo esto se actualiza solo por SSE (`usePropuestas.ts`, `MesaContext.tsx`), sin recargar.
-
-**Verificado:** 493 tests (`uv run pytest -q`), `ruff` limpio, `tsc -b` y `npm run build` sin
-errores, y una comprobacion visual con Edge headless (sin datos reales, con `fetch`
-simulado): la barra de mesa, el boton "Pedir", el formulario con formato/extras y el listado
-del pedido se ven bien. **No probado en un movil ni navegador real**: falta que el usuario lo
-compruebe en `demo.jurux.app` una vez desplegado.
-
-### Bloque 3 en detalle: la comanda llega a cocina/barra (implementado 2026-09-29)
-
-Backend + pantalla completos. Decidido con el usuario: sin ventana de agrupación (confirmar
-manda al instante); la pantalla vive por ahora dentro del `/admin` del gerente, no del rol
-camarero (que llega después, sin tener que rehacer esto); el alcohol solo se marca en la
-tarjeta, sin pedir confirmación expresa al servirlo.
-
-**Qué pasa al confirmar.** `POST /api/mesa/propuestas/confirmar` ahora, además de marcar las
-propuestas como "confirmada", arma una **comanda** (con numeración correlativa por
-restaurante y por día) y reparte sus líneas en **tickets** por destino (cocina/barra). El
-destino y el alcohol de cada línea salen de "Para pedir" (`productos.py`) en el momento de
-confirmar, no de lo que hubiera cuando se propuso: si el gerente cambia el destino de un
-plato a media tarde, manda el de ahora.
-
-**Modelo** (`src/carta_bar/comandas.py`): `comandas` (id, sesion, número del día),
-`tickets` (destino, estado: recibida/en_preparación/servida, con mesa y número de comanda
-copiados para no hacer join en la pantalla), `lineas_ticket` (copia congelada: nombre,
-precio, opciones, nota, alcohol, quién lo pidió).
-
-**Endpoints** (con la sesión del gerente, `/admin`):
-- `GET /admin/api/tickets?destino=cocina|barra` — los pendientes (no servidos).
-- `POST /admin/api/tickets/{id}/estado` — `en_preparacion` o `servida`.
-- `GET /admin/api/tickets/eventos` — SSE, mismo patrón que las propuestas (sondea cada 1,5 s,
-  solo envía si cambia); la pantalla de cocina de momento usa refresco cada 5 s como
-  Servicio, no este SSE — queda ahí para una vuelta futura si hace falta más rapidez.
-
-**Pantalla** (`SeccionCocina.tsx`, nueva sección "Cocina" en el panel): tarjetas grandes por
-ticket, en dos columnas (nuevas / en preparación), con pestañas para filtrar por destino.
-Cada línea muestra cantidad, plato con su formato/extras, nota, quién la pidió, y un aviso
-rojo si lleva alcohol. Un botón avanza el ticket de estado; al llegar a "servida" desaparece
-del tablero.
-
-**Verificado:** 527 tests (27 nuevos: lógica de reparto y numeración en memoria, recorrido
-completo por la API, multi-tenant, SSE), `ruff`, `tsc -b`, `npm run build` limpios, y una
-comprobación visual con Edge headless (datos simulados). **No probado en un dispositivo
-real**: falta que el usuario lo pruebe con La CatedRal o `demo.jurux.app`.
-
-**Pendiente para más adelante (fuera de este bloque):** rol camarero con su propio acceso;
-aviso sonoro al entrar un ticket nuevo; SSE en la pantalla de cocina en vez de refresco cada
-5 s; confirmación expresa al servir alcohol; anular una línea con motivo.
-
-### El cliente ve el estado de su comanda (añadido el mismo día, bloque 3)
-
-Faltaba: tras confirmar, el cliente solo veía "· pedido" en sus líneas, sin saber si la
-cocina/barra habían avanzado. Decidido con el usuario: solo dos estados visibles
-("en preparación" / "servido"), sin colas ni minutos, agregando todos los tickets de una
-misma comanda (si tiene cocina y barra, solo se ve "servido" cuando los dos lo están).
-
-- `resumen_comandas()` en `comandas.py`, agregando por número de comanda.
-- `GET /api/mesa/comandas` y `GET /api/mesa/comandas/eventos` (SSE, mismo patrón que las
-  propuestas), con la cookie de comensal.
-- En el panel del pedido de la mesa, un chip por comanda ("Comanda 5 · en preparación"),
-  encima del listado de propuestas. `useComandas.ts` en el cliente.
-
-6 tests nuevos (535 en total).
-
-### Impresión en cocina/barra (planteado y construido 2026-09-29)
-
-**El problema real, dicho por el usuario:** los cocineros no van a tocar una pantalla — hoy
-trabajan con el ticket de papel que imprime la comanda, como en cualquier TPV. Su Turbopos
-(el TPV de la barra) es además la máquina crítica donde los camareros cierran mesas, y tiene
-un sistema de terceros (Comandator) que ya la hace ir lenta: **no se toca ese aparato para
-nada de esto**, ni para imprimir ni para nada.
-
-**Decisión:** la impresión sale de un aparato aparte y dedicado (mini PC barato o una tablet
-vieja), nunca del Turbopos. Ese aparato tiene un navegador con la nueva pantalla
-`/admin/impresion` abierta todo el servicio, una por destino (una para cocina, otra para
-barra si hace falta), y en cuanto llega un ticket nuevo lo imprime solo, sin que nadie toque
-nada. Nuestro servidor está en la nube (Hetzner) y las impresoras en la red del bar: por eso
-hace falta ese aparato intermedio, dentro de la propia red, y no se puede imprimir
-directamente desde el servidor.
-
-Según cómo estén conectadas esas dos impresoras (pendiente de comprobar en el bar):
-- **Por red (IP):** el aparato aparte imprime ahí sin más, en la misma wifi.
-- **Por USB al Turbopos:** hace falta un adaptador de impresora en red (15-20€) para no
-  depender del Turbopos ni para eso.
-
-**Construido:**
-- `frontend/impresion.html` + `src/impresion/` (App.tsx, ReciboTicket.tsx, estilos.css):
-  página aparte y ligera (no tira del bundle grande del panel), pensada para un aparato
-  modesto. Al abrirla por primera vez pregunta "¿cocina o barra?" (se recuerda en
-  `localStorage`); a partir de ahí escucha `/admin/api/tickets/eventos?destino=X` (SSE) e
-  imprime cada ticket nuevo con `window.print()`, formateado a 80 mm (`@media print`, con
-  `@page { size: 80mm auto }`). Guarda en `localStorage` los ids ya impresos para no repetir
-  un ticket si se recarga la página.
-- Ruta `GET /admin/impresion` en el backend (misma sesión de gerente que el resto del panel).
-- El SSE de tickets ahora admite `?destino=` para que cada pantalla escuche solo lo suyo.
-- Enlace "Pantalla de impresión" desde la sección Cocina del panel, con el aviso de que nunca
-  va en el TPV principal.
-- **Para impresión silenciosa de verdad** (sin que salga el cuadro de diálogo de Windows),
-  el navegador de ese aparato dedicado debe abrirse con `--kiosk-printing`; sin ese flag,
-  `window.print()` abre el diálogo normal y hay que confirmar a mano. Esto se configura en
-  el aparato, no en el código.
-
-**Verificado:** 538 tests (3 nuevos: la ruta exige sesión, el filtro por destino del SSE),
-`ruff`, `tsc -b`, `npm run build` limpios. Comprobación visual con Edge headless: la lógica
-de cola/impresión funciona (recibe el ticket, lo marca impreso, actualiza el contador), y el
-recibo en sí se generó y se revisó con `--print-to-pdf` (formato correcto: mesa, comanda,
-destino, cantidad en negrita, nota en cursiva, alcohol destacado). Se encontró y se corrigió
-ahí mismo un fallo real: sin fondo blanco explícito en el área impresa, el texto salía negro
-sobre el fondo oscuro de la pantalla, invisible en el papel.
-
-**Pendiente de comprobar en el bar (no depende de más código):** si las impresoras son de
-red o USB, qué aparato dedicar, y probar la impresión de verdad con `--kiosk-printing`.
-
-**Aparcado como su propio proyecto, sin fecha:** sustituir Comandator por Carta Bar
-directamente en el Turbopos (el "rol camarero" llevado al TPV físico del bar). Es un salto
-grande — depende de qué tipo de aparato es el Turbopos por dentro y si permite instalar o
-abrir algo propio — que merece su propia sesión de planteamiento, no mezclarlo con esto.
-
-### Historial y reimpresión (revisión de código, 2026-09-29)
-
-Una revisión encontró un fallo real: si el navegador aún no está en modo silencioso
-(`--kiosk-printing`), cada ticket saca el diálogo de imprimir de Windows, y si alguien le da a
-Cancelar por error, el código lo marcaba como impreso igualmente — la comanda desaparecía de
-la cola sin dejar rastro ni forma de recuperarla salvo tocando el `localStorage` a mano.
-
-`window.print()` no permite saber por JS si el usuario imprimió o canceló (limitación real del
-navegador, no del código), así que la solución no es "detectarlo" sino no depender de
-detectarlo: la pantalla de impresión guarda ahora un pequeño historial (mesa, comanda, hora)
-de las últimas 50 impresiones, con un botón "Reimprimir" en cada una. Así el control queda en
-manos del camarero o gerente sin tocar nada técnico.
-
-Guardado en `localStorage` (aparato local, no en el servidor): esto es historial de esa
-pantalla de impresión en concreto, no del pedido en general — para eso está la mesa "Servicio"
-del panel.
-
-### Gestión de la comanda desde la mesa (construido 2026-09-29)
-
-Al entrar en una mesa ocupada desde **Servicio** (funciona igual entrando desde Mesas: es la
-misma mesa, mismo backend), el gerente/camarero ve ahora, debajo de quién está sentado:
-
-- Todo lo pedido, con cantidad, formato/extras, quién lo pidió y su precio.
-- El **total** y, si hay más de un comensal, **cuánto le toca a cada uno** (solo informativo:
-  de momento se cobra junto, como se decidió).
-- **"Añadir a la mesa"**: abre un selector estilo TPV (pestañas de categoría + botones grandes
-  por plato, con foto/precio) para que el personal pida en nombre de la mesa. No hace falta
-  que nadie haya escaneado el QR — si la mesa no tiene a nadie todavía, se crea un comensal
-  "Camarero" para poder colgar ahí lo que añada.
-- **Ajustar el precio de una línea** (tocando el propio precio en la lista): cambia el precio
-  de esa comanda en concreto, sin tocar el precio de la carta. Pensado para descuentos
-  puntuales, con permiso de gerente; hoy lo tiene cualquiera que entre al panel, porque el
-  rol camarero limitado aún no existe.
-- **Confirmar comanda**, igual que hace el anfitrión desde el móvil: manda lo pendiente a
-  cocina/barra.
-
-**Backend:** `resumen_mesa()` y `ajustar_precio()` en `propuestas.py`; endpoints nuevos bajo
-`/admin/api/mesas/{id}/comanda` (GET, POST añadir, DELETE quitar, PUT precio, POST confirmar).
-Reutilizan toda la lógica de propuestas/comandas ya construida, sin tocarla.
-
-**Frontend:** `PanelComandaMesa.tsx` (el listado, refresco cada 5 s) y `SelectorTPV.tsx` (la
-parrilla de categorías/platos, con un paso extra si el plato tiene formato o extras
-obligatorios, igual que en la carta del cliente).
-
-**Verificado:** 551 tests (13 nuevos), `ruff`, `tsc -b`, `npm run build` limpios, comprobación
-visual del selector TPV con Edge headless (pestañas, tiles, cambio de categoría).
-
-**Pendiente de resolver aparte:** el propio código dejó un fallo detectado en la revisión
-inicial de esta sesión (el "+" de Mi lista duplicado con "Pedir" en la carta del cliente, ya
-corregido) y queda por confirmar en el bar si el problema de "no se añade nada / lista en
-blanco" que describió el usuario es el buffering de SSE en nginx (pendiente de ver la
-configuración del servidor).
-
-### Mesas y Servicio muestran lo mismo (2026-09-29)
-
-El usuario señaló que si el panel de comanda solo estaba en Servicio, la pantalla Mesas no
-serviría de nada al tocar una mesa. Correcto: `PanelMesa.tsx` (el que usa Mesas) ahora incluye
-el mismo `PanelComandaMesa`, en modo ojo y con la mesa ocupada — misma mesa, mismo backend, se
-ve igual en los dos sitios. Mesas sigue siendo la pantalla para montar el local (plano, zonas);
-Servicio, la lista rápida del día a día sin plano.
-
-### Pedir la cuenta y cobrar (construido 2026-10-01)
-
-Cerraba el ciclo de la mesa: el estado "cuenta_pedida" existía desde el bloque 1 pero nada lo
-activaba nunca.
-
-- `POST /api/mesa/pedir-cuenta` (solo el anfitrión, solo con la mesa ya "abierta") pasa la
-  sesión a "cuenta_pedida". `pedir_cuenta()` en `mesas.py`.
-- Botón "Pedir la cuenta" en el panel del cliente, visible solo al anfitrión y solo en ese
-  estado.
-- `POST /admin/api/mesas/{id}/cobrar` cierra la sesión con motivo **"cobrada"** (distinto de
-  "liberada", que sigue siendo para mesas abandonadas sin cobrar). `cobrar_mesa()` en
-  `mesas.py`.
-- Botón "Cobrar y cerrar" en Servicio/Mesas, visible solo cuando la mesa está en
-  "cuenta_pedida".
-
-### Anular una línea ya confirmada (construido 2026-10-01)
-
-Hasta ahora solo se podía quitar una propuesta mientras seguía pendiente; una vez en
-cocina/barra no había forma de anularla si el cliente cambiaba de idea o había un error.
-
-- `Linea` (en `comandas.py`) gana `anulada: bool` y `motivo_anulacion: str | None`. Nunca se
-  borra: queda marcada, con su motivo (igual que el diseño original, sección 5.7).
-- `POST /admin/api/tickets/{ticket_id}/lineas/{linea_id}/anular` con `{"motivo": "..."}`.
-- En Cocina, cada línea tiene un botón "Anular" que pide el motivo (con `window.prompt`); la
-  línea anulada se ve tachada, con el motivo en rojo, y ya no se puede volver a anular.
-- Si se reimprime un ticket con una línea anulada, el recibo lo marca como "ANULADA: motivo".
-
-### Plato agotado: ya existía (revisado 2026-10-01)
-
-Comprobado con el usuario: el interruptor "Disponible" de cada plato (en Platos) ya bloquea
-al instante que se pueda proponer ese plato (`_validar_pedido` en `api.py` ya comprueba
-`disponible`). No hacía falta construir nada nuevo; confirmado que es suficiente, sin atajo
-adicional desde Cocina.
-
-### Bug real: anular una línea no la quitaba de la cuenta (encontrado y corregido 2026-10-05)
-
-Al construir el resumen de cuenta (siguiente sección) se vio que anular una línea en Cocina
-(`POST .../lineas/{id}/anular`) marcaba el ticket pero nunca tocaba la `Propuesta` de la que
-nació. `resumen_mesa()` (lo que arma la cuenta en pantalla y el total a cobrar) filtra por
-`estado != "retirada"`, así que una línea anulada se seguía cobrando igual. Arreglado:
-`admin_anular_linea` en `api.py` ahora también marca esa propuesta como `"retirada"`. Test que
-falla contra el código viejo y pasa con el arreglo:
-`test_anular_linea_quita_la_propuesta_de_la_cuenta_de_la_mesa` (`tests/test_comandas.py`).
-
-### Resumen de cuenta impreso al cobrar (construido 2026-10-05)
-
-El camarero gestiona la cuenta en pantalla (bloque anterior), pero no había nada en papel para
-dársela al cliente. Decidido con el usuario: **no es una factura** (sin NIF, sin numeración
-fiscal: eso es VeriFactu, Fase D, aparcado) — un resumen de lo pedido, con el desglose por
-persona también impreso, en la **misma pantalla dedicada** que ya imprime cocina/barra (nunca
-en el TPV).
-
-- `src/carta_bar/cuentas.py` (nuevo, mismo patrón que `comandas.py`): `Cuenta` es una foto
-  fija de `resumen_mesa()` en el momento de cobrar (líneas activas, por persona, total).
-  `registrar_cuenta()` devuelve `None` si no había nada que cobrar (no imprime cuentas
-  vacías). `RepositorioCuentas` con Memoria y Postgres (tabla `recibos_cuenta`, `lineas` y
-  `por_persona` en JSONB).
-- `POST /admin/api/mesas/{id}/cobrar` saca la foto (via `resumen_mesa`) **antes** de cerrar la
-  sesión, porque después ya no tendría sentido reconstruirla.
-- `GET /admin/api/cuentas/eventos` (SSE, mismo patrón de sondeo que `/admin/api/tickets/eventos`):
-  manda las cuentas de las últimas 6 h (margen de sobra para no perder ninguna si el aparato
-  estuvo apagado).
-- `frontend/src/impresion/`: la pantalla de elegir destino ahora tiene un tercer botón,
-  "Cuenta" (`PantallaImpresion = Destino | "cuenta"`); si se elige, escucha
-  `/admin/api/cuentas/eventos` e imprime con `ReciboCuenta.tsx` (mismo formato de 80 mm que
-  `ReciboTicket.tsx`, con precios, desglose por persona y un aviso "No es un documento
-  fiscal"). El historial con "Reimprimir" funciona igual para las dos cosas.
-
-**Verificado:** 579 tests (8 nuevos en `tests/test_cuentas.py`, 1 en `test_comandas.py` para
-el bug de arriba), más `tests/test_cuentas_postgres.py` (como `test_comandas_postgres.py`,
-contra un Postgres real con `pgserver`: confirma que `lineas`/`por_persona` como JSONB no
-revientan). `ruff`, `tsc -b`, `npm run build` limpios.
-
-**Verificado:** 569 tests (18 nuevos entre las dos piezas), `ruff` y `ruff format` limpios en
-todo lo tocado. El bloqueo de pytest de hoy (Smart App Control de Windows, en modo Enforce,
-rechazando el `python.exe` de cada `.venv` por no cumplir su "nivel de firma Enterprise") se
-resolvió desactivando Smart App Control; detalle completo en `docs/PENDIENTE.md`.
-
-**Lo único que queda del plan de "pedido en mesa" sin construir: rol camarero** (login propio,
-permisos limitados). Aparcado para su propia sesión de planteamiento, no bloquea nada de lo
-demás.
-
-### Bug real en producción: las comandas con extras no llegaban a cocina (2026-10-02)
-
-El usuario lo encontró probando el flujo completo: confirmaba el pedido, las propuestas se
-marcaban "· pedido", pero Cocina se quedaba vacía.
-
-**Causa:** en `RepositorioComandasPostgres.crear_comanda_con_tickets()`, las `opciones` de cada
-línea se mandaban como lista de Python (`[o.model_dump() for o in linea.opciones]`) directa al
-INSERT, sin `json.dumps()`. psycopg3 no sabe adaptar una lista de dicts a una columna JSONB por
-su cuenta e intenta tratarla como ARRAY: `cannot adapt type 'dict'`. Esto pasaba *después* de
-que `confirmar_pendientes()` ya hubiera marcado las propuestas como confirmadas (en otra
-sentencia), así que el fallo quedaba a medias: propuestas confirmadas, comanda nunca creada, y
-el cliente no veía ningún error (la llamada del móvil al confirmar no comprueba la respuesta).
-Solo afectaba a líneas con `opciones` no vacías (formato solo, sin extras, no reventaba — por
-eso no era evidente con cualquier pedido).
-
-**Por qué no lo detectaron los 469 tests que ya existían:** toda la suite corre con el
-repositorio en memoria (`conftest.py` vacía las credenciales de `POSTGRES_*`), que no pasa por
-psycopg ni por tipos de columna reales. `test_sql.py` solo valida la sintaxis SQL (con
-`pglast`), no la ejecuta.
-
-**Arreglo:** `json.dumps(...)` antes de mandar `opciones` al INSERT, igual que ya hacía
-`propuestas.py` para su propia tabla.
-
-**Test nuevo:** `tests/test_comandas_postgres.py`, contra un Postgres real (vía `pgserver`,
-no es dependencia del proyecto, se instala al vuelo con `uv run --with pgserver pytest ...`).
-Comprobado el ciclo correcto: falla contra el código viejo con el error exacto de producción,
-pasa con el arreglo. No corre en la suite normal (se salta si `pgserver` no está instalado),
-así que no hace falta para el día a día, pero queda ahí para la próxima vez que se toque esta
-tabla.
